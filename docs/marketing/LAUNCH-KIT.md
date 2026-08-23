@@ -3,7 +3,30 @@
 Actionable pack for the founder. Everything here is ready to ship; **nothing was posted** from the overnight squad.
 
 **Live site:** https://fantastic-eclair-0b2c66.netlify.app/  
-**Full plans:** `squad-reports/08-gtm.md` · `09-content.md` · `10-social.md`
+**Full plans:** `squad-reports/08-gtm.md` · `09-content.md` · `10-social.md`  
+**SEO drafts:** `docs/marketing/seo/` · live HE landing: `/whatsapp-restaurants.html`
+
+---
+
+## Day 0 publish order (checklist)
+
+Do these in order. One primary CTA for the whole day (clients **or** builders — not both as equal asks).
+
+- [ ] **0.** Admin: confirm Review builders works (`ORVO_ADMIN_EMAIL`)
+- [ ] **1.** Pick today’s primary link (signup **or** waitlist) → paste into LinkedIn / X / IG bios
+- [ ] **2.** Open metrics Sheet: `Date | Channel | Asset # | Clicks/DMs | Signups`
+- [ ] **3.** Decide CTA lane: **Clients** (Mon/Wed/Fri) or **Builders** (Tue/Thu)
+- [ ] **4.** 08:30 LinkedIn — Post **7** (waitlist) Hebrew → `10-social.md`
+- [ ] **5.** 08:35 X — short cut of Post **7**
+- [ ] **6.** 08:40 IG Story — waitlist sticker + one line from Post **7**
+- [ ] **7.** 09:00 WhatsApp Status — one line from Post **2** + link (`?utm_source=whatsapp&utm_medium=dm&utm_campaign=launch_d0`)
+- [ ] **8.** Optional SEO: confirm `/whatsapp-restaurants.html` loads on Netlify; soft-share only if client day
+- [ ] **9.** 12:00 LinkedIn comment / X — Post **4** (how it works)
+- [ ] **10.** 18:00 IG Feed or LinkedIn — Post **2** (pain) or **6** (example job)
+- [ ] **11.** Evening — 10 SMB WhatsApp intros + 10 builder intros (scripts §3)
+- [ ] **12.** Night — tick §8 asset checklist; skim `08-gtm.md` Week 1 only
+
+**Do not:** auto-post from agents · claim live Stripe escrow · advertise “browse all jobs” before ≥5–8 approved builders.
 
 ---
 
@@ -84,15 +107,18 @@ Details: `08-gtm.md` § Offers.
 
 ---
 
-## 6. SEO — not tomorrow morning, but this week
+## 6. SEO — Day 0 stub live; polish this week
 
-Ship when you have 2 quiet hours:
+| Asset | Status | Path |
+|-------|--------|------|
+| HE restaurant landing | **Live HTML** | `/whatsapp-restaurants.html` |
+| HE page draft / outline | Ready | `docs/marketing/seo/whatsapp-bot-restaurants-he.md` |
+| EN builders page draft | Ready | `docs/marketing/seo/for-builders-en.md` |
+| SPA routing note | Ready | `pages/README.md` |
+| Homepage title/description | Still TODO | `09-content.md` § On-page template |
 
-1. Hebrew page: WhatsApp AI agent for restaurants — outline in `09-content.md` § A1  
-2. English page: WhatsApp AI agent builders — § A2  
-3. Homepage title/description refresh — § On-page template  
-
-UTM for social: `?utm_source=linkedin&utm_medium=social&utm_campaign=launch_d0` (swap source).
+UTM for social: `?utm_source=linkedin&utm_medium=social&utm_campaign=launch_d0` (swap source).  
+SEO landing UTM: `?utm_source=seo&utm_medium=landing&utm_campaign=wa_restaurant`.
 
 ---
 

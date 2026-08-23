@@ -26,6 +26,7 @@ Strategy: `docs/WINNING-PRODUCT.md`
 | 2026-08-23 ~01:21 | Wave 1 | Fake-fund kill, sibling reject, status labels — `WAVE1-DONE.md` |
 | 2026-08-23 ~01:45 | Wave 2D SQL | `003_chat_and_trust.sql` — `WAVE2D-SQL-DONE.md` |
 | 2026-08-23 ~01:45 | Wave 2B Payments | Pay sheet + Stripe MVP doc + payments lockdown — `WAVE2B-PAY-DONE.md` |
+| 2026-08-23 ~01:48 | Wave 2G GTM | SEO drafts + Day 0 checklist + HE landing — `WAVE2G-GTM-DONE.md` |
 
 Next: Wire `create-checkout-session` when Stripe secrets exist; continue loop/landing waves.
 - 2026-08-23 Wave2A Agent A: Niche landing locked to Israel WhatsApp AI agents for SMBs.
@@ -33,3 +34,10 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue loop/la
 - Trust strip honest (no live Stripe); How it works + builders sections niche-tightened; footer ©2026 + HE UI coming.
 - Visual: deep ink + citrus #FF6B35, Playfair/Manrope, full-bleed gradient/pattern; scripts ?v=13.
 - Report: squad-reports/WAVE2A-LANDING-DONE.md
+
+## 2026-08-23T01:48Z — Agent G (GTM/SEO) Wave 2G
+- SEO drafts: `docs/marketing/seo/whatsapp-bot-restaurants-he.md` + `for-builders-en.md`
+- LAUNCH-KIT: **Day 0 publish order** checklist at top; §6 SEO status table
+- Crawlable HE landing: `/whatsapp-restaurants.html` (RTL, links → `index.html` + UTM)
+- SPA note: `pages/README.md` (niche HTML at site root, not `/pages/`)
+- Done note: `squad-reports/WAVE2G-GTM-DONE.md`

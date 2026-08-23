@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>סוכן AI לוואטסאפ למסעדה | ORVO</title>
+<meta name="description" content="סוכן AI לוואטסאפ למסעדה. מפרסמים בקשה ב־ORVO, בונים מאומתים שולחים הצעות, צ'אט ותשלום בפלטפורמה."/>
+<link rel="canonical" href="https://fantastic-eclair-0b2c66.netlify.app/whatsapp-restaurants.html"/>
+<meta property="og:title" content="ORVO — סוכן AI לוואטסאפ למסעדה"/>
+<meta property="og:description" content="מפרסמים בקשה. בונים מאומתים שולחים הצעות. צ'אט ותשלום ב־ORVO."/>
+<meta property="og:type" content="website"/>
+<meta property="og:locale" content="he_IL"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--o:#FF6B35;--o2:#FF8C5A;--bg:#F9F9F7;--black:#0A0A0A;--dark:#141414;--gray:#6B6B6B;--border:rgba(0,0,0,.07)}
+html{scroll-behavior:smooth}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--black);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.btn{border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--black)}
+.btn-ghost:hover{border-color:var(--black)}
+.btn-primary{background:var(--o);color:#fff}
+.btn-primary:hover{background:var(--o2)}
+.btn-lg{padding:14px 28px;font-size:15px;border-radius:10px}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,64px);background:rgba(249,249,247,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:600}
+.logo span{color:var(--o)}
+.nav-links{display:flex;gap:24px;list-style:none;font-size:14px;color:var(--gray)}
+.nav-links a:hover{color:var(--black)}
+
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:120px clamp(20px,5vw,64px) 72px;
+  max-width:920px;margin:0 auto;
+  background:
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(255,107,53,.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(20,20,20,.04), transparent 50%),
+    var(--bg);
+}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--gray);margin-bottom:20px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--o)}
+.brand-mark{font-family:'Playfair Display',serif;font-size:clamp(42px,6vw,64px);font-weight:600;letter-spacing:-.02em;line-height:1;margin-bottom:18px}
+.brand-mark span{color:var(--o)}
+h1{font-family:'Playfair Display',serif;font-size:clamp(28px,3.8vw,40px);font-weight:500;line-height:1.15;letter-spacing:-.02em;margin-bottom:18px;max-width:18ch}
+.lead{font-size:17px;color:var(--gray);max-width:34em;margin-bottom:32px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+
+.section{padding:72px clamp(20px,5vw,64px);max-width:920px;margin:0 auto}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--o);margin-bottom:12px}
+.section h2{font-family:'Playfair Display',serif;font-size:clamp(26px,3.2vw,36px);font-weight:500;line-height:1.2;margin-bottom:16px;letter-spacing:-.02em}
+.section > p{color:var(--gray);font-size:16px;max-width:36em;margin-bottom:28px}
+.list{list-style:none;display:grid;gap:14px}
+.list li{padding:14px 0;border-top:1px solid var(--border);font-size:15px}
+.list li strong{display:block;margin-bottom:4px;font-size:15px}
+.list li span{color:var(--gray);font-size:14px}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:8px}
+.step{padding-top:20px;border-top:2px solid var(--border)}
+.step-num{font-size:12px;font-weight:700;color:var(--o);margin-bottom:10px}
+.step h3{font-size:16px;font-weight:600;margin-bottom:6px}
+.step p{font-size:14px;color:var(--gray)}
+
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.chip{padding:10px 16px;border:1px solid var(--border);background:#fff;font-size:14px;font-weight:500}
+
+.section-dark{background:var(--dark);color:#fff;padding:72px clamp(20px,5vw,64px)}
+.section-dark .inner{max-width:920px;margin:0 auto}
+.section-dark .section-label{color:var(--o2)}
+.section-dark h2{font-family:'Playfair Display',serif;font-size:clamp(26px,3.2vw,36px);font-weight:500;margin-bottom:16px}
+.section-dark p{color:rgba(255,255,255,.55);font-size:15px;max-width:36em;margin-bottom:24px}
+
+.faq details{border-top:1px solid var(--border);padding:16px 0}
+.faq summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq details p{margin-top:10px;color:var(--gray);font-size:14px;max-width:40em}
+
+.cta{text-align:center;padding:88px 24px;background:linear-gradient(180deg,var(--bg) 0%,#fff 100%)}
+.cta h2{font-family:'Playfair Display',serif;font-size:clamp(26px,3.5vw,40px);margin-bottom:12px}
+.cta p{color:var(--gray);margin-bottom:28px;font-size:16px}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+footer{padding:28px clamp(20px,5vw,64px);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--gray)}
+.footer-links{display:flex;gap:20px}
+.footer-links a:hover{color:var(--black)}
+
+@media(max-width:720px){
+  .steps{grid-template-columns:1fr}
+  .nav-links{display:none}
+  h1{max-width:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="index.html"><span>O</span>RVO</a>
+  <ul class="nav-links">
+    <li><a href="#how">איך זה עובד</a></li>
+    <li><a href="index.html#builders">לבונים</a></li>
+  </ul>
+  <a class="btn btn-primary" href="index.html?utm_source=seo&amp;utm_medium=landing&amp;utm_campaign=wa_restaurant">פרסמו בקשה</a>
+</nav>
+
+<main>
+  <section class="hero">
+    <div class="eyebrow"><span class="dot"></span> מסעדות · וואטסאפ · ישראל</div>
+    <p class="brand-mark"><span>O</span>RVO</p>
+    <h1>סוכן AI לוואטסאפ למסעדה — בונים מאומתים</h1>
+    <p class="lead">הלקוח כותב ב־23:40. אתם ישנים. ההזמנה מתה. מפרסמים בקשה אחת ב־ORVO ומקבלים הצעות מבונים שמדברים עברית ובונים על WhatsApp.</p>
+    <div class="hero-btns">
+      <a class="btn btn-primary btn-lg" href="index.html?utm_source=seo&amp;utm_medium=landing&amp;utm_campaign=wa_restaurant">פרסמו בקשה</a>
+      <a class="btn btn-ghost btn-lg" href="#how">איך ORVO עובד</a>
+    </div>
+  </section>
+
+  <section class="section" id="does">
+    <p class="section-label">מה הסוכן עושה</p>
+    <h2>תפריט. הזמנה. התראה למטבח.</h2>
+    <p>סוכן מותאם לוואטסאפ — לא תבנית אנגלית מתורגמת.</p>
+    <ul class="list">
+      <li><strong>מענה על תפריט ושעות</strong><span>שאלות חוזרות, אלרגיות, זמינות — גם מחוץ לשעות העבודה.</span></li>
+      <li><strong>קבלת הזמנה לאיסוף או משלוח</strong><span>איסוף פרטים לפי הכללים שלכם, בלי לאבד הודעות בלילה.</span></li>
+      <li><strong>התראה למטבח / קופה</strong><span>חיבור לזרימת העבודה האמיתית של המסעדה — לא רק צ'אט יפה.</span></li>
+    </ul>
+  </section>
+
+  <section class="section" id="diy">
+    <p class="section-label">מתי מותאם מנצח</p>
+    <h2>SaaS מצוין לזרימות פשוטות. ORVO כשצריך בונה.</h2>
+    <p>כלים עצמיים (~₪97–₪500 לחודש) מתאימים לתבניות. כשיש CRM מוזר, התראות מטבח, עברית מדויקת או API רשמי — מגייסים בונה מאומת. טווח שוק מותאם: ~₪3,500–₪12,000.</p>
+  </section>
+
+  <section class="section" id="how">
+    <p class="section-label">תהליך</p>
+    <h2>מפרסמים. מקבלים הצעות. משלמים בבטחה.</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><h3>פרסמו בקשה</h3><p>תארו מה חייב לעבוד בוואטסאפ ואת טווח התקציב.</p></div>
+      <div class="step"><div class="step-num">02</div><h3>בונים מאומתים מציעים</h3><p>יעד ~48 שעות. בחודש ההשקה גם התאמה ידנית.</p></div>
+      <div class="step"><div class="step-num">03</div><h3>צ'אט ותשלום ב־ORVO</h3><p>בלי להעביר כסף בוואטסאפ פרטי. שחרור אחרי מסירה.</p></div>
+    </div>
+  </section>
+
+  <section class="section-dark">
+    <div class="inner">
+      <p class="section-label">תמחור</p>
+      <h2>מפרסמים תקציב — לא מחיר קסם בדף.</h2>
+      <p>שבבי תקציב נפוצים בשוק הישראלי. מקבלים הצעות מבונים מאומתים לפי ההיקף האמיתי.</p>
+      <div class="chips">
+        <span class="chip">₪3,500</span>
+        <span class="chip">₪6,500</span>
+        <span class="chip">₪12,000</span>
+        <span class="chip">מותאם</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <p class="section-label">שאלות נפוצות</p>
+    <h2>לפני שמפרסמים בקשה</h2>
+    <div class="faq">
+      <details open>
+        <summary>כמה זמן עד שמקבלים הצעות?</summary>
+        <p>בדרך כלל תוך 48 שעות אחרי פרסום הבקשה. בחודש ההשקה מתאימים גם ידנית.</p>
+      </details>
+      <details>
+        <summary>האם התשלום עובר דרך ORVO?</summary>
+        <p>כן. מדברים ומשלמים בפלטפורמה (מסלול Stripe) — בלי להעביר כסף בוואטסאפ פרטי.</p>
+      </details>
+      <details>
+        <summary>מה ההבדל בין בוט תבניות לסוכן AI?</summary>
+        <p>בוט תבניות עונה על זרימות קבועות. סוכן מותאם מבין הקשר, עברית טבעית, ומתחבר לתפריט או למטבח לפי הצורך.</p>
+      </details>
+      <details>
+        <summary>האם צריך WhatsApp Business API?</summary>
+        <p>לרוב כן לפרודקשן רציני. הבונים ב־ORVO יודעים להנחות API רשמי מול פתרונות לא רשמיים.</p>
+      </details>
+      <details>
+        <summary>כמה זה עולה?</summary>
+        <p>בשוק הישראלי בוטים מותאמים נעים לרוב בין ₪3,500 ל־₪12,000+ לפי מורכבות. ב־ORVO מפרסמים תקציב ומקבלים הצעות.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>מוכנים לסוכן וואטסאפ למסעדה?</h2>
+    <p>פרסמו בקשה ב־ORVO — או חזרו לדף הראשי להרשמה.</p>
+    <div class="cta-btns">
+      <a class="btn btn-primary btn-lg" href="index.html?utm_source=seo&amp;utm_medium=landing&amp;utm_campaign=wa_restaurant">פרסמו בקשה</a>
+      <a class="btn btn-ghost btn-lg" href="index.html">חזרה ל־ORVO</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>© 2026 ORVO — סוכני AI לוואטסאפ לעסקים בישראל</span>
+  <div class="footer-links">
+    <a href="index.html">דף הבית</a>
+    <a href="index.html#builders">לבונים</a>
+    <a href="index.html#how">איך זה עובד</a>
+  </div>
+</footer>
+
+</body>
+</html>
