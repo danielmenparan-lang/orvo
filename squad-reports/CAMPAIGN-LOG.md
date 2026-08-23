@@ -159,3 +159,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Deep links `?view=invites|requests|…`; nav `.scrolled` polish
 - Edge `_shared/cors.ts` used by checkout/connect/release scaffolds
 - Chat max 2000 chars + `sql/011_message_limits.sql`
+
+## 2026-08-23T06:00Z — pulse
+- Client requests: hide cancelled by default + toggle; **Copy link** (`?rid=`)
+- Quote cards show builder ★ average when reviews exist
+- `netlify.toml` headers + `/hire` `/builders` redirects
+- `sql/012_notifications.sql` + webhook uses shared CORS

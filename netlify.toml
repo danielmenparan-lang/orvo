@@ -1,0 +1,25 @@
+[build]
+  publish = "."
+  command = "echo 'static ORVO site'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "interest-cohort=()"
+
+[[headers]]
+  for = "/founder-checklist.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[redirects]]
+  from = "/builders"
+  to = "/for-builders.html"
+  status = 301
+
+[[redirects]]
+  from = "/hire"
+  to = "/hire-ai-agent-builders.html"
+  status = 301

@@ -397,6 +397,17 @@
   function consumeViewDeepLink() {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
+    const rid = params.get('rid');
+    if (rid) {
+      ensureDashOpen();
+      go('chat', rid);
+      params.delete('rid');
+      params.delete('view');
+      const u = new URL(window.location.href);
+      u.search = params.toString();
+      window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
+      return;
+    }
     const v = params.get('view');
     if (!v) return;
     const allowed = new Set([
@@ -404,7 +415,6 @@
       'profile', 'admin', 'all-requests', 'disputes',
     ]);
     if (!allowed.has(v)) return;
-    // Role gate soft: still open dash; go() will render empty/admin-only as needed
     ensureDashOpen();
     go(v);
     params.delete('view');
@@ -782,15 +792,28 @@
   async function loadRequests() {
     const body = $('view-body');
     body.innerHTML = '<p class="empty">Loading...</p>';
-    const { data, error } = await needDb().from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    const showAll = !!window.__orvoShowAllRequests;
+    let q = needDb().from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (!showAll) q = q.neq('status', 'cancelled');
+    const { data, error } = await q;
     if (error) { body.innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
     if (!data?.length) {
       body.innerHTML = `<p class="empty">No requests yet.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Post your first agent brief — vetted builders worldwide reply with quotes in USD.</p>
-        <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">+ Post request</button>`;
+        <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">+ Post request</button>
+        ${showAll ? '' : '<p class="empty" style="padding-top:12px;font-size:12px"><button type="button" class="hero-secondary" id="btn-show-cancelled" style="color:var(--gray)">Show cancelled</button></p>'}`;
+      $('btn-show-cancelled')?.addEventListener('click', () => {
+        window.__orvoShowAllRequests = true;
+        loadRequests();
+      });
       return;
     }
-    body.innerHTML = data.map(r => `
+    const filterBar = `<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button type="button" class="btn btn-ghost" id="btn-toggle-cancelled" style="padding:8px 12px;font-size:12px">
+        ${showAll ? 'Hide cancelled' : 'Show cancelled'}
+      </button>
+    </div>`;
+    body.innerHTML = filterBar + data.map(r => `
       <div class="card">
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
@@ -799,14 +822,33 @@
         <div class="row">
           <button class="btn btn-primary btn-open-req" data-rid="${r.id}">Open</button>
           ${r.status === 'open' ? `<button class="btn btn-ghost btn-cancel-req" data-rid="${r.id}">Cancel</button>` : ''}
+          <button class="btn btn-ghost btn-share-req" data-rid="${r.id}">Copy link</button>
         </div>
       </div>`).join('');
+    $('btn-toggle-cancelled')?.addEventListener('click', () => {
+      window.__orvoShowAllRequests = !window.__orvoShowAllRequests;
+      loadRequests();
+    });
     body.querySelectorAll('.btn-open-req').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.rid));
     });
     body.querySelectorAll('.btn-cancel-req').forEach(el => {
       el.addEventListener('click', () => cancelRequest(el.dataset.rid));
     });
+    body.querySelectorAll('.btn-share-req').forEach(el => {
+      el.addEventListener('click', () => copyRequestLink(el.dataset.rid));
+    });
+  }
+
+  async function copyRequestLink(rid) {
+    const url = `${window.location.origin}${window.location.pathname}?rid=${encodeURIComponent(rid)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      track('request_link_copied', { request_id: rid });
+      toast('Link copied — open it while signed in', true);
+    } catch {
+      toast(url, true);
+    }
   }
 
   async function cancelRequest(rid) {
@@ -1381,13 +1423,32 @@
       const ids = [...new Set((quotes || []).map(q => q.builder_id))];
       const { data: profs } = ids.length ? await needDb().from('profiles').select('id,full_name').in('id', ids) : { data: [] };
       const names = Object.fromEntries((profs || []).map(p => [p.id, p.full_name]));
-      quotesHtml = (quotes || []).length ? (quotes || []).map(q => `
+      let ratings = {};
+      if (ids.length) {
+        try {
+          const { data: revs } = await needDb().from('reviews').select('builder_id,rating').in('builder_id', ids);
+          const acc = {};
+          (revs || []).forEach((r) => {
+            if (!acc[r.builder_id]) acc[r.builder_id] = { sum: 0, n: 0 };
+            acc[r.builder_id].sum += Number(r.rating) || 0;
+            acc[r.builder_id].n += 1;
+          });
+          Object.keys(acc).forEach((id) => {
+            ratings[id] = { avg: acc[id].sum / acc[id].n, n: acc[id].n };
+          });
+        } catch (_) { /* reviews table optional */ }
+      }
+      quotesHtml = (quotes || []).length ? (quotes || []).map(q => {
+        const rt = ratings[q.builder_id];
+        const rateLabel = rt ? ` · ★ ${rt.avg.toFixed(1)} (${rt.n})` : '';
+        return `
         <div class="card" style="cursor:default">
           <h3>${esc(names[q.builder_id] || 'Builder')} — ${money(q.amount_cents)}</h3>
           <p>${esc(q.message)}</p>
-          ${q.delivery_days ? `<p style="font-size:12px;color:var(--muted)">ETA ${esc(String(q.delivery_days))} days</p>` : ''}
+          ${q.delivery_days ? `<p style="font-size:12px;color:var(--muted)">ETA ${esc(String(q.delivery_days))} days${rateLabel}</p>` : (rateLabel ? `<p style="font-size:12px;color:var(--muted)">${rateLabel.slice(3)}</p>` : '')}
           ${q.status === 'pending' ? `<button class="btn btn-primary btn-pay" data-qid="${q.id}" data-rid="${rid}">Accept & pay</button>` : `<span class="badge">${esc(statusLabel(q.status))}</span>`}
-        </div>`).join('') : `<p class="empty">Waiting for quotes...</p>
+        </div>`;
+      }).join('') : `<p class="empty">Waiting for quotes...</p>
           <p class="empty" style="padding-top:8px;font-size:13px">Vetted builders worldwide will reply here with USD quotes.</p>`;
     }
 
@@ -1441,7 +1502,8 @@
         <div class="status-rail">${rail}</div>
         <div class="req-meta">${metaBits}</div>
         ${builderSnip}
-        ${req?.description ? `<p style="font-size:13px;color:var(--gray);line-height:1.55;margin:0">${esc(req.description.slice(0, 280))}${req.description.length > 280 ? '…' : ''}</p>` : ''}
+        ${req?.description ? `<p style="font-size:13px;color:var(--gray);line-height:1.55;margin:0 0 10px">${esc(req.description.slice(0, 280))}${req.description.length > 280 ? '…' : ''}</p>` : ''}
+        <button type="button" class="btn btn-ghost" id="btn-copy-req-link" style="padding:8px 12px;font-size:12px">Copy request link</button>
       </div>
       ${req?.user_id === user.id ? `<div style="margin-bottom:16px"><b>Quotes</b>${quotesHtml}</div>` : ''}
       ${escrowHtml}
@@ -1480,6 +1542,7 @@
         ? 'Checkout not live yet — no card charged'
         : 'Checkout unavailable — still awaiting payment', false);
     });
+    $('btn-copy-req-link')?.addEventListener('click', () => copyRequestLink(rid));
     $('chat-form').addEventListener('submit', sendMsg);
     await renderMsgs();
     chatSub = needDb().channel('c-' + rid)
@@ -2006,11 +2069,12 @@
       openAuth('signup');
     }
     else if (a === 'close-auth') closeAuth();
+    else if (a === 'close-reset') closePasswordReset();
     else if (a === 'tab-login') setAuthTab('login');
     else if (a === 'tab-signup') setAuthTab('signup');
     else if (a === 'home') {
       e.preventDefault();
-      closeDash(); closeAuth(); closePost(); closeQuote(); closePay(); closeDispute(); closeReview(); closeConfirm(false);
+      closeDash(); closeAuth(); closePost(); closeQuote(); closePay(); closeDispute(); closeReview(); closeConfirm(false); closePasswordReset();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     else if (a === 'dashboard') {
@@ -2095,6 +2159,7 @@
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if ($('confirm-modal')?.classList.contains('open')) closeConfirm(false);
+    else if ($('reset-modal')?.classList.contains('open')) closePasswordReset();
     else if ($('review-modal')?.classList.contains('open')) closeReview();
     else if ($('dispute-modal')?.classList.contains('open')) closeDispute();
     else if ($('pay-modal').classList.contains('open')) closePay();
@@ -2107,6 +2172,8 @@
   // Enter key on login
   $('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   $('signup-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
+  $('reset-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitPasswordReset(); });
+  $('reset-btn')?.addEventListener('click', submitPasswordReset);
 
   // ── BOOT ──
   async function boot() {
@@ -2120,8 +2187,21 @@
       return;
     }
     await refreshUser();
-    db.auth.onAuthStateChange(refreshUser);
+    db.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        user = session?.user || null;
+        if (user) await loadProfile();
+        updateNav();
+        openPasswordResetModal();
+        track('password_recovery_opened', {});
+        return;
+      }
+      await refreshUser();
+      if (event === 'SIGNED_IN') consumeViewDeepLink();
+    });
     handleCheckoutReturn();
+    consumeViewDeepLink();
+    wireNavScroll();
     track('app_boot', { authed: !!user });
   }
 
