@@ -35,9 +35,9 @@
 
 **Honesty status (code):** Accept → `awaiting_payment` + `payments.pending` only. Client checkout calls Edge Function; without secrets → awaiting UI (not funded). Release requires `held`. Sibling quotes rejected.
 
-**Founder still:** Apply SQL 001→016 on Supabase; set `is_admin`; add Stripe secrets + deploy functions; flip `ORVO_CHECKOUT_LIVE` when Checkout is live.
+**Founder still:** Apply SQL 001→017 on Supabase; set `is_admin`; add Stripe secrets + deploy functions (`STRIPE-DEPLOY-CHECKLIST.md`); flip `ORVO_CHECKOUT_LIVE` when Checkout is live.
 
-**Next code polish:** ~~message notify~~ · ~~threads preview~~ · ~~pay You pay row~~ · ~~Edge auth shared~~ — remaining: live Stripe implementation.
+**Next code polish:** ~~nav alerts~~ · ~~requests search~~ · ~~webhook idempotency SQL~~ · ~~deploy checklist~~ — remaining: live Stripe implementation.
 
 ---
 

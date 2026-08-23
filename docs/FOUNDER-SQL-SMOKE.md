@@ -20,6 +20,7 @@ Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops
 - [ ] `sql/014_quote_notify.sql` (quote → notification; needs 012)
 - [ ] `sql/015_status_notify.sql` (status change → inbox)
 - [ ] `sql/016_message_notify.sql` (chat message → inbox)
+- [ ] `sql/017_stripe_webhook_events.sql` (optional until Stripe webhook live)
 
 ## Privilege
 

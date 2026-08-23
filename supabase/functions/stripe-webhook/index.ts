@@ -26,7 +26,8 @@ Deno.serve(async (req) => {
   // TODO when secrets exist:
   // 1. const body = await req.text()
   // 2. constructEvent(body, sig, whsec)
-  // 3. checkout.session.completed → service-role: payment held + request funded
+  // 3. if evt.id in stripe_webhook_events (sql/017) → 200
+  // 4. checkout.session.completed → service-role: payment held + request funded
   return jsonResponse({
     error: 'not_implemented',
     message: 'Secrets present but webhook handler not implemented yet.',

@@ -83,6 +83,8 @@ button{font-family:inherit;cursor:pointer}
 .skel-line.sm{width:40%}
 @keyframes skelShine{0%{background-position:100% 0}100%{background-position:-100% 0}}
 .notif-unread{border-left:3px solid var(--o)}
+.nav-notif{position:relative}
+.nav-notif .badge-dot{position:absolute;top:-6px;right:-4px;margin:0;min-width:16px;padding:0 5px;font-size:10px}
 .side-item .badge-dot{
   display:inline-block;min-width:18px;padding:1px 6px;margin-left:6px;border-radius:9px;
   background:var(--o);color:#fff;font-size:11px;font-weight:700;line-height:1.4;vertical-align:middle;
@@ -479,6 +481,7 @@ footer{
   </div>
   <div class="nav-btns hidden" id="nav-in">
     <span class="nav-user" id="nav-name"></span>
+    <button class="btn btn-ghost nav-notif" id="nav-notif-btn" data-action="notifications" type="button">Alerts</button>
     <button class="btn btn-ghost" data-action="dashboard">Dashboard</button>
     <button class="btn btn-primary" id="nav-main-btn" data-action="post">Post request</button>
   </div>
@@ -510,7 +513,7 @@ footer{
   <div class="trust reveal">
     <div class="trust-item"><b>Vetted builders</b> — manual review before they see jobs</div>
     <div class="trust-item"><b>On-platform chat</b> — scope & price stay on ORVO</div>
-    <div class="trust-item"><b>Hire flow</b> — quote → fund on ORVO → release when done</div>
+    <div class="trust-item"><b>Hire flow</b> — quote → fund via Checkout → release when done</div>
   </div>
 
   <section class="section reveal" id="how">
@@ -519,7 +522,7 @@ footer{
     <div class="steps">
       <div class="step"><div class="step-num">01</div><h3>Post your agent request</h3><p>Describe the AI agent you need — channel, integrations, success criteria. Clients worldwide welcome.</p></div>
       <div class="step"><div class="step-num">02</div><h3>Get quotes from vetted builders</h3><p>Only approved builders see open jobs. They review your brief, message you, and send a price.</p></div>
-      <div class="step"><div class="step-num">03</div><h3>Hire and release on ORVO</h3><p>Accept a quote, fund through ORVO, then release when delivery is approved.</p></div>
+      <div class="step"><div class="step-num">03</div><h3>Hire and release on ORVO</h3><p>Accept a quote, complete Checkout when live (held until you approve delivery), then release payment.</p></div>
     </div>
   </section>
 
@@ -782,10 +785,10 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=30"></script>
-<script src="js/events.js?v=30"></script>
-<script src="js/status-spine.js?v=30"></script>
-<script src="supabase-config.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="js/chat-policy.js?v=31"></script>
+<script src="js/events.js?v=31"></script>
+<script src="js/status-spine.js?v=31"></script>
+<script src="supabase-config.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>

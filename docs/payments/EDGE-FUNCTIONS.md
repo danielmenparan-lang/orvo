@@ -27,7 +27,9 @@ No fake `funded`/`paid` from the browser.
 
 ## stripe-webhook
 
-Verify `STRIPE_WEBHOOK_SECRET`. On `checkout.session.completed`:
+Verify `STRIPE_WEBHOOK_SECRET`. Scaffold rejects requests missing `stripe-signature` header (400) before 501.
+
+On `checkout.session.completed`:
 - set payment `status=held`, `paid_at=now()`, store PI id  
 - set request `status=funded`  
 
@@ -36,7 +38,7 @@ Only the webhook writes `held`/`funded`.
 ## release-to-builder
 
 **Input:** `{ request_id }`  
-**Auth:** Bearer JWT — request owner or admin  
+**Auth:** Bearer JWT — request owner or admin (scaffold validates header + body)
 **Requires:** payment `held` + builder Connect account  
 **Output:** `{ ok: true, transfer_id }`  
 
@@ -45,6 +47,7 @@ Client: `releasePayment` → `tryReleaseToBuilder`. On 501: mark request `comple
 ## create-connect-account
 
 **Input:** `{}` (JWT user must be approved builder)  
+**Auth:** Bearer JWT required (scaffold validates before 501)
 **Output:** `{ url }` Stripe Account Link  
 
 Client: Profile → **Set up payouts** → `tryCreateConnectAccount` (501 → toast until secrets).

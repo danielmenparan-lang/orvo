@@ -198,12 +198,21 @@
       const { count } = await needDb().from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id).is('read_at', null);
+      const n = count || 0;
+      const label = n ? (n > 9 ? '9+' : String(n)) : '';
       const side = $('sidebar')?.querySelector('[data-view="notifications"]');
-      if (!side) return;
-      const base = 'Notifications';
-      side.innerHTML = count
-        ? `${base}<span class="badge-dot">${count > 9 ? '9+' : count}</span>`
-        : base;
+      if (side) {
+        const base = 'Notifications';
+        side.innerHTML = n
+          ? `${base}<span class="badge-dot">${label}</span>`
+          : base;
+      }
+      const navBtn = $('nav-notif-btn');
+      if (navBtn) {
+        navBtn.innerHTML = n
+          ? `Alerts<span class="badge-dot">${label}</span>`
+          : 'Alerts';
+      }
     } catch { /* sql/012 not applied */ }
   }
 
@@ -947,27 +956,42 @@
     const body = $('view-body');
     body.innerHTML = loadingSkeleton(3);
     const showAll = !!window.__orvoShowAllRequests;
+    const qText = (window.__orvoRequestsQuery || '').trim().toLowerCase();
     let q = needDb().from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     if (!showAll) q = q.neq('status', 'cancelled');
     const { data, error } = await q;
     if (error) { body.innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
-    if (!data?.length) {
-      body.innerHTML = `<p class="empty">No requests yet.</p>
-        <p class="empty" style="padding-top:8px;font-size:13px">Post your first agent brief — vetted builders worldwide reply with quotes in USD.</p>
-        <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">+ Post request</button>
-        ${showAll ? '' : '<p class="empty" style="padding-top:12px;font-size:12px"><button type="button" class="hero-secondary" id="btn-show-cancelled" style="color:var(--gray)">Show cancelled</button></p>'}`;
+    let rows = data || [];
+    if (qText) {
+      rows = rows.filter((r) => {
+        const hay = ((r.title || '') + ' ' + (r.description || '') + ' ' + (r.category || '') + ' ' + (r.status || '')).toLowerCase();
+        return hay.includes(qText);
+      });
+    }
+    if (!rows.length) {
+      body.innerHTML = `<input class="admin-search" id="requests-search" type="search" placeholder="Search your requests…" value="${esc(qText)}" autocomplete="off"/>
+        <p class="empty">${qText ? 'No requests match that search.' : 'No requests yet.'}</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">${qText ? 'Try another term or clear the search.' : 'Post your first agent brief — vetted builders worldwide reply with quotes in USD.'}</p>
+        ${!qText ? '<button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">+ Post request</button>' : ''}
+        ${showAll || qText ? '' : '<p class="empty" style="padding-top:12px;font-size:12px"><button type="button" class="hero-secondary" id="btn-show-cancelled" style="color:var(--gray)">Show cancelled</button></p>'}`;
+      $('requests-search')?.addEventListener('input', (e) => {
+        window.__orvoRequestsQuery = e.target.value;
+        clearTimeout(window.__orvoReqSearchT);
+        window.__orvoReqSearchT = setTimeout(loadRequests, 280);
+      });
       $('btn-show-cancelled')?.addEventListener('click', () => {
         window.__orvoShowAllRequests = true;
         loadRequests();
       });
       return;
     }
-    const filterBar = `<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    const filterBar = `<input class="admin-search" id="requests-search" type="search" placeholder="Search your requests…" value="${esc(qText)}" autocomplete="off"/>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
       <button type="button" class="btn btn-ghost" id="btn-toggle-cancelled" style="padding:8px 12px;font-size:12px">
         ${showAll ? 'Hide cancelled' : 'Show cancelled'}
       </button>
     </div>`;
-    body.innerHTML = filterBar + data.map(r => `
+    body.innerHTML = filterBar + rows.map(r => `
       <div class="card">
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
@@ -982,6 +1006,11 @@
     $('btn-toggle-cancelled')?.addEventListener('click', () => {
       window.__orvoShowAllRequests = !window.__orvoShowAllRequests;
       loadRequests();
+    });
+    $('requests-search')?.addEventListener('input', (e) => {
+      window.__orvoRequestsQuery = e.target.value;
+      clearTimeout(window.__orvoReqSearchT);
+      window.__orvoReqSearchT = setTimeout(loadRequests, 280);
     });
     body.querySelectorAll('.btn-open-req').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.rid));
@@ -1458,6 +1487,7 @@
       $('view-body').innerHTML = '<p class="empty">Admin only</p>';
       return;
     }
+    $('view-body').innerHTML = loadingSkeleton(4);
     const { data, error } = await needDb().from('requests').select('*').order('created_at', { ascending: false }).limit(40);
     if (error) { $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
     const { data: builders } = await needDb().from('profiles')
@@ -1509,6 +1539,7 @@
       $('view-body').innerHTML = '<p class="empty">Admin only</p>';
       return;
     }
+    $('view-body').innerHTML = loadingSkeleton(3);
     const { data, error } = await needDb().from('disputes')
       .select('*').in('status', ['open', 'under_review']).order('created_at', { ascending: false });
     if (error) {
@@ -2361,6 +2392,7 @@
     }
     else if (a === 'jobs') { e.preventDefault(); user ? (openDash('jobs'), go('jobs')) : openAuth('login'); }
     else if (a === 'invites') { e.preventDefault(); user ? (openDash('invites'), go('invites')) : openAuth('login'); }
+    else if (a === 'notifications') { e.preventDefault(); user ? (openDash('notifications'), go('notifications')) : openAuth('login'); }
     else if (a === 'admin') { e.preventDefault(); user ? (openDash('admin'), go('admin')) : openAuth('login'); }
     else if (a === 'close-dash') { e.preventDefault(); closeDash(); }
     else if (a === 'close-quote') closeQuote();

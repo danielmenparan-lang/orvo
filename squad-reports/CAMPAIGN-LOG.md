@@ -189,3 +189,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Messages list: last-message preview + skeletons
 - Pay sheet **You pay** total row
 - Edge `_shared/auth.ts`; release/connect/webhook validation scaffolds
+
+## 2026-08-23T08:00Z — pulse
+- Nav **Alerts** badge + `?view=notifications` routing
+- Client **My requests** search filter
+- `sql/017_stripe_webhook_events.sql` + `STRIPE-DEPLOY-CHECKLIST.md`
+- Landing hire-flow honesty copy; admin skeletons
