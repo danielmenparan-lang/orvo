@@ -22,6 +22,7 @@ if ! command -v supabase >/dev/null 2>&1; then
 fi
 
 echo "Setting Edge secrets (project must be linked)…"
+echo "Note: SUPABASE_URL and SUPABASE_ANON_KEY are auto-injected in Edge Functions."
 supabase secrets set \
   STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" \
   STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" \

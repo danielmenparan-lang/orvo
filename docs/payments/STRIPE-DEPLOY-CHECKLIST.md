@@ -35,7 +35,7 @@ bash scripts/edge-secrets.local.sh
 
 ## 3. Deploy functions
 
-From repo root (Supabase CLI linked to project):
+Functions are **implemented** (Checkout, webhook, Connect, release). From repo root (Supabase CLI linked):
 
 ```bash
 bash scripts/deploy-stripe.sh

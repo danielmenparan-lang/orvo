@@ -273,3 +273,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Login routes founder/admin to **Profile** until setup complete
 - Boot error **Copy APPLY-ALL SQL** + checklist link when DB missing
 - Health summary Schema N/N · Edge N/N; `scripts/edge-secrets.template.sh`
+
+## 2026-08-23T15:30Z — pulse (post-finale)
+- **Stripe Edge functions implemented** — checkout, webhook, connect, release (not 501 stub)
+- Shared `_shared/supabase.ts` + `_shared/stripe.ts`; `orvoFeePercent()` fix
+- Webhook: checkout.session.completed → held/funded; account.updated sync
+- Docs: EDGE-FUNCTIONS + STRIPE-DEPLOY-CHECKLIST updated (live after secrets)

@@ -1,8 +1,10 @@
-# ORVO Stripe Edge Functions (scaffold)
+# ORVO Stripe Edge Functions (implemented)
 
 Deploy under Supabase Edge Functions when secrets are ready. See `docs/payments/STRIPE-CONNECT-MVP.md`.
 
-Shared helpers: `supabase/functions/_shared/auth.ts` (Bearer + JSON body + UUID validation), `stripe-env.ts` (secret/site/fee helpers).
+**Status:** Handlers implemented in `supabase/functions/*` — return `501 not_configured` without secrets; live Checkout/Connect/Release after secrets + deploy + smoke test.
+
+Shared helpers: `_shared/auth.ts`, `stripe-env.ts`, `supabase.ts`, `stripe.ts`.
 
 **Validation matrix (pre-Stripe):**
 
@@ -13,6 +15,7 @@ Shared helpers: `supabase/functions/_shared/auth.ts` (Bearer + JSON body + UUID 
 | Missing `request_id` / `quote_id` | 400 | `validation_error` |
 | Non-UUID field value | 400 | `validation_error` |
 | Secrets not set | 501 | `not_configured` |
+| Secrets set, handler error | 500 | `checkout_failed` / `handler_failed` |
 
 ## create-checkout-session
 

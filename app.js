@@ -2907,7 +2907,7 @@
       : '';
     const stripeLine = window.ORVO_CHECKOUT_LIVE
       ? '<span style="color:var(--green)">ORVO_CHECKOUT_LIVE = true</span>'
-      : '<span style="color:var(--muted)">Checkout off (flip after Stripe smoke test)</span>';
+      : '<span style="color:var(--muted)">Checkout off — Edge handlers ready; set secrets + deploy + smoke test</span>';
     const adminLine = adminOk
       ? '<span style="color:var(--green)">is_admin = yes</span>'
       : (configuredFounder
