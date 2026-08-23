@@ -3,102 +3,150 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ORVO — AI Agent Marketplace</title>
+<title>ORVO — WhatsApp AI agents for Israeli businesses</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--o:#FF6B35;--o2:#FF8C5A;--bg:#F9F9F7;--black:#0A0A0A;--dark:#141414;--gray:#6B6B6B;--border:rgba(0,0,0,.07);--red:#B91C1C;--green:#15803D}
+:root{
+  --o:#FF6B35;--o2:#FF8C5A;--o-dim:rgba(255,107,53,.14);
+  --ink:#0B1220;--ink-2:#121A2B;--ink-3:#1A2438;
+  --bg:#F3F5F8;--surface:#FFFFFF;--black:#0B1220;
+  --gray:#5C6578;--muted:#8A93A6;
+  --border:rgba(11,18,32,.08);--border-strong:rgba(11,18,32,.14);
+  --red:#B91C1C;--green:#15803D;
+  --hero-fg:#F7F4EE;--hero-muted:rgba(247,244,238,.72)
+}
 html{scroll-behavior:smooth}
-body{font-family:Inter,sans-serif;background:var(--bg);color:var(--black);line-height:1.6;-webkit-font-smoothing:antialiased}
+body{font-family:Manrope,sans-serif;background:var(--bg);color:var(--black);line-height:1.6;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer}
 .hidden{display:none!important}
 #boot-error{position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--red);color:#fff;padding:12px;text-align:center;font-size:14px}
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,64px);background:rgba(249,249,247,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
-.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:600}.logo span{color:var(--o)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,64px);background:rgba(11,18,32,.72);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06)}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--hero-fg)}.logo span{color:var(--o)}
 .nav-links{display:flex;gap:32px;list-style:none}
-.nav-links a{font-size:14px;color:var(--gray);transition:color .2s}
-.nav-links a:hover{color:var(--black)}
+.nav-links a{font-size:14px;color:var(--hero-muted);transition:color .2s}
+.nav-links a:hover{color:var(--hero-fg)}
 .nav-btns{display:flex;gap:10px;align-items:center}
-.btn{border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--black)}
-.btn-ghost:hover{border-color:var(--black)}
+.btn{border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s,color .2s,transform .2s}
+.btn-ghost{background:transparent;border:1px solid var(--border-strong);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--ink)}
+nav .btn-ghost{border-color:rgba(255,255,255,.18);color:var(--hero-fg)}
+nav .btn-ghost:hover{border-color:rgba(255,255,255,.4)}
 .btn-primary{background:var(--o);color:#fff}.btn-primary:hover{background:var(--o2)}
 .btn-lg{padding:14px 28px;font-size:15px;border-radius:10px}
 .btn-black{background:var(--black);color:#fff;width:100%;padding:14px;border-radius:8px;font-size:14px;font-weight:500}
 .btn-black:disabled{opacity:.5}
-.nav-user{font-size:13px;color:var(--gray);margin-right:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-user{font-size:13px;color:var(--hero-muted);margin-right:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding:120px clamp(20px,5vw,64px) 80px;max-width:1200px;margin:0 auto}
-.hero-text .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--gray);margin-bottom:20px}
-.hero-text .dot{width:6px;height:6px;border-radius:50%;background:var(--o)}
-.hero-text h1{font-family:'Playfair Display',serif;font-size:clamp(36px,4.5vw,58px);font-weight:500;line-height:1.08;letter-spacing:-.02em;margin-bottom:20px}
-.hero-text h1 em{font-style:italic;color:var(--o)}
-.hero-text .lead{font-size:17px;color:var(--gray);max-width:440px;margin-bottom:32px;font-weight:400}
-.hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
-.role-pick{display:flex;gap:12px;flex-wrap:wrap}
-.role-card{flex:1;min-width:160px;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;transition:all .2s;text-align:left}
-.role-card:hover{border-color:var(--o);box-shadow:0 8px 32px rgba(255,107,53,.08)}
-.role-card strong{display:block;font-size:14px;margin-bottom:4px}
-.role-card span{font-size:12px;color:var(--gray)}
-.preview-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.08)}
-.preview-card .tag{font-size:11px;font-weight:600;color:var(--o);letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px}
-.preview-card h3{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:10px;line-height:1.3}
-.preview-card p{font-size:14px;color:var(--gray);margin-bottom:20px}
-.preview-meta{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--border);font-size:13px}
+/* Landing hero — full-bleed ink + citrus */
+.hero{
+  position:relative;min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(32px,5vw,72px);
+  align-items:center;padding:120px clamp(20px,5vw,72px) 88px;overflow:hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 85% 20%, rgba(255,107,53,.22), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(255,140,90,.12), transparent 50%),
+    linear-gradient(165deg, var(--ink) 0%, var(--ink-2) 48%, #0E1628 100%);
+  color:var(--hero-fg)
+}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+}
+.hero-text,.hero-visual{position:relative;z-index:1}
+.brand-mark{
+  font-family:'Playfair Display',serif;font-size:clamp(42px,7vw,88px);font-weight:700;
+  line-height:1;letter-spacing:-.03em;margin-bottom:18px;color:var(--hero-fg);
+  animation:rise .7s ease-out both
+}
+.brand-mark span{color:var(--o)}
+.hero-text h1{
+  font-family:'Playfair Display',serif;font-size:clamp(26px,3.2vw,40px);font-weight:500;
+  line-height:1.18;letter-spacing:-.02em;margin-bottom:16px;max-width:18ch;
+  color:var(--hero-fg);animation:rise .7s .08s ease-out both
+}
+.hero-text .lead{
+  font-size:17px;color:var(--hero-muted);max-width:38ch;margin-bottom:28px;font-weight:400;
+  animation:rise .7s .16s ease-out both
+}
+.hero-ctas{display:flex;flex-direction:column;align-items:flex-start;gap:14px;animation:rise .7s .24s ease-out both}
+.hero-secondary{font-size:14px;color:var(--hero-muted);background:none;border:none;padding:0;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,107,53,.55)}
+.hero-secondary:hover{color:var(--o)}
+
+.hero-visual{display:flex;align-items:center;justify-content:flex-end;animation:rise .8s .2s ease-out both}
+.preview-scene{
+  width:100%;max-width:440px;padding:28px 28px 24px;
+  background:linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.1);border-radius:4px 18px 18px 18px;
+  backdrop-filter:blur(8px)
+}
+.preview-scene .tag{font-size:11px;font-weight:700;color:var(--o);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+.preview-scene h3{font-family:'Playfair Display',serif;font-size:24px;margin-bottom:10px;line-height:1.25;color:var(--hero-fg)}
+.preview-scene p{font-size:14px;color:var(--hero-muted);margin-bottom:20px;max-width:34ch}
+.preview-meta{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);font-size:13px;color:var(--hero-muted)}
 .preview-meta .status{color:var(--o);font-weight:600}
 
-.trust{display:flex;justify-content:center;gap:40px;flex-wrap:wrap;padding:28px clamp(20px,5vw,64px);border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:#fff}
-.trust-item{font-size:13px;color:var(--gray)}.trust-item b{color:var(--black)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
-.section{padding:80px clamp(20px,5vw,64px);max-width:1100px;margin:0 auto}
-.section-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--o);margin-bottom:12px}
-.section h2{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,42px);font-weight:500;line-height:1.15;margin-bottom:48px;letter-spacing:-.02em}
+.trust{display:flex;justify-content:center;gap:clamp(24px,5vw,48px);flex-wrap:wrap;padding:26px clamp(20px,5vw,64px);border-bottom:1px solid var(--border);background:var(--surface)}
+.trust-item{font-size:13px;color:var(--gray)}.trust-item b{color:var(--ink)}
+
+.section{padding:88px clamp(20px,5vw,64px);max-width:1100px;margin:0 auto}
+.section-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--o);margin-bottom:12px}
+.section h2{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,42px);font-weight:500;line-height:1.15;margin-bottom:48px;letter-spacing:-.02em;color:var(--ink)}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
-.step{padding-top:24px;border-top:2px solid var(--border)}
+.step{padding-top:24px;border-top:2px solid var(--border-strong)}
 .step-num{font-size:12px;font-weight:700;color:var(--o);margin-bottom:12px}
-.step h3{font-size:17px;font-weight:600;margin-bottom:8px}
+.step h3{font-size:17px;font-weight:600;margin-bottom:8px;color:var(--ink)}
 .step p{font-size:14px;color:var(--gray)}
 
-.section-dark{background:var(--dark);color:#fff;padding:80px clamp(20px,5vw,64px)}
+.section-dark{background:linear-gradient(180deg,var(--ink) 0%,var(--ink-3) 100%);color:var(--hero-fg);padding:88px clamp(20px,5vw,64px)}
 .section-dark .section-inner{max-width:1100px;margin:0 auto}
 .section-dark .section-label{color:var(--o2)}
-.section-dark h2{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,42px);font-weight:500;margin-bottom:40px}
+.section-dark h2{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,42px);font-weight:500;margin-bottom:40px;color:var(--hero-fg)}
 .values{display:grid;grid-template-columns:repeat(2,1fr);gap:32px}
 .value h3{font-size:16px;font-weight:600;margin-bottom:8px}
-.value p{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6}
+.value p{font-size:14px;color:rgba(247,244,238,.58);line-height:1.6}
 
-.cta{text-align:center;padding:100px 24px;background:linear-gradient(180deg,var(--bg) 0%,#fff 100%)}
-.cta h2{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,44px);margin-bottom:12px}
+.cta{text-align:center;padding:100px 24px;background:linear-gradient(180deg,var(--bg) 0%,#E8ECF2 100%)}
+.cta h2{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,44px);margin-bottom:12px;color:var(--ink)}
 .cta p{color:var(--gray);margin-bottom:32px;font-size:16px}
-.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;align-items:center}
+.cta .btn-ghost{border-color:var(--border-strong);color:var(--ink)}
+.cta .btn-ghost:hover{border-color:var(--ink)}
+.cta-link{font-size:14px;color:var(--gray);text-decoration:underline;text-underline-offset:3px;background:none;border:none;padding:8px}
+.cta-link:hover{color:var(--o)}
 
-footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--gray)}
-.footer-links{display:flex;gap:24px}
-.footer-links a:hover{color:var(--black)}
+footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--gray);background:var(--surface)}
+.footer-meta{display:flex;flex-direction:column;gap:4px}
+.footer-he{font-size:12px;color:var(--muted)}
+.footer-links{display:flex;gap:24px;flex-wrap:wrap}
+.footer-links a:hover{color:var(--ink)}
 
 @media(max-width:900px){
   .nav-links{display:none}
-  .hero{grid-template-columns:1fr;text-align:center;padding-top:100px}
-  .hero-text .lead,.hero-btns,.role-pick{margin-left:auto;margin-right:auto;justify-content:center}
-  .preview-card{max-width:420px;margin:0 auto}
+  .hero{grid-template-columns:1fr;text-align:center;padding-top:108px;padding-bottom:64px;min-height:auto}
+  .hero-text h1,.hero-text .lead{margin-left:auto;margin-right:auto}
+  .hero-ctas{align-items:center}
+  .hero-visual{justify-content:center}
+  .preview-scene{max-width:420px;text-align:left}
   .steps,.values{grid-template-columns:1fr}
 }
 
 /* App screens (dashboard, modals) */
 .screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:none;overflow:auto}
 .screen.open{display:block}
-.screen-head{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0;z-index:1}
+.screen-head{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:1}
 .screen-body{max-width:1100px;margin:0 auto;padding:24px;display:grid;grid-template-columns:220px 1fr;gap:24px}
 @media(max-width:768px){.screen-body{grid-template-columns:1fr}}
 .sidebar{display:flex;flex-direction:column;gap:4px}
 .side-item{padding:12px 14px;border-radius:8px;font-size:14px;cursor:pointer;border:none;background:none;text-align:left;color:var(--gray)}
-.side-item:hover{background:#fff;color:var(--black)}
-.side-item.active{background:#fff;color:var(--black);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.side-item:hover{background:var(--surface);color:var(--black)}
+.side-item.active{background:var(--surface);color:var(--black);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .side-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);padding:8px 14px 4px;margin-top:8px}
-.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;min-height:400px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;min-height:400px}
 .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
 .panel-head h2{font-size:20px;font-weight:600}
 .empty{color:var(--gray);text-align:center;padding:48px 16px;font-size:14px}
@@ -113,7 +161,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .modal-bg{position:fixed;inset:0;z-index:300;background:rgba(10,10,10,.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
 .modal-bg.open{display:flex}
-.modal-box{background:#fff;border-radius:16px;padding:40px;width:100%;max-width:460px;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.15)}
+.modal-box{background:var(--surface);border-radius:16px;padding:40px;width:100%;max-width:460px;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.15)}
 .modal-close{position:absolute;top:16px;right:16px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:16px}
 .modal-box h2{font-family:'Playfair Display',serif;font-size:26px;margin-bottom:6px}
 .modal-box .sub{font-size:14px;color:var(--gray);margin-bottom:24px}
@@ -128,6 +176,17 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 .msg{padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px}
 .msg.err{background:#FEE2E2;color:var(--red)}
 .msg.ok{background:#DCFCE7;color:var(--green)}
+.pay-sheet{max-width:420px;padding:32px 28px 28px}
+.pay-sheet .pay-rows{margin:0 0 18px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.pay-sheet .pay-row{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;font-size:14px;border-bottom:1px solid var(--border)}
+.pay-sheet .pay-row:last-child{border-bottom:none}
+.pay-sheet .pay-row span{color:var(--gray)}
+.pay-sheet .pay-row strong{font-weight:600;color:var(--black)}
+.pay-sheet .pay-row.total{background:var(--bg)}
+.pay-sheet .pay-note{font-size:13px;line-height:1.55;color:var(--gray);margin:0 0 20px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+.pay-sheet .pay-actions{display:flex;flex-direction:column;gap:8px}
+.pay-sheet .pay-actions .btn-ghost{width:100%;padding:12px}
+.pay-sheet.done .pay-rows,.pay-sheet.done #pay-confirm-btn{display:none}
 .chat{border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;height:360px}
 .chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
 .chat-bubble{max-width:80%;padding:10px 14px;border-radius:12px;font-size:14px}
@@ -166,75 +225,70 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 <main id="landing">
   <section class="hero">
     <div class="hero-text">
-      <div class="eyebrow"><span class="dot"></span> Trusted AI agent marketplace</div>
-      <h1>Need an AI agent?<br><em>Meet a builder.</em></h1>
-      <p class="lead">Post what you need. Vetted builders send quotes. Chat privately and hire through ORVO.</p>
-      <div class="hero-btns">
+      <p class="brand-mark" aria-label="ORVO"><span>O</span>RVO</p>
+      <h1>WhatsApp AI agents for Israeli businesses</h1>
+      <p class="lead">Post what your restaurant, clinic, or salon needs. Hand-vetted builders quote. You chat and hire through ORVO — custom WhatsApp agents, not another DIY bot SaaS.</p>
+      <div class="hero-ctas">
         <button class="btn btn-primary btn-lg" data-action="client-start">Post a request</button>
-        <button class="btn btn-ghost btn-lg" data-action="builder-start">Apply as a builder</button>
-      </div>
-      <div class="role-pick">
-        <button type="button" class="role-card" data-action="client-start">
-          <strong>I need an agent</strong>
-          <span>Post a job · get quotes</span>
-        </button>
-        <button type="button" class="role-card" data-action="builder-start">
-          <strong>I build agents</strong>
-          <span>Apply · get vetted · earn</span>
-        </button>
+        <button type="button" class="hero-secondary" data-action="builder-start">Builders: apply to ship WhatsApp agents →</button>
       </div>
     </div>
-    <div class="preview-card">
-      <div class="tag">WhatsApp · Restaurant</div>
-      <h3>Order bot for my restaurant</h3>
-      <p>Takes orders on WhatsApp, answers menu questions, alerts the kitchen automatically.</p>
-      <div class="preview-meta">
-        <span class="status">Example · Vetted builders only</span>
+    <div class="hero-visual">
+      <div class="preview-scene">
+        <div class="tag">WhatsApp · Restaurant</div>
+        <h3>Order bot for my restaurant</h3>
+        <p>Takes orders on WhatsApp, answers menu questions, alerts the kitchen automatically.</p>
+        <div class="preview-meta">
+          <span class="status">Example · Vetted builders only</span>
+        </div>
       </div>
     </div>
   </section>
 
   <div class="trust">
-    <div class="trust-item"><b>Vetted builders</b> — manual review</div>
-    <div class="trust-item"><b>Private chat</b> — agree on scope & price</div>
-    <div class="trust-item"><b>Secure hire flow</b> — quote → fund → release</div>
+    <div class="trust-item"><b>Vetted builders</b> — manual review before any invite</div>
+    <div class="trust-item"><b>On-platform chat</b> — scope & price stay on ORVO</div>
+    <div class="trust-item"><b>Hire flow</b> — quote → fund on ORVO → release when done</div>
   </div>
 
   <section class="section" id="how">
-    <p class="section-label">Process</p>
-    <h2>Post it. Builders quote.<br>You pay safe.</h2>
+    <p class="section-label">How it works</p>
+    <h2>From WhatsApp chaos<br>to a custom agent.</h2>
     <div class="steps">
-      <div class="step"><div class="step-num">01</div><h3>Client posts a request</h3><p>Describe the AI agent you need. Only approved builders see your post.</p></div>
-      <div class="step"><div class="step-num">02</div><h3>Builders send quotes</h3><p>Vetted builders review your job, message you, and send a price.</p></div>
-      <div class="step"><div class="step-num">03</div><h3>Hire through ORVO</h3><p>Accept a quote, fund the project on ORVO, and release payment when the work is done.</p></div>
+      <div class="step"><div class="step-num">01</div><h3>Post your WhatsApp need</h3><p>Orders, booking, FAQ, or leads — describe the agent your Israeli SMB needs. Concierge matching, not an open job board.</p></div>
+      <div class="step"><div class="step-num">02</div><h3>Get quotes from vetted builders</h3><p>ORVO invites builders who ship Hebrew WhatsApp agents (Meta Cloud API, n8n, and similar). They quote scope and price.</p></div>
+      <div class="step"><div class="step-num">03</div><h3>Hire and release on ORVO</h3><p>Accept a quote, fund through ORVO, then release when delivery is approved. Funds stay with ORVO until you say so.</p></div>
     </div>
   </section>
 
   <section class="section-dark" id="builders">
     <div class="section-inner">
       <p class="section-label">For builders</p>
-      <h2>Build agents. Get paid.<br>We bring the clients.</h2>
+      <h2>Ship Hebrew WhatsApp agents.<br>We match the SMBs.</h2>
       <div class="values">
-        <div class="value"><h3>Apply & get vetted</h3><p>Submit your bio and skills. ORVO reviews every builder before they see any jobs.</p></div>
-        <div class="value"><h3>Browse open jobs</h3><p>Once approved, see client requests that match your skills. Send quotes and chat.</p></div>
-        <div class="value"><h3>Get paid via ORVO</h3><p>Clients fund projects on ORVO. You get paid when delivery is accepted.</p></div>
-        <div class="value"><h3>No cold outreach</h3><p>Clients come to you. Focus on building great agents, not finding leads.</p></div>
+        <div class="value"><h3>Apply & get vetted</h3><p>Show Meta WhatsApp Cloud API, n8n, or Hebrew UX work. Manual review before you see any request.</p></div>
+        <div class="value"><h3>Matched invites</h3><p>Concierge invites for restaurant, clinic, and salon briefs — not cold Upwork bidding.</p></div>
+        <div class="value"><h3>Paid on delivery</h3><p>Client funds on ORVO. You mark delivered; they release. Founding fee 0%.</p></div>
+        <div class="value"><h3>Israel beachhead</h3><p>Buyers already live on WhatsApp. Focus on shipping agents, not hunting leads.</p></div>
       </div>
       <button class="btn btn-primary btn-lg" style="margin-top:40px" data-action="builder-start">Apply as a builder</button>
     </div>
   </section>
 
   <section class="cta">
-    <h2>Ready to start?</h2>
-    <p>Join as a client or apply as a vetted builder.</p>
+    <h2>Ready for a WhatsApp agent?</h2>
+    <p>Post a request — ORVO matches vetted builders who build for Israeli SMBs.</p>
     <div class="cta-btns">
       <button class="btn btn-primary btn-lg" data-action="client-start">Post a request</button>
-      <button class="btn btn-ghost btn-lg" data-action="signup">Create free account</button>
+      <button type="button" class="cta-link" data-action="builder-start">Apply as a builder</button>
     </div>
   </section>
 
   <footer>
-    <span>© 2025 ORVO — AI Agent Marketplace</span>
+    <div class="footer-meta">
+      <span>© 2026 ORVO — WhatsApp AI agents for Israeli businesses</span>
+      <span class="footer-he" lang="he" dir="rtl">ממשק בעברית בדרך · Hebrew UI coming</span>
+    </div>
     <div class="footer-links">
       <a href="#how">How it works</a>
       <a href="#" data-action="login">Sign in</a>
@@ -305,6 +359,29 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
   </div>
 </div>
 
+<!-- ACCEPT & PAY -->
+<div class="modal-bg" id="pay-modal">
+  <div class="modal-box pay-sheet" id="pay-sheet">
+    <button class="modal-close" data-action="close-pay">✕</button>
+    <h2 id="pay-title">Accept &amp; pay</h2>
+    <p class="sub" id="pay-sub">Review the quote before locking in this builder</p>
+    <div id="pay-msg" class="msg hidden"></div>
+    <div class="pay-rows" id="pay-breakdown">
+      <div class="pay-row"><span>Quote amount</span><strong id="pay-amount">—</strong></div>
+      <div class="pay-row"><span id="pay-fee-label">ORVO fee</span><strong id="pay-fee">—</strong></div>
+      <div class="pay-row total"><span>Builder receives</span><strong id="pay-builder-net">—</strong></div>
+    </div>
+    <p class="pay-note" id="pay-note">
+      Card checkout is not live yet. Accepting locks this builder and marks the job
+      <strong>awaiting payment</strong> — not funded. Stripe Checkout is coming next.
+    </p>
+    <div class="pay-actions">
+      <button class="btn-black" id="pay-confirm-btn">Accept quote — await payment</button>
+      <button class="btn btn-ghost" data-action="close-pay" id="pay-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- DASHBOARD -->
 <div class="screen" id="dashboard">
   <div class="screen-head">
@@ -324,7 +401,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase-config.js?v=12"></script>
-<script src="app.js?v=12"></script>
+<script src="supabase-config.js?v=13"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

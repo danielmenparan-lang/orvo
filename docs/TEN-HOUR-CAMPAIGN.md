@@ -10,7 +10,7 @@
 | ID | Role | Owns |
 |----|------|------|
 | A | Niche Landing | `index.html` hero, CTAs, Hebrew-ready copy, brand-first |
-| B | Payments Path | Stripe scaffold docs + `acceptQuote` checkout contract, fee UI |
+| B | Payments Path | ✅ Wave 2B: pay sheet + STRIPE-CONNECT-MVP + `002_payments_lockdown.sql` |
 | C | Loop Engineer | login routing, chat relationship gate, apply edit loop |
 | D | Trust/SQL | migrations beyond `001`, payment write locks, message filter SQL |
 | E | Design System | CSS variables, motion, mobile, remove AI-slop look |

@@ -641,7 +641,11 @@
         <p class="empty" style="padding-top:8px;font-size:12px">Clients must post with status "open". If you were just approved, sign out and back in.</p>`;
       return;
     }
-    body.innerHTML = data.map(r => `
+    const { data: myQuotes } = await needDb().from('quotes').select('request_id').eq('builder_id', user.id);
+    const quotedIds = new Set((myQuotes || []).map(q => q.request_id));
+    body.innerHTML = data.map(r => {
+      const canMsg = isAdmin() || quotedIds.has(r.id) || r.assigned_builder_id === user.id;
+      return `
       <div class="card">
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
@@ -649,9 +653,10 @@
         <p>Budget: ${esc(r.budget || 'Not specified')}</p>
         <div class="row">
           <button class="btn btn-primary btn-quote" data-rid="${r.id}">Send quote</button>
-          <button class="btn btn-ghost btn-chat" data-rid="${r.id}">Message</button>
+          ${canMsg ? `<button class="btn btn-ghost btn-chat" data-rid="${r.id}">Message</button>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
     body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
   }
@@ -690,7 +695,7 @@
       <div class="card" data-click="${q.request_id}">
         <h3>${esc(q.requests?.title || 'Project')}</h3>
         <p>${esc(q.message)}</p>
-        <span class="badge">${money(q.amount_cents)} · ${esc(q.status)}</span>
+        <span class="badge">${money(q.amount_cents)} · ${esc(statusLabel(q.status))}</span>
       </div>`).join('');
     body.querySelectorAll('[data-click]').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.click));
@@ -699,16 +704,33 @@
 
   async function loadApply() {
     if (isBuilder()) { go('jobs'); return; }
-    if (isPending()) { go('status'); return; }
+    const editing = isPending();
+    let existing = null;
+    if (editing) {
+      const { data } = await needDb().from('builder_applications').select('*').eq('user_id', user.id).maybeSingle();
+      existing = data;
+    }
+    const btnLabel = editing ? 'Save changes' : 'Submit application';
     $('view-body').innerHTML = `
-      <p style="color:var(--gray);font-size:14px;margin-bottom:20px">ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.</p>
+      <p style="color:var(--gray);font-size:14px;margin-bottom:20px">${editing
+        ? 'Update your application below. Status stays pending until ORVO reviews.'
+        : 'ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.'}</p>
       <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..."></textarea></div>
       <div class="field"><label>Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
       <div class="field"><label>Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" placeholder="GitHub, website, or leave empty"/></div>
       <div class="field"><label>LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" placeholder="https://linkedin.com/in/..."/></div>
       <div class="field"><label>Years of experience</label><input id="apply-years" type="number" min="0" value="0"/></div>
-      <button class="btn-black" id="apply-btn">Submit application</button>`;
+      <button class="btn-black" id="apply-btn">${btnLabel}</button>
+      ${editing ? '<button class="btn btn-ghost" id="apply-cancel" style="margin-top:10px;width:100%;padding:12px">Back to status</button>' : ''}`;
+    if (existing) {
+      $('apply-bio').value = existing.bio || '';
+      $('apply-skills').value = existing.skills || '';
+      $('apply-portfolio').value = existing.portfolio_url || '';
+      $('apply-linkedin').value = existing.linkedin_url || '';
+      $('apply-years').value = String(existing.experience_years ?? 0);
+    }
     $('apply-btn').addEventListener('click', doApply);
+    $('apply-cancel')?.addEventListener('click', () => go('status'));
   }
 
   async function doApply() {
@@ -717,8 +739,9 @@
     const skills = $('apply-skills').value.trim();
     if (!skills) { toast('Add at least one skill', false); return; }
     const btn = $('apply-btn');
+    const wasPending = isPending();
     btn.disabled = true;
-    btn.textContent = 'Submitting...';
+    btn.textContent = wasPending ? 'Saving...' : 'Submitting...';
     try {
       const row = {
         user_id: user.id,
@@ -740,13 +763,13 @@
       await refreshUser();
       renderSidebar();
       go('status');
-      toast('Application sent! Admin will see it in Review builders.', true);
+      toast(wasPending ? 'Application updated — still pending review.' : 'Application sent! Admin will see it in Review builders.', true);
       if (!saved) console.warn('ORVO: application saved but no row returned');
     } catch (e) {
       toast(e.message, false);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Submit application';
+      btn.textContent = wasPending ? 'Save changes' : 'Submit application';
     }
   }
 
@@ -762,7 +785,7 @@
       rejected: 'Your application was not approved. Contact support if you believe this is an error.',
     };
     $('view-body').innerHTML = `
-      <p><strong>Status:</strong> <span class="badge">${esc(app.status)}</span></p>
+      <p><strong>Status:</strong> <span class="badge">${esc(statusLabel(app.status))}</span></p>
       <p style="color:var(--gray);margin:12px 0 20px;font-size:14px">${msgs[app.status] || ''}</p>
       <p style="font-size:13px;color:var(--gray)">Submitted ${ago(app.created_at)}</p>
       ${app.status === 'approved' ? '<button class="btn btn-primary" style="margin-top:20px;padding:12px 28px" data-goto="jobs">Browse jobs</button>' : ''}
@@ -839,7 +862,7 @@
     const { data, error } = await needDb().from('requests').select('*').order('created_at', { ascending: false }).limit(30);
     if (error) { $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
     $('view-body').innerHTML = (data || []).map(r => `
-      <div class="card"><h3>${esc(r.title)}</h3><p>${esc(r.status)} · ${ago(r.created_at)}</p></div>`).join('') || '<p class="empty">No requests</p>';
+      <div class="card"><h3>${esc(r.title)}</h3><p>${esc(statusLabel(r.status))} · ${ago(r.created_at)}</p></div>`).join('') || '<p class="empty">No requests</p>';
   }
 
   // ── CHAT ──
@@ -862,6 +885,11 @@
     chatRequestId = rid;
 
     const { data: req } = await needDb().from('requests').select('*').eq('id', rid).single();
+    if (!(await canChatOnRequest(req))) {
+      toast('Message only after you quote or are assigned to this job.', false);
+      go(isBuilder() ? 'jobs' : 'messages');
+      return;
+    }
     chatRequestStatus = req?.status || 'open';
     let quotesHtml = '';
 
@@ -874,7 +902,7 @@
         <div class="card" style="cursor:default">
           <h3>${esc(names[q.builder_id] || 'Builder')} — ${money(q.amount_cents)}</h3>
           <p>${esc(q.message)}</p>
-          ${q.status === 'pending' ? `<button class="btn btn-primary btn-pay" data-qid="${q.id}" data-rid="${rid}">Accept & pay</button>` : `<span class="badge">${esc(q.status)}</span>`}
+          ${q.status === 'pending' ? `<button class="btn btn-primary btn-pay" data-qid="${q.id}" data-rid="${rid}">Accept & pay</button>` : `<span class="badge">${esc(statusLabel(q.status))}</span>`}
         </div>`).join('') : '<p class="empty">Waiting for quotes...</p>';
     }
 
@@ -948,7 +976,12 @@
     const body = input.value.trim();
     if (!body || !chatRequestId) return;
     if (!isAdmin()) {
-      const check = validateChatMessage(body, chatRequestStatus);
+      const { data: req } = await needDb().from('requests').select('id,user_id,assigned_builder_id,status').eq('id', chatRequestId).maybeSingle();
+      if (!(await canChatOnRequest(req))) {
+        toast('Message only after you quote or are assigned to this job.', false);
+        return;
+      }
+      const check = validateChatMessage(body, req?.status || chatRequestStatus);
       if (!check.ok) { toast(check.msg, false); return; }
     }
     input.value = '';
@@ -970,17 +1003,31 @@
   }
 
   async function loadThreads() {
-    let list = [];
-    if (isBuilder()) {
-      const { data: quotes } = await needDb().from('quotes').select('request_id, requests(title,created_at)').eq('builder_id', user.id);
-      list = (quotes || []).map(q => ({ id: q.request_id, title: q.requests?.title, t: q.requests?.created_at }));
-      const { data: open } = await needDb().from('requests').select('id,title,created_at').eq('status', 'open');
-      (open || []).forEach(r => { if (!list.find(x => x.id === r.id)) list.push({ id: r.id, title: r.title, t: r.created_at }); });
-    } else {
-      const { data } = await needDb().from('requests').select('id,title,created_at').eq('user_id', user.id);
-      list = (data || []).map(r => ({ id: r.id, title: r.title, t: r.created_at }));
+    const byId = new Map();
+    // Own requests (client relationship)
+    const { data: own } = await needDb().from('requests')
+      .select('id,title,created_at').eq('user_id', user.id);
+    (own || []).forEach(r => byId.set(r.id, { id: r.id, title: r.title, t: r.created_at }));
+
+    if (isBuilder() || isAdmin()) {
+      const { data: quotes } = await needDb().from('quotes')
+        .select('request_id, requests(title,created_at)').eq('builder_id', user.id);
+      (quotes || []).forEach(q => {
+        if (!q.request_id || byId.has(q.request_id)) return;
+        byId.set(q.request_id, { id: q.request_id, title: q.requests?.title, t: q.requests?.created_at });
+      });
+      const { data: assigned } = await needDb().from('requests')
+        .select('id,title,created_at').eq('assigned_builder_id', user.id);
+      (assigned || []).forEach(r => {
+        if (!byId.has(r.id)) byId.set(r.id, { id: r.id, title: r.title, t: r.created_at });
+      });
     }
-    if (!list.length) { $('view-body').innerHTML = '<p class="empty">No conversations yet</p>'; return; }
+
+    const list = [...byId.values()].sort((a, b) => new Date(b.t || 0) - new Date(a.t || 0));
+    if (!list.length) {
+      $('view-body').innerHTML = '<p class="empty">No conversations yet. Quote a job or post a request to start messaging.</p>';
+      return;
+    }
     $('view-body').innerHTML = list.map(r => `
       <div class="card" data-click="${r.id}">
         <h3>${esc(r.title || 'Chat')}</h3>
