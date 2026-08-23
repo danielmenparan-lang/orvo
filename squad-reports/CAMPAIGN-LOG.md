@@ -267,3 +267,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Setup health **Edge function probes** (checkout, webhook, connect, release)
 - **Re-check** button; deploy hint → `scripts/deploy-stripe.sh`
 - Added `scripts/deploy-stripe.sh` one-shot Stripe Edge deploy
+
+## 2026-08-23T15:00Z — pulse (post-finale)
+- **Phased founder banner** — database phase → Stripe phase (Edge + CHECKOUT_LIVE)
+- Login routes founder/admin to **Profile** until setup complete
+- Boot error **Copy APPLY-ALL SQL** + checklist link when DB missing
+- Health summary Schema N/N · Edge N/N; `scripts/edge-secrets.template.sh`

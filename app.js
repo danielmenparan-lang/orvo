@@ -151,11 +151,13 @@
 
   function hideMsg(id) { $(id)?.classList.add('hidden'); }
 
-  function bootErr(msg) {
+  function bootErr(msg, { setupHint = false } = {}) {
     const el = $('boot-error');
-    // Banner is always public-safe (P1-10); detail stays in console for ops
     el.textContent = sanitizePublicErr(msg);
     el.classList.remove('hidden');
+    document.body.classList.add('boot-error-on');
+    const actions = $('boot-error-actions');
+    if (actions) actions.classList.toggle('hidden', !setupHint);
     console.warn('ORVO boot:', msg);
   }
 
@@ -171,6 +173,15 @@
       toast('Could not copy — opening raw SQL in new tab', false);
       window.open(APPLY_ALL_SQL_URL, '_blank', 'noopener');
       return false;
+    }
+  }
+
+  async function copyDeployCmd() {
+    try {
+      await navigator.clipboard.writeText('bash scripts/deploy-stripe.sh');
+      toast('Copied: bash scripts/deploy-stripe.sh', true);
+    } catch {
+      toast('bash scripts/deploy-stripe.sh', true);
     }
   }
 
@@ -298,7 +309,7 @@
 
     let { data, error } = await needDb().from('profiles').select('*').eq('id', user.id).maybeSingle();
     if (error) {
-      bootErr('Database error — complete database setup, then refresh. ' + error.message);
+      bootErr('Database error — complete database setup, then refresh. ' + error.message, { setupHint: true });
       return;
     }
 
@@ -307,7 +318,7 @@
       await new Promise((r) => setTimeout(r, 600));
       ({ data, error } = await needDb().from('profiles').select('*').eq('id', user.id).maybeSingle());
       if (error) {
-        bootErr('Database error — complete database setup, then refresh. ' + error.message);
+        bootErr('Database error — complete database setup, then refresh. ' + error.message, { setupHint: true });
         return;
       }
     }
@@ -340,10 +351,10 @@
         if (again) { profile = again; return; }
       }
       if (insErr.code === '23503') {
-        bootErr('Session out of sync — sign out, then sign in again after database setup.');
+        bootErr('Session out of sync — sign out, then sign in again after database setup.', { setupHint: true });
         return;
       }
-      bootErr('Profile error — complete database setup, then refresh. ' + insErr.message);
+      bootErr('Profile error — complete database setup, then refresh. ' + insErr.message, { setupHint: true });
       return;
     }
     profile = inserted;
@@ -871,6 +882,7 @@
       go('requests');
       maybeOpenClientPost();
     }
+    maybeRouteFounderToProfile();
   }
 
   /** Login / session restore: role home — never signup intent. */
@@ -879,6 +891,24 @@
     postSignupIntent = 'client';
     openDash(wantPost && !isAdmin() && !isBuilder() && !isPending() ? 'requests' : homeViewForRole());
     if (wantPost) maybeOpenClientPost();
+    maybeRouteFounderToProfile();
+  }
+
+  /** Send founder/admin to Profile while SQL, admin, Edge, or Checkout still pending. */
+  async function maybeRouteFounderToProfile() {
+    if (!user || (!isConfiguredFounder() && !isAdmin())) return;
+    try {
+      const [schema, edge] = await Promise.all([probeSchemaHealth(), probeEdgeHealth()]);
+      const schemaOk = schema.length > 0 && schema.every((c) => c.ok);
+      const edgeOk = edge.length > 0 && edge.every((c) => c.ok);
+      if (!schemaOk || !isAdmin() || !edgeOk || !window.ORVO_CHECKOUT_LIVE) {
+        ensureDashOpen();
+        go('profile');
+      }
+    } catch {
+      ensureDashOpen();
+      go('profile');
+    }
   }
 
   /** True if user owns the request, quoted it, is assigned, invited, or is admin. */
@@ -2804,40 +2834,71 @@
       return;
     }
     const adminOk = isAdmin();
-    let checks = [];
+    let schemaChecks = [];
+    let edgeChecks = [];
     try {
-      checks = await probeSchemaHealth();
-    } catch {
-      checks = [];
-    }
-    const schemaOk = checks.length > 0 && checks.every((c) => c.ok);
-    if (schemaOk && adminOk) {
+      [schemaChecks, edgeChecks] = await Promise.all([probeSchemaHealth(), probeEdgeHealth()]);
+    } catch { /* optional */ }
+    const schemaOk = schemaChecks.length > 0 && schemaChecks.every((c) => c.ok);
+    const edgeOk = edgeChecks.length > 0 && edgeChecks.every((c) => c.ok);
+    const checkoutLive = !!window.ORVO_CHECKOUT_LIVE;
+
+    if (schemaOk && adminOk && edgeOk && checkoutLive) {
       el.classList.add('hidden');
       return;
     }
-    const failN = checks.filter((c) => !c.ok).length;
-    const steps = [
-      !schemaOk ? `Run APPLY-ALL SQL${failN ? ` (${failN} table${failN === 1 ? '' : 's'} missing)` : ''}` : null,
-      !adminOk ? 'Copy is_admin SQL in Profile → run after signup' : null,
+
+    if (!schemaOk || !adminOk) {
+      const failN = schemaChecks.filter((c) => !c.ok).length;
+      const steps = [
+        !schemaOk ? `Run APPLY-ALL SQL${failN ? ` (${failN} table${failN === 1 ? '' : 's'} missing)` : ''}` : null,
+        !adminOk ? 'Copy is_admin SQL in Profile → run after signup' : null,
+      ].filter(Boolean);
+      el.classList.remove('hidden');
+      el.innerHTML = `
+        <div class="founder-banner-inner">
+          <div>
+            <b>Founder setup — database</b>
+            <span class="founder-banner-steps">${esc(steps.join(' · '))}</span>
+          </div>
+          <div class="founder-banner-actions">
+            <button type="button" class="btn btn-primary" id="btn-banner-copy-sql">Copy APPLY-ALL SQL</button>
+            <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
+            <a href="founder-checklist.html" target="_blank" rel="noopener" class="btn btn-ghost">Checklist</a>
+          </div>
+        </div>`;
+      $('btn-banner-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
+      $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
+      return;
+    }
+
+    const stripeSteps = [
+      !edgeOk ? 'Deploy Edge: bash scripts/deploy-stripe.sh' : null,
+      edgeOk && !checkoutLive ? 'Stripe secrets + smoke test → ORVO_CHECKOUT_LIVE=true' : null,
     ].filter(Boolean);
     el.classList.remove('hidden');
     el.innerHTML = `
       <div class="founder-banner-inner">
         <div>
-          <b>Founder setup</b>
-          <span class="founder-banner-steps">${esc(steps.join(' · '))}</span>
+          <b>Founder setup — Stripe</b>
+          <span class="founder-banner-steps">${esc(stripeSteps.join(' · '))}</span>
         </div>
         <div class="founder-banner-actions">
-          <button type="button" class="btn btn-primary" id="btn-banner-copy-sql">Copy APPLY-ALL SQL</button>
+          <button type="button" class="btn btn-primary" id="btn-banner-deploy-cmd">Copy deploy command</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
-          <a href="founder-checklist.html" target="_blank" rel="noopener" class="btn btn-ghost">Checklist</a>
+          <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" class="btn btn-ghost">Stripe checklist</a>
         </div>
       </div>`;
-    $('btn-banner-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
+    $('btn-banner-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
     $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
   }
 
   function renderHealthPanel(schemaChecks, edgeChecks, { adminOk, configuredFounder }) {
+    const schemaOkN = (schemaChecks || []).filter((c) => c.ok).length;
+    const schemaTotal = (schemaChecks || []).length;
+    const edgeOkN = (edgeChecks || []).filter((c) => c.ok).length;
+    const edgeTotal = (edgeChecks || []).length;
+    const summary = `<div style="font-size:12px;color:var(--muted);margin:6px 0 8px">Schema ${schemaOkN}/${schemaTotal} · Edge ${edgeOkN}/${edgeTotal}</div>`;
     const rows = renderHealthCheckRows(schemaChecks);
     const edgeRows = (edgeChecks || []).length
       ? `<hr style="border:none;border-top:1px solid var(--border);margin:10px 0"/>
@@ -2867,6 +2928,7 @@
           <button type="button" class="btn btn-ghost" id="btn-recheck-health" style="padding:4px 10px;font-size:11px">Re-check</button>
         </div>
         <span style="font-size:11px;color:var(--muted)">(live probes)</span>
+        ${summary}
         ${rows}
         ${edgeRows}
         ${fixBlock}
@@ -2875,6 +2937,7 @@
         <div>${adminLine}</div>
         <div>${stripeLine}</div>
         <div style="margin-top:10px">
+          <button type="button" class="btn btn-ghost" id="btn-copy-deploy-cmd" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy deploy cmd</button>
           <button type="button" class="btn btn-primary" id="btn-copy-apply-all" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy APPLY-ALL SQL</button>
           <button type="button" class="btn btn-ghost" id="btn-copy-admin-sql" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy is_admin SQL</button>
           <a href="founder-checklist.html" target="_blank" rel="noopener" style="color:var(--o)">Founder checklist →</a>
@@ -2929,6 +2992,7 @@
       <button class="btn btn-ghost" id="logout-btn" style="width:100%;padding:12px">Sign out</button>`;
     $('logout-btn').addEventListener('click', doLogout);
     $('btn-recheck-health')?.addEventListener('click', () => loadProfileView());
+    $('btn-copy-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
     $('btn-copy-apply-all')?.addEventListener('click', () => copyApplyAllSql());
     $('btn-copy-admin-sql')?.addEventListener('click', async () => {
       const safeEmail = logged.replace(/'/g, "''");
@@ -3095,6 +3159,8 @@
   $('reset-btn')?.addEventListener('click', submitPasswordReset);
 
   // ── BOOT ──
+  $('boot-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
+
   async function boot() {
     if (!window.supabase?.createClient) {
       bootErr('Supabase failed to load. Connect to internet and refresh (Ctrl+F5).');

@@ -16,6 +16,14 @@ update public.profiles set is_admin = true where email = 'your@email.com';
 
 ## 2. Edge secrets (Supabase → Project Settings → Edge Functions)
 
+Or from repo (after copying template):
+
+```bash
+cp scripts/edge-secrets.template.sh scripts/edge-secrets.local.sh
+# edit scripts/edge-secrets.local.sh with your keys
+bash scripts/edge-secrets.local.sh
+```
+
 | Secret | Example |
 |--------|---------|
 | `STRIPE_SECRET_KEY` | `sk_test_…` |
