@@ -320,3 +320,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Checkout return post-login** — sign-in prompt when anonymous; resume poll → chat deep link
 - **`connectUnavailableMessage`** + shared **`copyVerifyCmd`**; Stripe founder banner verify-edge button
 - CAMPAIGN-FINALE-HE judge table sync (Stripe IMPLEMENTED)
+
+## 2026-08-23T20:00Z — pulse (post-finale)
+- **`releaseUnavailableMessage`** — honest release Edge error copy
+- **`startConnectOnboarding`** — builder payout banner launches Connect directly (not Profile-only)
+- **`copyFounderSetupCmd`** — boot error bar, database founder banner, Profile ops block
+- WINNING-PRODUCT + EDGE-FUNCTIONS doc sync (IMPLEMENTED, not scaffold)

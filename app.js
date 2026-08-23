@@ -143,6 +143,20 @@
     return result?.message || fallback;
   }
 
+  /** Honest copy when release Edge returns errors (not the 501 fallback path). */
+  function releaseUnavailableMessage(result, fallback = 'Release failed') {
+    if (result?.reason === 'not_configured') {
+      return 'Release not configured — deploy release-to-builder + Stripe secrets';
+    }
+    if (result?.reason === 'network') {
+      return 'Could not reach release — try again.';
+    }
+    if (result?.reason === 'auth') {
+      return 'Sign in again to release payment.';
+    }
+    return result?.message || fallback;
+  }
+
   function parseMoney(s) {
     const m = String(s || '').replace(/,/g, '').match(/\d+(\.\d+)?/);
     return m ? Math.round(parseFloat(m[0]) * 100) : 0;
@@ -225,6 +239,15 @@
       toast('Copied: bash scripts/verify-edge.sh', true);
     } catch {
       toast('bash scripts/verify-edge.sh', true);
+    }
+  }
+
+  async function copyFounderSetupCmd() {
+    try {
+      await navigator.clipboard.writeText('bash scripts/founder-setup.sh');
+      toast('Copied: bash scripts/founder-setup.sh', true);
+    } catch {
+      toast('bash scripts/founder-setup.sh', true);
     }
   }
 
@@ -2686,7 +2709,7 @@
           return;
         }
         if (released.reason !== 'not_configured') {
-          toast(released.message || userFacingErr(released.reason), false);
+          toast(releaseUnavailableMessage(released), false);
           loadChat();
           return;
         }
@@ -2800,6 +2823,22 @@
       showMsg('pay-msg', userFacingErr(e.message), false);
       toast(e.message, false);
     }
+  }
+
+  async function startConnectOnboarding(btnEl) {
+    const btn = btnEl || $('btn-connect-payouts');
+    if (!btn) return;
+    const defaultLabel = btn.dataset.defaultLabel || btn.textContent || 'Set up payouts';
+    btn.disabled = true;
+    btn.textContent = 'Opening…';
+    const r = await tryCreateConnectAccount();
+    if (r.ok && r.url) {
+      window.location.href = r.url;
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = defaultLabel;
+    toast(connectUnavailableMessage(r), false);
   }
 
   async function tryCreateConnectAccount() {
@@ -2948,11 +2987,13 @@
           </div>
           <div class="founder-banner-actions">
             <button type="button" class="btn btn-primary" id="btn-banner-copy-sql">Copy APPLY-ALL SQL</button>
+            <button type="button" class="btn btn-ghost" id="btn-banner-founder-setup">Copy setup steps</button>
             <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
             <a href="founder-checklist.html" target="_blank" rel="noopener" class="btn btn-ghost">Checklist</a>
           </div>
         </div>`;
       $('btn-banner-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
+      $('btn-banner-founder-setup')?.addEventListener('click', () => copyFounderSetupCmd());
       $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
       return;
     }
@@ -3000,9 +3041,11 @@
           <span class="founder-banner-steps">Connect Express required before ORVO can transfer held funds to you</span>
         </div>
         <div class="founder-banner-actions">
-          <button type="button" class="btn btn-primary" id="btn-builder-payout-profile">Set up payouts</button>
+          <button type="button" class="btn btn-primary" id="btn-builder-payout-connect" data-default-label="Set up payouts">Set up payouts</button>
+          <button type="button" class="btn btn-ghost" id="btn-builder-payout-profile">Profile</button>
         </div>
       </div>`;
+    $('btn-builder-payout-connect')?.addEventListener('click', (e) => startConnectOnboarding(e.currentTarget));
     $('btn-builder-payout-profile')?.addEventListener('click', () => go('profile'));
   }
 
@@ -3089,7 +3132,11 @@
         <b>${adminOk ? 'Admin' : 'Founder'} ops</b><br>
         ${adminOk ? `Logged in: <code>${esc(logged)}</code><br>Builder status: <b>${esc(bs)}</b><br>DB is_admin: <b>yes</b><br>` : `Signed in as founder · run is_admin SQL after signup<br>`}
         <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe deploy checklist →</a><br>
-        <span style="font-size:12px;color:var(--muted)">CLI: <code>bash scripts/deploy-stripe.sh</code> · <code>bash scripts/founder-setup.sh</code></span>
+        <span style="font-size:12px;color:var(--muted)">CLI: <code>bash scripts/founder-setup.sh</code> · <code>bash scripts/deploy-stripe.sh</code></span>
+        <div style="margin-top:8px">
+          <button type="button" class="btn btn-ghost" id="btn-copy-founder-setup" style="padding:6px 10px;font-size:11px;margin-right:6px">Copy founder-setup</button>
+          <button type="button" class="btn btn-ghost" id="btn-copy-deploy-inline" style="padding:6px 10px;font-size:11px">Copy deploy cmd</button>
+        </div>
       </div>` : '';
     const connectBlock = isBuilder() ? `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
@@ -3127,19 +3174,9 @@
         toast(sql, true);
       }
     });
-    $('btn-connect-payouts')?.addEventListener('click', async () => {
-      const btn = $('btn-connect-payouts');
-      btn.disabled = true;
-      btn.textContent = 'Opening…';
-      const r = await tryCreateConnectAccount();
-      if (r.ok && r.url) {
-        window.location.href = r.url;
-        return;
-      }
-      btn.disabled = false;
-      btn.textContent = connectId ? 'Update payout onboarding' : 'Set up payouts';
-      toast(connectUnavailableMessage(r), false);
-    });
+    $('btn-copy-founder-setup')?.addEventListener('click', () => copyFounderSetupCmd());
+    $('btn-copy-deploy-inline')?.addEventListener('click', () => copyDeployCmd());
+    $('btn-connect-payouts')?.addEventListener('click', (e) => startConnectOnboarding(e.currentTarget));
     if (showHealth) refreshFounderSetupBanner();
     refreshBuilderPayoutBanner();
   }
@@ -3304,6 +3341,7 @@
 
   // ── BOOT ──
   $('boot-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
+  $('boot-copy-founder-setup')?.addEventListener('click', () => copyFounderSetupCmd());
 
   async function boot() {
     if (!window.supabase?.createClient) {

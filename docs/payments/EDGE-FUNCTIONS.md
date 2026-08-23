@@ -58,7 +58,7 @@ Only the webhook writes `held`/`funded`.
 ## release-to-builder
 
 **Input:** `{ request_id }`  
-**Auth:** Bearer JWT — request owner or admin (scaffold validates header + body)
+**Auth:** Bearer JWT — request owner or admin (validates header + body)
 
 When implemented:
 1. Verify payment `held` and request not disputed
@@ -72,7 +72,7 @@ Client: `releasePayment` → `tryReleaseToBuilder`. On 501: mark request `comple
 ## create-connect-account
 
 **Input:** `{}` (JWT user must be approved builder)  
-**Auth:** Bearer JWT required (scaffold validates before 501)
+**Auth:** Bearer JWT required (validates before 501)
 **Output:** `{ url }` Stripe Account Link  
 
 Client: Profile → **Set up payouts** → `tryCreateConnectAccount` (501 → toast until secrets).
