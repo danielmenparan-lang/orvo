@@ -251,6 +251,16 @@
     }
   }
 
+  async function copySecretsTemplateCmd() {
+    const cmd = 'cp scripts/edge-secrets.template.sh scripts/edge-secrets.local.sh';
+    try {
+      await navigator.clipboard.writeText(cmd);
+      toast('Copied secrets template cmd — edit local file, then run it', true);
+    } catch {
+      toast(cmd, true);
+    }
+  }
+
   function isConfiguredFounder() {
     const logged = myEmail();
     const cfg = cfgAdminEmail();
@@ -449,6 +459,9 @@
       n += 1;
       if (n > maxAttempts) {
         stopCheckoutPoll();
+        toast('Still confirming payment — webhook may be delayed. Open the project and refresh.', false);
+        if (view === 'chat' && chatRequestId === rid) loadChat();
+        else if (rid) go('chat', rid);
         return;
       }
       try {
@@ -545,7 +558,12 @@
       track('connect_return_cancel', {});
       toast('Payout setup cancelled — you can retry from Profile or the payout banner.', false);
       clean();
-      if (!user) openAuth('login');
+      if (user) {
+        ensureDashOpen();
+        go('profile');
+      } else {
+        openAuth('login');
+      }
     }
   }
 
@@ -3028,6 +3046,7 @@
         </div>
         <div class="founder-banner-actions">
           <button type="button" class="btn btn-primary" id="btn-banner-deploy-cmd">Copy deploy command</button>
+          <button type="button" class="btn btn-ghost" id="btn-banner-secrets-cmd">Copy secrets template</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-verify-cmd">Copy verify-edge</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-founder-setup-stripe">Copy setup steps</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
@@ -3036,6 +3055,7 @@
         </div>
       </div>`;
     $('btn-banner-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
+    $('btn-banner-secrets-cmd')?.addEventListener('click', () => copySecretsTemplateCmd());
     $('btn-banner-verify-cmd')?.addEventListener('click', () => copyVerifyCmd());
     $('btn-banner-founder-setup-stripe')?.addEventListener('click', () => copyFounderSetupCmd());
     $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
@@ -3121,6 +3141,7 @@
         <div style="margin-top:10px">
           <button type="button" class="btn btn-ghost" id="btn-copy-verify-cmd" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy verify-edge</button>
           <button type="button" class="btn btn-ghost" id="btn-copy-deploy-cmd" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy deploy cmd</button>
+          <button type="button" class="btn btn-ghost" id="btn-copy-secrets-cmd" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy secrets template</button>
           <button type="button" class="btn btn-primary" id="btn-copy-apply-all" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy APPLY-ALL SQL</button>
           <button type="button" class="btn btn-ghost" id="btn-copy-admin-sql" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy is_admin SQL</button>
           <a href="founder-checklist.html" target="_blank" rel="noopener" style="color:var(--o)">Founder checklist →</a>
@@ -3182,6 +3203,7 @@
     $('btn-recheck-health')?.addEventListener('click', () => loadProfileView());
     $('btn-copy-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
     $('btn-copy-verify-cmd')?.addEventListener('click', () => copyVerifyCmd());
+    $('btn-copy-secrets-cmd')?.addEventListener('click', () => copySecretsTemplateCmd());
     $('btn-copy-apply-all')?.addEventListener('click', () => copyApplyAllSql());
     $('btn-copy-admin-sql')?.addEventListener('click', async () => {
       const safeEmail = logged.replace(/'/g, "''");
@@ -3348,7 +3370,7 @@
     if (how) {
       how.textContent = live
         ? 'Accept a quote, pay via Stripe Checkout — funds held until you approve delivery — then release to the builder.'
-        : 'Accept a quote, complete Checkout when live (held until you approve delivery), then release payment.';
+        : 'Accept a quote; ORVO tries Checkout when configured (funds held until you approve delivery), then release.';
     }
     const builderPaid = $('builder-paid-copy');
     if (builderPaid) {

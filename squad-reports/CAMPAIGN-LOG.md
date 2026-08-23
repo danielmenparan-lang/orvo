@@ -338,3 +338,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Connect return toasts webhook-aware (no stale “when Connect is live”)
 - `founder-setup.sh` + smoke test: `payment_intent.succeeded` webhook event listed
 - auth.ts + EDGE-FUNCTIONS + STATUS.md wording sync
+
+## 2026-08-23T21:30Z — pulse (post-finale)
+- **Checkout poll timeout toast** — honest delay message + open project
+- **Connect cancel → Profile** when signed in
+- **`copySecretsTemplateCmd`** — Stripe banner, Setup health, founder checklist
+- Landing how-it-works step 3 copy (configured vs live)
