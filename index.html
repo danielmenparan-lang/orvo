@@ -282,7 +282,8 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
     <h2>Post a request</h2>
     <p class="sub">Only approved builders will see this</p>
     <div id="post-msg" class="msg hidden"></div>
-    <div class="field"><label>What do you need?</label><textarea id="post-desc" placeholder="Describe the AI agent..."></textarea></div>
+    <div class="field"><label>Title</label><input id="post-title" placeholder="e.g. WhatsApp order bot for my restaurant" maxlength="80"/></div>
+    <div class="field"><label>What do you need?</label><textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..."></textarea></div>
     <div class="field"><label>Category</label>
       <select id="post-cat"><option>WhatsApp / Chat</option><option>Voice / Phone</option><option>Automation</option><option>CRM / Email</option><option>Other</option></select>
     </div>
@@ -323,7 +324,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase-config.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="supabase-config.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

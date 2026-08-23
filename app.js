@@ -493,11 +493,13 @@
     const btn = $('post-btn');
     btn.disabled = true;
     try {
+      const title = ($('post-title')?.value || '').trim();
       const desc = $('post-desc').value.trim();
+      if (!title) throw new Error('Add a short title');
       if (!desc) throw new Error('Describe your project');
       const { error } = await needDb().from('requests').insert({
         user_id: user.id,
-        title: desc.slice(0, 80),
+        title: title.slice(0, 80),
         description: desc,
         category: $('post-cat').value,
         budget: $('post-budget').value.trim() || null,
@@ -787,9 +789,24 @@
         </div>`).join('') : '<p class="empty">Waiting for quotes...</p>';
     }
 
+    let escrowHtml = '';
+    if (req && ['funded', 'delivered', 'in_progress'].includes(req.status)) {
+      const isClient = req.user_id === user.id;
+      const isAssigned = req.assigned_builder_id === user.id;
+      if (isAssigned && req.status === 'funded') {
+        escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Delivery</b><p>Mark the agent as delivered when the client can test it.</p>
+          <button class="btn btn-primary" id="btn-mark-delivered" data-rid="${rid}">Mark delivered</button></div>`;
+      }
+      if (isClient && (req.status === 'funded' || req.status === 'delivered')) {
+        escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Escrow</b><p>Status: <span class="badge">${esc(req.status)}</span>. Release payment when you're satisfied.</p>
+          <button class="btn btn-primary" id="btn-release-pay" data-rid="${rid}">Release payment to builder</button></div>`;
+      }
+    }
+
     $('view-body').innerHTML = `
       <h3 style="margin-bottom:12px">${esc(req?.title || 'Chat')}</h3>
       ${req?.user_id === user.id ? `<div style="margin-bottom:16px"><b>Quotes</b>${quotesHtml}</div>` : ''}
+      ${escrowHtml}
       <p class="chat-hint">No emails or phone numbers. Off-platform contact links blocked. Agent/demo links (GitHub, Vercel, n8n…) are OK.</p>
       <div class="chat">
         <div class="chat-msgs" id="chat-msgs"></div>
@@ -802,6 +819,8 @@
     $('view-body').querySelectorAll('.btn-pay').forEach(b => {
       b.addEventListener('click', () => acceptQuote(b.dataset.qid, b.dataset.rid));
     });
+    $('btn-mark-delivered')?.addEventListener('click', () => markDelivered(rid));
+    $('btn-release-pay')?.addEventListener('click', () => releasePayment(rid));
     $('chat-form').addEventListener('submit', sendMsg);
     await renderMsgs();
     chatSub = needDb().channel('c-' + rid)
@@ -876,6 +895,30 @@
     $('view-body').querySelectorAll('[data-click]').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.click));
     });
+  }
+
+  async function markDelivered(rid) {
+    if (!confirm('Mark this project as delivered for client review?')) return;
+    try {
+      const { error } = await needDb().from('requests').update({ status: 'delivered' }).eq('id', rid);
+      if (error) throw error;
+      toast('Marked delivered — waiting for client release', true);
+      loadChat();
+    } catch (e) { toast(e.message, false); }
+  }
+
+  async function releasePayment(rid) {
+    if (!confirm('Release escrow to the builder? This confirms the work is accepted.')) return;
+    try {
+      const { error: e1 } = await needDb().from('requests').update({ status: 'completed' }).eq('id', rid);
+      if (e1) throw e1;
+      const { error: e2 } = await needDb().from('payments')
+        .update({ status: 'released', released_at: new Date().toISOString() })
+        .eq('request_id', rid);
+      if (e2) throw e2;
+      toast('Payment released to builder', true);
+      loadChat();
+    } catch (e) { toast(e.message, false); }
   }
 
   async function acceptQuote(qid, rid) {
