@@ -116,11 +116,21 @@
 
   function toast(msg, ok) {
     const el = $('toast');
+    if (!el) return;
     el.textContent = msg;
     el.style.background = ok ? '#15803D' : '#B91C1C';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', ok ? 'polite' : 'assertive');
     el.classList.add('show');
     clearTimeout(el._t);
     el._t = setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  function loadingSkeleton(n) {
+    const lines = Array.from({ length: n || 3 }, (_, i) =>
+      `<div class="skel-line ${i === 0 ? 'lg' : (i === (n || 3) - 1 ? 'sm' : '')}"></div>`
+    ).join('');
+    return `<div class="skel" aria-busy="true" aria-label="Loading">${lines}</div>`;
   }
 
   function showMsg(id, text, ok) {
@@ -179,6 +189,21 @@
       const side = $('sidebar')?.querySelector('[data-view="invites"]');
       if (side) side.textContent = count ? `Invited jobs (${count})` : 'Invited jobs';
     } catch { /* table missing */ }
+  }
+
+  async function refreshNotifBadge() {
+    if (!user || !db) return;
+    try {
+      const { count } = await needDb().from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id).is('read_at', null);
+      const side = $('sidebar')?.querySelector('[data-view="notifications"]');
+      if (!side) return;
+      const base = 'Notifications';
+      side.innerHTML = count
+        ? `${base}<span class="badge-dot">${count > 9 ? '9+' : count}</span>`
+        : base;
+    } catch { /* sql/012 not applied */ }
   }
 
   function watchBuilderApplications() {
@@ -412,7 +437,7 @@
     if (!v) return;
     const allowed = new Set([
       'requests', 'jobs', 'invites', 'quotes', 'messages', 'apply', 'status',
-      'profile', 'admin', 'all-requests', 'disputes',
+      'profile', 'admin', 'all-requests', 'disputes', 'notifications',
     ]);
     if (!allowed.has(v)) return;
     ensureDashOpen();
@@ -729,12 +754,14 @@
         <button class="side-item" data-view="apply">Become a builder</button>`;
     }
     h += `<div class="side-label">Account</div>
+      <button class="side-item" data-view="notifications">Notifications</button>
       <button class="side-item" data-view="profile">Profile</button>`;
     $('sidebar').innerHTML = h;
     $('sidebar').querySelectorAll('[data-view]').forEach(el => {
       el.addEventListener('click', () => go(el.dataset.view));
     });
     if (isBuilder()) refreshInviteBadge();
+    refreshNotifBadge();
   }
 
   function go(v, id) {
@@ -756,6 +783,7 @@
       status: 'Application status', profile: 'Profile',
       admin: 'Review builders', 'all-requests': 'All requests',
       invites: 'Invited jobs', disputes: 'Disputes',
+      notifications: 'Notifications',
     };
     $('view-title').textContent = titles[v] || 'Dashboard';
 
@@ -771,6 +799,7 @@
     else if (v === 'admin') loadAdmin();
     else if (v === 'all-requests') loadAllRequests();
     else if (v === 'disputes') loadDisputes();
+    else if (v === 'notifications') loadNotifications();
   }
 
   // ── CLIENT ──
@@ -810,9 +839,53 @@
     } finally { btn.disabled = false; }
   }
 
+  async function loadNotifications() {
+    const body = $('view-body');
+    body.innerHTML = loadingSkeleton(4);
+    try {
+      const { data, error } = await needDb().from('notifications')
+        .select('*').eq('user_id', user.id)
+        .order('created_at', { ascending: false }).limit(40);
+      if (error) throw error;
+      if (!(data || []).length) {
+        body.innerHTML = `<p class="empty">No notifications yet.</p>
+          <p class="empty" style="padding-top:8px;font-size:13px">You’ll see quote alerts here after sql/012 + sql/014 are applied.</p>`;
+        return;
+      }
+      body.innerHTML = data.map((n) => {
+        const unread = !n.read_at;
+        return `<div class="card ${unread ? 'notif-unread' : ''}" data-nid="${n.id}" data-link="${esc(n.link_path || '')}" style="cursor:pointer">
+          <h3>${esc(n.title)}</h3>
+          ${n.body ? `<p>${esc(n.body)}</p>` : ''}
+          <span class="badge">${unread ? 'New · ' : ''}${ago(n.created_at)}</span>
+        </div>`;
+      }).join('');
+      body.querySelectorAll('[data-nid]').forEach((el) => {
+        el.addEventListener('click', async () => {
+          const id = el.dataset.nid;
+          const link = el.dataset.link || '';
+          try {
+            await needDb().from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id).eq('user_id', user.id);
+          } catch (_) { /* ignore */ }
+          refreshNotifBadge();
+          if (link.includes('rid=')) {
+            const rid = new URLSearchParams(link.replace(/^\?/, '')).get('rid');
+            if (rid) { go('chat', rid); return; }
+          }
+          if (link.includes('view=messages')) { go('messages'); return; }
+          loadNotifications();
+        });
+      });
+      refreshNotifBadge();
+    } catch (e) {
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(e.message))}</p>
+        <p class="empty" style="font-size:12px;padding-top:8px">${isAdmin() ? 'Run sql/012_notifications.sql (and 014) in Supabase.' : 'Notifications are not available yet.'}</p>`;
+    }
+  }
+
   async function loadRequests() {
     const body = $('view-body');
-    body.innerHTML = '<p class="empty">Loading...</p>';
+    body.innerHTML = loadingSkeleton(3);
     const showAll = !!window.__orvoShowAllRequests;
     let q = needDb().from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     if (!showAll) q = q.neq('status', 'cancelled');
@@ -903,7 +976,7 @@
       return;
     }
     const qText = (window.__orvoJobsQuery || '').trim().replace(/[%_,]/g, ' ').slice(0, 80);
-    body.innerHTML = '<p class="empty">Loading...</p>';
+    body.innerHTML = loadingSkeleton(3);
     let query = needDb().from('requests').select('*').eq('status', 'open').order('created_at', { ascending: false });
     if (qText) {
       query = query.or(`title.ilike.%${qText}%,description.ilike.%${qText}%,category.ilike.%${qText}%`);
@@ -1270,7 +1343,7 @@
       body.innerHTML = '<p class="empty">Approved builders only.</p>';
       return;
     }
-    body.innerHTML = '<p class="empty">Loading...</p>';
+    body.innerHTML = loadingSkeleton(3);
     const { data, error } = await needDb().from('request_invites')
       .select('id,note,created_at,request_id, requests(id,title,description,category,budget,status,location)')
       .eq('builder_id', user.id)
@@ -1421,6 +1494,9 @@
   }
 
   function requestSpineSteps(status) {
+    if (window.ORVO_STATUS?.requestSpineSteps) {
+      return window.ORVO_STATUS.requestSpineSteps(status);
+    }
     const order = ['open', 'awaiting_payment', 'funded', 'delivered', 'completed'];
     const labels = {
       open: 'Open',
@@ -1431,6 +1507,12 @@
     };
     let s = status || 'open';
     if (s === 'in_progress') s = 'funded';
+    if (s === 'cancelled') {
+      return [
+        { key: 'open', label: 'Open', cls: 'done' },
+        { key: 'cancelled', label: 'Cancelled', cls: 'now' },
+      ];
+    }
     if (s === 'disputed') {
       return order.map((k) => ({
         key: k,
@@ -1636,7 +1718,7 @@
     const names = Object.fromEntries((profs || []).map(p => [p.id, p.full_name]));
     box.innerHTML = (data || []).map(m => {
       const mine = m.sender_id === user.id;
-      return `<div class="chat-bubble ${mine ? 'me' : 'them'}"><small>${mine ? 'You' : esc(names[m.sender_id] || 'User')}</small>${esc(m.body)}</div>`;
+      return `<div class="chat-bubble ${mine ? 'me' : 'them'}"><small>${mine ? 'You' : esc(names[m.sender_id] || 'User')}</small>${esc(m.body)}<span class="chat-time">${ago(m.created_at)}</span></div>`;
     }).join('') || '<p class="empty" style="padding:20px">Start chatting...</p>';
     box.scrollTop = box.scrollHeight;
   }
