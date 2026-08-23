@@ -19,6 +19,7 @@ Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops
 - [ ] `sql/013_request_search.sql` (optional FTS indexes)
 - [ ] `sql/014_quote_notify.sql` (quote → notification; needs 012)
 - [ ] `sql/015_status_notify.sql` (status change → inbox)
+- [ ] `sql/016_message_notify.sql` (chat message → inbox)
 
 ## Privilege
 

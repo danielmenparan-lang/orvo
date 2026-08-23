@@ -3,6 +3,7 @@
 // Full contract: docs/payments/STRIPE-CONNECT-MVP.md + docs/payments/EDGE-FUNCTIONS.md
 
 import { jsonResponse, optionsResponse } from '../_shared/cors.ts';
+import { parseJsonBody, requireBearer, requireUuidField, unauthorized } from '../_shared/auth.ts';
 
 type Body = { request_id?: string; quote_id?: string };
 
@@ -10,26 +11,15 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse();
   if (req.method !== 'POST') return jsonResponse({ error: 'method_not_allowed' }, 405);
 
-  let body: Body = {};
-  try {
-    body = await req.json();
-  } catch {
-    return jsonResponse({ error: 'invalid_json', message: 'Expected JSON body.' }, 400);
-  }
+  if (!requireBearer(req)) return unauthorized();
 
-  const requestId = typeof body.request_id === 'string' ? body.request_id.trim() : '';
-  const quoteId = typeof body.quote_id === 'string' ? body.quote_id.trim() : '';
-  if (!requestId || !quoteId) {
-    return jsonResponse({
-      error: 'validation_error',
-      message: 'request_id and quote_id are required.',
-    }, 400);
-  }
+  const raw = await parseJsonBody<Body>(req);
+  if (raw instanceof Response) return raw;
 
-  const auth = req.headers.get('authorization') || '';
-  if (!auth.toLowerCase().startsWith('bearer ')) {
-    return jsonResponse({ error: 'unauthorized', message: 'Bearer JWT required.' }, 401);
-  }
+  const requestId = requireUuidField(raw as Record<string, unknown>, 'request_id');
+  if (requestId instanceof Response) return requestId;
+  const quoteId = requireUuidField(raw as Record<string, unknown>, 'quote_id');
+  if (quoteId instanceof Response) return quoteId;
 
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
   if (!stripeKey) {

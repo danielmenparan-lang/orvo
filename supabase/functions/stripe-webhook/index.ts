@@ -15,8 +15,16 @@ Deno.serve(async (req) => {
     }, 501);
   }
 
+  const sig = req.headers.get('stripe-signature');
+  if (!sig) {
+    return jsonResponse({
+      error: 'validation_error',
+      message: 'Missing stripe-signature header.',
+    }, 400);
+  }
+
   // TODO when secrets exist:
-  // 1. const sig = req.headers.get('stripe-signature')
+  // 1. const body = await req.text()
   // 2. constructEvent(body, sig, whsec)
   // 3. checkout.session.completed → service-role: payment held + request funded
   return jsonResponse({

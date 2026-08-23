@@ -306,6 +306,8 @@ footer{
 .card:not([data-click]){cursor:default}
 .card h3{font-size:16px;font-weight:600;margin-bottom:6px}
 .card p{font-size:13px;color:var(--gray);margin-bottom:4px}
+.card .thread-snippet{font-size:13px;color:var(--muted);margin:6px 0 8px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .thread-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .tag{display:inline-block;font-size:11px;font-weight:600;background:var(--o-dim);color:var(--o);padding:3px 8px;border-radius:4px;margin-bottom:8px}
 .badge{font-size:12px;font-weight:600;color:var(--o)}
 .req-spine{margin:0 0 20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
@@ -683,7 +685,8 @@ footer{
     <div class="pay-rows" id="pay-breakdown">
       <div class="pay-row"><span>Quote amount</span><strong id="pay-amount">—</strong></div>
       <div class="pay-row"><span id="pay-fee-label">ORVO fee</span><strong id="pay-fee">—</strong></div>
-      <div class="pay-row total"><span>Builder receives</span><strong id="pay-builder-net">—</strong></div>
+      <div class="pay-row"><span>Builder receives</span><strong id="pay-builder-net">—</strong></div>
+      <div class="pay-row total"><span>You pay</span><strong id="pay-total">—</strong></div>
     </div>
     <p class="pay-note" id="pay-note">
       Card checkout is not live yet. Accepting locks this builder and marks the job
@@ -779,10 +782,10 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=29"></script>
-<script src="js/events.js?v=29"></script>
-<script src="js/status-spine.js?v=29"></script>
-<script src="supabase-config.js?v=29"></script>
-<script src="app.js?v=29"></script>
+<script src="js/chat-policy.js?v=30"></script>
+<script src="js/events.js?v=30"></script>
+<script src="js/status-spine.js?v=30"></script>
+<script src="supabase-config.js?v=30"></script>
+<script src="app.js?v=30"></script>
 </body>
 </html>

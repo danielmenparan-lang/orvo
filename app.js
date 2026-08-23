@@ -567,6 +567,7 @@
       $('pay-fee').textContent = '0%';
     }
     $('pay-builder-net').textContent = money(builderNet);
+    if ($('pay-total')) $('pay-total').textContent = money(amountCents);
     const checkoutLive = !!window.ORVO_CHECKOUT_LIVE;
     if (checkoutLive) {
       $('pay-note').innerHTML =
@@ -1132,6 +1133,7 @@
 
   async function loadQuotes() {
     const body = $('view-body');
+    body.innerHTML = loadingSkeleton(3);
     const { data, error } = await needDb().from('quotes').select('*, requests(title)').eq('builder_id', user.id).order('created_at', { ascending: false });
     if (error) { body.innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
     if (!data?.length) {
@@ -1833,6 +1835,8 @@
   }
 
   async function loadThreads() {
+    const body = $('view-body');
+    body.innerHTML = loadingSkeleton(4);
     const byId = new Map();
     // Own requests (client relationship)
     const { data: own } = await needDb().from('requests')
@@ -1854,16 +1858,35 @@
     }
 
     const list = [...byId.values()].sort((a, b) => new Date(b.t || 0) - new Date(a.t || 0));
+    const ids = list.map((r) => r.id);
+    const previews = {};
+    if (ids.length) {
+      const { data: msgs } = await needDb().from('messages')
+        .select('request_id,body,created_at,sender_id')
+        .in('request_id', ids)
+        .order('created_at', { ascending: false });
+      (msgs || []).forEach((m) => {
+        if (!previews[m.request_id]) previews[m.request_id] = m;
+      });
+    }
     if (!list.length) {
       $('view-body').innerHTML = `<p class="empty">No conversations yet.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Post a request or send a quote to start messaging on ORVO.</p>`;
       return;
     }
-    $('view-body').innerHTML = list.map(r => `
+    $('view-body').innerHTML = list.map(r => {
+      const prev = previews[r.id];
+      const snippet = prev
+        ? ((prev.sender_id === user.id ? 'You: ' : '') + prev.body).slice(0, 100) + (prev.body.length > 100 ? '…' : '')
+        : 'No messages yet — open to chat';
+      const t = prev?.created_at || r.t;
+      return `
       <div class="card" data-click="${r.id}">
         <h3>${esc(r.title || 'Chat')}</h3>
-        <span class="badge">${ago(r.t)}</span>
-      </div>`).join('');
+        <p class="thread-snippet">${esc(snippet)}</p>
+        <div class="thread-meta"><span class="badge">${ago(t)}</span></div>
+      </div>`;
+    }).join('');
     $('view-body').querySelectorAll('[data-click]').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.click));
     });

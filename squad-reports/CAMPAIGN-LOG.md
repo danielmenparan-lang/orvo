@@ -183,3 +183,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - `sql/015_status_notify.sql` (request status → client/builder inbox)
 - Post/quote char counters; admin Copy events (localStorage buffer)
 - Checkout Edge validates body/JWT before 501; badge pop motion
+
+## 2026-08-23T07:30Z — pulse
+- `sql/016_message_notify.sql` (chat → counterparty inbox)
+- Messages list: last-message preview + skeletons
+- Pay sheet **You pay** total row
+- Edge `_shared/auth.ts`; release/connect/webhook validation scaffolds
