@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
   // 2. fee = round(amount * ORVO_FEE_PERCENT / 100)  // _fee = ${ _fee }
   // 3. stripe.checkout.sessions.create({
   //      mode: 'payment',
-  //      success_url: `${_site}/?checkout=success`,
-  //      cancel_url: `${_site}/?checkout=cancel`,
+  //      success_url: `${_site}/?checkout=success&rid=${requestId}`,
+  //      cancel_url: `${_site}/?checkout=cancel&rid=${requestId}`,
   //      metadata: { request_id, quote_id },
   //      payment_intent_data: { transfer_group: `orvo_${request_id}` },
   //    })

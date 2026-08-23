@@ -224,3 +224,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Pay sheet resume button + ORVO_CHECKOUT_LIVE-aware awaiting copy
 - My requests **Complete payment** on awaiting_payment cards
 - Admin disputes badge + clickable KPI tiles; Edge UUID validation + test
+
+## 2026-08-23T11:00Z — pulse
+- Checkout return `rid` deep link → request chat
+- Admin all-requests status filter chips; confirm note counter
+- `CAMPAIGN-FINALE-HE.md` + `JUDGE-WAVE-10h.md` (campaign finale)

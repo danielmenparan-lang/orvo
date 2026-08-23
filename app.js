@@ -328,27 +328,34 @@
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get('checkout') || params.get('paid');
     if (!checkout) return;
+    const rid = params.get('rid');
     const clean = () => {
       const u = new URL(window.location.href);
       u.searchParams.delete('checkout');
       u.searchParams.delete('paid');
       u.searchParams.delete('session_id');
+      u.searchParams.delete('rid');
       window.history.replaceState({}, '', u.pathname + u.search + u.hash);
     };
     if (checkout === 'success' || checkout === '1' || checkout === 'true') {
-      track('checkout_return_success', {});
+      track('checkout_return_success', { request_id: rid || null });
       toast('Checkout returned — funding confirms when the webhook marks funds held (not instant).', true);
       clean();
       if (user) {
         ensureDashOpen();
-        go('requests');
+        if (rid) go('chat', rid);
+        else go('requests');
       }
       return;
     }
     if (checkout === 'cancel' || checkout === '0') {
-      track('checkout_return_cancel', {});
+      track('checkout_return_cancel', { request_id: rid || null });
       toast('Checkout cancelled — job stays awaiting payment until you try again.', false);
       clean();
+      if (user && rid) {
+        ensureDashOpen();
+        go('chat', rid);
+      }
     }
   }
 
@@ -1657,9 +1664,11 @@
     }
     $('view-body').innerHTML = loadingSkeleton(4);
     const qText = (window.__orvoAllReqsQuery || '').trim().toLowerCase();
+    const statusFilter = window.__orvoAllReqsStatus || '';
     const { data, error } = await needDb().from('requests').select('*').order('created_at', { ascending: false }).limit(40);
     if (error) { $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
     let rows = data || [];
+    if (statusFilter) rows = rows.filter((r) => r.status === statusFilter);
     if (qText) {
       rows = rows.filter((r) => {
         const hay = ((r.title || '') + ' ' + (r.description || '') + ' ' + (r.status || '') + ' ' + (r.location || '')).toLowerCase();
@@ -1671,7 +1680,19 @@
     const builderOpts = (builders || []).map(b =>
       `<option value="${b.id}">${esc(b.full_name || b.email || b.id)}</option>`
     ).join('');
-    const searchHtml = `<input class="admin-search" id="all-reqs-search" type="search" placeholder="Filter requests…" value="${esc(qText)}" autocomplete="off"/>`;
+    const statusChips = [
+      { key: '', label: 'All' },
+      { key: 'open', label: 'Open' },
+      { key: 'awaiting_payment', label: 'Awaiting pay' },
+      { key: 'funded', label: 'Funded' },
+      { key: 'disputed', label: 'Disputed' },
+    ];
+    const chipHtml = `<div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">${
+      statusChips.map((c) =>
+        `<button type="button" class="btn btn-ghost channel-chip${statusFilter === c.key ? ' on' : ''}" data-status="${c.key}" style="padding:6px 12px;font-size:12px">${c.label}</button>`
+      ).join('')
+    }</div>`;
+    const searchHtml = `${chipHtml}<input class="admin-search" id="all-reqs-search" type="search" placeholder="Filter requests…" value="${esc(qText)}" autocomplete="off"/>`;
     $('view-body').innerHTML = searchHtml + ((rows || []).map(r => `
       <div class="card" style="cursor:default">
         <h3>${esc(r.title)}</h3>
@@ -1690,6 +1711,12 @@
       window.__orvoAllReqsQuery = e.target.value;
       clearTimeout(window.__orvoAllReqsSearchT);
       window.__orvoAllReqsSearchT = setTimeout(loadAllRequests, 280);
+    });
+    $('view-body').querySelectorAll('[data-status]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        window.__orvoAllReqsStatus = btn.dataset.status || '';
+        loadAllRequests();
+      });
     });
     $('view-body').querySelectorAll('.btn-invite').forEach(b => {
       b.addEventListener('click', () => {
@@ -2217,6 +2244,7 @@
       const wrap = $('confirm-note-wrap');
       if (wrap) wrap.classList.toggle('hidden', !withNote);
       if ($('confirm-note')) $('confirm-note').value = '';
+      if (withNote) wireFieldCounter('confirm-note', 'confirm-note-count', 500);
       $('confirm-modal')?.classList.add('open');
     });
   }

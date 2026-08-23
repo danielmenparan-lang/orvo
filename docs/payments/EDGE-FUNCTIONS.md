@@ -32,6 +32,7 @@ Pseudo:
 - On `{ url }` → redirect to Stripe Checkout
 - On `501` / `not_configured` / network → stay on **awaiting payment** (honest; not funded)
 - Scaffold validates JSON body (`request_id`, `quote_id`) + Bearer header before secret check
+- Return URLs include `rid` for deep link: `/?checkout=success&rid=<uuid>`
 
 No fake `funded`/`paid` from the browser.
 
