@@ -13,6 +13,7 @@
   let chatRequestId = null;
   let chatRequestStatus = 'open';
   let quoteRequestId = null;
+  let pendingPay = null; // { qid, rid, amountCents, fee, builderNet }
   let chatSub = null;
   let chatPoll = null;
   let postSignupIntent = 'client';
@@ -55,11 +56,13 @@
       disputed: 'Disputed',
       pending: 'Pending',
       accepted: 'Accepted',
+      approved: 'Approved',
       paid: 'Paid',
       rejected: 'Declined',
       withdrawn: 'Withdrawn',
       held: 'Held',
       released: 'Released',
+      none: 'None',
     };
     return map[s] || s || 'Unknown';
   }
@@ -355,10 +358,74 @@
   }
   function closeQuote() { $('quote-modal').classList.remove('open'); quoteRequestId = null; }
 
-  function routeAfterAuth(intent) {
+  function openPaySheet({ qid, rid, amountCents, fee, builderNet }) {
+    pendingPay = { qid, rid, amountCents, fee, builderNet };
+    const sheet = $('pay-sheet');
+    sheet.classList.remove('done');
+    $('pay-title').textContent = 'Accept & pay';
+    $('pay-sub').textContent = 'Review the quote before locking in this builder';
+    $('pay-amount').textContent = money(amountCents);
+    const pct = FEE();
+    if (pct > 0) {
+      $('pay-fee-label').textContent = `ORVO fee (${pct}%)`;
+      $('pay-fee').textContent = money(fee);
+    } else {
+      $('pay-fee-label').textContent = 'ORVO fee (founding)';
+      $('pay-fee').textContent = '0%';
+    }
+    $('pay-builder-net').textContent = money(builderNet);
+    $('pay-note').innerHTML =
+      'Card checkout is not live yet. Accepting locks this builder and marks the job ' +
+      '<strong>awaiting payment</strong> — not funded. Stripe Checkout is coming next.';
+    const msg = $('pay-msg');
+    msg.className = 'msg hidden';
+    msg.textContent = '';
+    $('pay-confirm-btn').disabled = false;
+    $('pay-confirm-btn').textContent = 'Accept quote — await payment';
+    $('pay-cancel-btn').textContent = 'Cancel';
+    $('pay-modal').classList.add('open');
+  }
+
+  function closePay() {
+    $('pay-modal').classList.remove('open');
+    pendingPay = null;
+    const sheet = $('pay-sheet');
+    if (sheet) sheet.classList.remove('done');
+  }
+
+  function showPayAwaitingState() {
+    const sheet = $('pay-sheet');
+    sheet.classList.add('done');
+    $('pay-title').textContent = 'Awaiting payment';
+    $('pay-sub').textContent = 'Builder locked — checkout coming soon';
+    $('pay-note').innerHTML =
+      'Quote accepted. Status is <strong>awaiting payment</strong>, not funded. ' +
+      'When Stripe Checkout goes live, you will pay here and funds will be held until you release.';
+    showMsg('pay-msg', 'Checkout coming — no card charged yet', true);
+    $('pay-cancel-btn').textContent = 'Close';
+  }
+
+  /** Signup only: honor intent. Login always uses role via openDash(). */
+  function routeAfterSignup(intent) {
     openDash();
-    if (intent === 'builder') go('apply');
-    else go('requests');
+    if (intent === 'builder' && !isBuilder() && !isPending()) go('apply');
+  }
+
+  /** Login / session restore: role only — never signup intent. */
+  function routeAfterLogin() {
+    postSignupIntent = 'client';
+    openDash();
+  }
+
+  /** True if user owns the request, quoted it, is assigned, or is admin. */
+  async function canChatOnRequest(req) {
+    if (!user || !req) return false;
+    if (isAdmin()) return true;
+    if (req.user_id === user.id) return true;
+    if (req.assigned_builder_id === user.id) return true;
+    const { data: q } = await needDb().from('quotes')
+      .select('id').eq('request_id', req.id).eq('builder_id', user.id).limit(1).maybeSingle();
+    return !!q;
   }
 
   // ── AUTH ACTIONS ──
@@ -377,15 +444,16 @@
       });
       if (error) throw error;
       if (data.session) {
-        postSignupIntent = $('signup-intent')?.value || 'client';
+        const intent = $('signup-intent')?.value || 'client';
+        postSignupIntent = 'client';
         await refreshUser();
         closeAuth();
-        routeAfterAuth(postSignupIntent);
+        routeAfterSignup(intent);
         toast('Welcome!', true);
         return;
       }
       setAuthTab('login');
-      postSignupIntent = $('signup-intent')?.value || 'client';
+      postSignupIntent = 'client';
       showMsg('login-msg', 'Account created! Sign in to continue.', true);
     } catch (e) {
       showMsg('signup-msg', e.message, false);
@@ -412,7 +480,7 @@
       if (!data.session) throw new Error('No session');
       await refreshUser();
       closeAuth();
-      routeAfterAuth(postSignupIntent);
+      routeAfterLogin();
       toast('Signed in!', true);
     } catch (e) {
       showMsg('login-msg', e.message, false);
@@ -934,23 +1002,25 @@
   }
 
   async function releasePayment(rid) {
-    if (!confirm('Release funds to the builder? This confirms the work is accepted.')) return;
+    if (!confirm('Confirm delivery accepted? This completes the project. Payout settles when Stripe Connect is live (admin/webhook).')) return;
     try {
       const { data: pay, error: pe } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
       if (pe) throw pe;
-      if (!pay || !['held', 'paid'].includes(pay.status)) {
-        throw new Error('Nothing to release yet — payment must be held first.');
+      if (!pay || !['held', 'paid', 'pending'].includes(pay.status)) {
+        throw new Error('Nothing to release yet.');
       }
-      if (pay.status === 'paid' && !isAdmin()) {
-        throw new Error('This project is not funded yet.');
-      }
+      // Client may complete the request; payment settlement is admin/webhook-only (see sql/002)
       const { error: e1 } = await needDb().from('requests').update({ status: 'completed' }).eq('id', rid);
       if (e1) throw e1;
-      const { error: e2 } = await needDb().from('payments')
-        .update({ status: 'released', released_at: new Date().toISOString() })
-        .eq('request_id', rid);
-      if (e2) throw e2;
-      toast('Payment released to builder', true);
+      if (isAdmin()) {
+        const { error: e2 } = await needDb().from('payments')
+          .update({ status: 'released', released_at: new Date().toISOString() })
+          .eq('request_id', rid);
+        if (e2) throw e2;
+        toast('Payment released to builder', true);
+      } else {
+        toast('Project completed — payout will settle via ORVO', true);
+      }
       loadChat();
     } catch (e) { toast(e.message, false); }
   }
@@ -959,13 +1029,25 @@
     const { data: q } = await needDb().from('quotes').select('*').eq('id', qid).single();
     if (!q) return;
     const fee = FEE() > 0 ? Math.round(q.amount_cents * FEE() / 100) : 0;
-    const stripeLink = (window.STRIPE_PAYMENT_LINK || '').trim();
-    const feeLine = fee > 0 ? `\n\nORVO fee (${FEE()}%): ${money(fee)}\nBuilder receives: ${money(q.amount_cents - fee)}` : '\n\nFounding fee: 0%';
-    const msg = stripeLink
-      ? `Accept this quote for ${money(q.amount_cents)} and continue to checkout?${feeLine}`
-      : `Accept this quote for ${money(q.amount_cents)}?${feeLine}\n\nCard checkout is not live yet — accepting locks the builder and marks the job awaiting payment (not funded).`;
-    if (!confirm(msg)) return;
+    openPaySheet({
+      qid,
+      rid,
+      amountCents: q.amount_cents,
+      fee,
+      builderNet: q.amount_cents - fee,
+    });
+  }
+
+  async function confirmAcceptPay() {
+    if (!pendingPay || !user) return;
+    const { qid, rid, amountCents, fee, builderNet } = pendingPay;
+    const btn = $('pay-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Accepting…';
     try {
+      const { data: q, error: qe } = await needDb().from('quotes').select('*').eq('id', qid).single();
+      if (qe) throw qe;
+      if (!q) throw new Error('Quote not found');
       const { error: e1 } = await needDb().from('quotes').update({ status: 'accepted' }).eq('id', qid);
       if (e1) throw e1;
       // Decline sibling pending quotes
@@ -979,21 +1061,25 @@
         assigned_builder_id: q.builder_id,
       }).eq('id', rid);
       if (e2) throw e2;
+      // Client may only insert pending — webhook/service role sets held/funded later
       const { error: e3 } = await needDb().from('payments').insert({
         user_id: user.id, request_id: rid, quote_id: qid,
-        amount_cents: q.amount_cents, platform_fee_cents: fee,
-        builder_payout_cents: q.amount_cents - fee,
+        amount_cents: amountCents, platform_fee_cents: fee,
+        builder_payout_cents: builderNet,
         status: 'pending',
       });
       if (e3) throw e3;
-      if (stripeLink) {
-        window.open(stripeLink, '_blank');
-        toast('Complete checkout to fund the project', true);
-      } else {
-        toast('Quote accepted — awaiting payment (not funded yet)', true);
-      }
+      // Ignore STRIPE_PAYMENT_LINK — no fake fund path; Checkout Session comes next
+      showPayAwaitingState();
+      toast('Quote accepted — awaiting payment (not funded yet)', true);
+      pendingPay = null;
       loadChat();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Accept quote — await payment';
+      showMsg('pay-msg', userFacingErr(e.message), false);
+      toast(e.message, false);
+    }
   }
 
   async function loadProfileView() {
@@ -1050,7 +1136,7 @@
     else if (a === 'tab-signup') setAuthTab('signup');
     else if (a === 'home') {
       e.preventDefault();
-      closeDash(); closeAuth(); closePost(); closeQuote();
+      closeDash(); closeAuth(); closePost(); closeQuote(); closePay();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     else if (a === 'dashboard') {
@@ -1084,16 +1170,19 @@
     else if (a === 'close-dash') { e.preventDefault(); closeDash(); }
     else if (a === 'close-quote') closeQuote();
     else if (a === 'close-post') closePost();
+    else if (a === 'close-pay') closePay();
   });
 
   $('login-btn').addEventListener('click', doLogin);
   $('signup-btn').addEventListener('click', doSignup);
   $('quote-btn').addEventListener('click', doQuote);
   $('post-btn').addEventListener('click', doPost);
+  $('pay-confirm-btn').addEventListener('click', confirmAcceptPay);
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if ($('quote-modal').classList.contains('open')) closeQuote();
+    if ($('pay-modal').classList.contains('open')) closePay();
+    else if ($('quote-modal').classList.contains('open')) closeQuote();
     else if ($('post-modal').classList.contains('open')) closePost();
     else if ($('auth-modal').classList.contains('open')) closeAuth();
     else if ($('dashboard').classList.contains('open')) closeDash();
