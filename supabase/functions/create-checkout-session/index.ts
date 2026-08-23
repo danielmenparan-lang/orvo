@@ -4,6 +4,7 @@
 
 import { jsonResponse, optionsResponse } from '../_shared/cors.ts';
 import { parseJsonBody, requireBearer, requireUuidField, unauthorized } from '../_shared/auth.ts';
+import { requireStripeSecret, siteUrl, orvoFeePercent } from '../_shared/stripe-env.ts';
 
 type Body = { request_id?: string; quote_id?: string };
 
@@ -21,8 +22,8 @@ Deno.serve(async (req) => {
   const quoteId = requireUuidField(raw as Record<string, unknown>, 'quote_id');
   if (quoteId instanceof Response) return quoteId;
 
-  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-  if (!stripeKey) {
+  const stripeCheck = requireStripeSecret();
+  if (stripeCheck instanceof Response) {
     return jsonResponse({
       error: 'not_configured',
       message: 'Set STRIPE_SECRET_KEY and implement Checkout Session creation.',
@@ -31,17 +32,21 @@ Deno.serve(async (req) => {
     }, 501);
   }
 
+  const _site = siteUrl();
+  const _fee = orvoFeePercent();
+
   // TODO when secrets exist:
   // 1. Verify JWT, load quote/request ownership (service role)
-  // 2. stripe.checkout.sessions.create({
+  // 2. fee = round(amount * ORVO_FEE_PERCENT / 100)  // _fee = ${ _fee }
+  // 3. stripe.checkout.sessions.create({
   //      mode: 'payment',
-  //      success_url: `${SITE_URL}/?checkout=success`,
-  //      cancel_url: `${SITE_URL}/?checkout=cancel`,
+  //      success_url: `${_site}/?checkout=success`,
+  //      cancel_url: `${_site}/?checkout=cancel`,
   //      metadata: { request_id, quote_id },
   //      payment_intent_data: { transfer_group: `orvo_${request_id}` },
   //    })
-  // 3. Upsert payments.stripe_checkout_session_id
-  // 4. Return { url: session.url }
+  // 4. Upsert payments.stripe_checkout_session_id
+  // 5. Return { url: session.url }
   return jsonResponse({
     error: 'not_implemented',
     message: 'STRIPE_SECRET_KEY is set but Checkout Session creation is not implemented yet.',

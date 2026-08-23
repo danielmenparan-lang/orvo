@@ -20,6 +20,7 @@ Run in Supabase SQL Editor, **in order**:
 16. `016_message_notify.sql` — new chat message → counterparty inbox  
 17. `017_stripe_webhook_events.sql` — Stripe evt idempotency (webhook only; optional until Stripe live)  
 18. `018_builder_application_notify.sql` — approved/rejected → builder inbox  
+19. `019_notifications_unread_idx.sql` — partial index for unread badge queries  
 
 Founder smoke checklist: `docs/FOUNDER-SQL-SMOKE.md` / `founder-checklist.html`.  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md` · deploy: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`.
@@ -31,4 +32,4 @@ After first admin signup:
 update public.profiles set is_admin = true where email = 'danielmen.paran@gmail.com';
 ```
 
-**Prod apply status:** *not confirmed by agents — founder must run 001→018 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*
+**Prod apply status:** *not confirmed by agents — founder must run 001→019 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*

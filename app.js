@@ -580,12 +580,14 @@
   }
   function closeQuote() { $('quote-modal').classList.remove('open'); quoteRequestId = null; }
 
-  function openPaySheet({ qid, rid, amountCents, fee, builderNet, builderName, etaDays }) {
+  function openPaySheet({ qid, rid, amountCents, fee, builderNet, builderName, etaDays, requestTitle }) {
     pendingPay = { qid, rid, amountCents, fee, builderNet };
     const sheet = $('pay-sheet');
     sheet.classList.remove('done');
     $('pay-title').textContent = 'Accept & pay';
-    $('pay-sub').textContent = 'Review the quote before locking in this builder';
+    $('pay-sub').textContent = requestTitle
+      ? `“${requestTitle.slice(0, 72)}${requestTitle.length > 72 ? '…' : ''}”`
+      : 'Review the quote before locking in this builder';
     const bl = $('pay-builder-line');
     if (bl) {
       const bits = [];
@@ -1679,6 +1681,22 @@
     }));
   }
 
+  async function markThreadNotificationsRead(rid) {
+    if (!user || !rid) return;
+    try {
+      const { data } = await needDb().from('notifications')
+        .select('id,link_path').eq('user_id', user.id).is('read_at', null);
+      const ids = (data || [])
+        .filter((n) => (n.link_path || '').includes(String(rid)))
+        .map((n) => n.id);
+      if (!ids.length) return;
+      await needDb().from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .in('id', ids).eq('user_id', user.id);
+      refreshNotifBadge();
+    } catch (_) { /* inbox optional */ }
+  }
+
   async function loadChat() {
     if (!chatRequestId) { go('messages'); return; }
     const rid = chatRequestId;
@@ -1694,6 +1712,7 @@
       go(isBuilder() ? 'jobs' : 'messages');
       return;
     }
+    markThreadNotificationsRead(rid);
     chatRequestStatus = req?.status || 'open';
 
     const { data: payRow } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
@@ -1945,6 +1964,15 @@
         if (!previews[m.request_id]) previews[m.request_id] = m;
       });
     }
+    const unreadRids = new Set();
+    try {
+      const { data: unread } = await needDb().from('notifications')
+        .select('link_path').eq('user_id', user.id).is('read_at', null);
+      (unread || []).forEach((n) => {
+        const m = (n.link_path || '').match(/rid=([0-9a-f-]{36})/i);
+        if (m) unreadRids.add(m[1]);
+      });
+    } catch (_) { /* inbox optional */ }
     if (!list.length) {
       $('view-body').innerHTML = `<p class="empty">No conversations yet.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Post a request or send a quote to start messaging on ORVO.</p>`;
@@ -1956,11 +1984,15 @@
         ? ((prev.sender_id === user.id ? 'You: ' : '') + prev.body).slice(0, 100) + (prev.body.length > 100 ? '…' : '')
         : 'No messages yet — open to chat';
       const t = prev?.created_at || r.t;
+      const isUnread = unreadRids.has(r.id);
       return `
-      <div class="card" data-click="${r.id}">
+      <div class="card ${isUnread ? 'thread-unread' : ''}" data-click="${r.id}">
         <h3>${esc(r.title || 'Chat')}</h3>
         <p class="thread-snippet">${esc(snippet)}</p>
-        <div class="thread-meta"><span class="badge">${ago(t)}</span></div>
+        <div class="thread-meta">
+          ${isUnread ? '<span class="badge-new">New</span>' : ''}
+          <span class="badge">${ago(t)}</span>
+        </div>
       </div>`;
     }).join('');
     $('view-body').querySelectorAll('[data-click]').forEach(el => {
@@ -2219,9 +2251,12 @@
     if (!q) return;
     const fee = FEE() > 0 ? Math.round(q.amount_cents * FEE() / 100) : 0;
     let builderName = '';
+    let requestTitle = '';
     try {
       const { data: bp } = await needDb().from('profiles').select('full_name').eq('id', q.builder_id).maybeSingle();
       builderName = bp?.full_name || '';
+      const { data: req } = await needDb().from('requests').select('title').eq('id', rid).maybeSingle();
+      requestTitle = req?.title || '';
     } catch (_) { /* ignore */ }
     openPaySheet({
       qid,
@@ -2231,6 +2266,7 @@
       builderNet: q.amount_cents - fee,
       builderName,
       etaDays: q.delivery_days || null,
+      requestTitle,
     });
   }
 

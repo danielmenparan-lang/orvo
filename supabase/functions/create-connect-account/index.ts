@@ -1,6 +1,7 @@
 // Scaffold — Stripe Connect Express onboarding for builders.
 import { jsonResponse, optionsResponse } from '../_shared/cors.ts';
 import { requireBearer, unauthorized } from '../_shared/auth.ts';
+import { requireStripeSecret, siteUrl } from '../_shared/stripe-env.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return optionsResponse();
@@ -8,16 +9,14 @@ Deno.serve(async (req) => {
 
   if (!requireBearer(req)) return unauthorized();
 
-  if (!Deno.env.get('STRIPE_SECRET_KEY')) {
-    return jsonResponse({
-      error: 'not_configured',
-      message: 'Set STRIPE_SECRET_KEY, then create Express account + Account Link.',
-    }, 501);
-  }
+  const stripeCheck = requireStripeSecret();
+  if (stripeCheck instanceof Response) return stripeCheck;
+
+  const _site = siteUrl();
 
   // TODO: verify JWT → create/retrieve Express account → Account Links.create
-  //   refresh_url: `${SITE_URL}/?connect=refresh`
-  //   return_url: `${SITE_URL}/?connect=success`
+  //   refresh_url: `${_site}/?connect=refresh`
+  //   return_url: `${_site}/?connect=success`
   // → { url }
   return jsonResponse({
     error: 'not_implemented',

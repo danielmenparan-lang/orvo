@@ -201,3 +201,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - `sql/018_builder_application_notify.sql` (approve/reject → inbox)
 - Login routes to role home (`admin` / `invites` / `status` / `requests`)
 - Admin all-requests filter + Review builders skeleton
+
+## 2026-08-23T09:00Z — pulse
+- Pay sheet shows request title; thread unread + mark-read on chat open
+- `sql/019_notifications_unread_idx.sql`; Edge `_shared/stripe-env.ts`
+- SEO theme/manifest on hire + for-builders pages
+- `JUDGE-WAVE-4h.md` — integrity still PASS, Stripe blocked

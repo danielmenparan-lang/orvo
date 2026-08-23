@@ -2,7 +2,7 @@
 
 Deploy under Supabase Edge Functions when secrets are ready. See `docs/payments/STRIPE-CONNECT-MVP.md`.
 
-Shared helpers: `supabase/functions/_shared/auth.ts` (Bearer + JSON body validation).
+Shared helpers: `supabase/functions/_shared/auth.ts` (Bearer + JSON body validation), `stripe-env.ts` (secret/site/fee helpers).
 
 ## create-checkout-session
 
