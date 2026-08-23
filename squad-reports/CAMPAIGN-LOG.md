@@ -243,3 +243,7 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 ## 2026-08-23T12:00Z — pulse (post-finale)
 - Checkout success webhook poll (held/funded refresh, no client fake pay)
 - My requests Pay status badge; webhook scaffold idempotency docs
+
+## 2026-08-23T12:30Z — pulse (post-finale)
+- Chat payment/request Realtime on held/funded; confirming webhook banner
+- Admin all-requests Pay line; release Transfer scaffold steps

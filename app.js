@@ -16,6 +16,7 @@
   let pendingPay = null; // { qid, rid, amountCents, fee, builderNet }
   let awaitingPayContext = null; // { rid, qid, checkoutOpen }
   let chatSub = null;
+  let paySub = null;
   let chatPoll = null;
   let postSignupIntent = 'client';
   let pendingClientPost = false;
@@ -326,6 +327,13 @@
     profile = inserted;
   }
 
+  function stopPayWatch() {
+    if (paySub && db) {
+      db.removeChannel(paySub);
+      paySub = null;
+    }
+  }
+
   function stopCheckoutPoll() {
     if (checkoutPollTimer) {
       clearInterval(checkoutPollTimer);
@@ -418,6 +426,9 @@
       if (user) {
         ensureDashOpen();
         go('profile');
+        refreshUser().then(() => {
+          if (view === 'profile') loadProfileView();
+        });
       }
       return;
     }
@@ -1024,6 +1035,7 @@
     if (v !== 'chat') {
       if (chatSub && db) db.removeChannel(chatSub);
       chatSub = null;
+      stopPayWatch();
       if (chatPoll) clearInterval(chatPoll);
       chatPoll = null;
     }
@@ -1771,6 +1783,17 @@
     }
     const { data: builders } = await needDb().from('profiles')
       .select('id,full_name,email').eq('builder_status', 'approved').limit(50);
+    const payIds = rows
+      .filter((r) => ['awaiting_payment', 'funded', 'delivered', 'completed'].includes(r.status))
+      .map((r) => r.id);
+    const payMap = {};
+    if (payIds.length) {
+      try {
+        const { data: pays } = await needDb().from('payments')
+          .select('request_id,status,amount_cents').in('request_id', payIds);
+        (pays || []).forEach((p) => { payMap[p.request_id] = p; });
+      } catch { /* optional */ }
+    }
     const builderOpts = (builders || []).map(b =>
       `<option value="${b.id}">${esc(b.full_name || b.email || b.id)}</option>`
     ).join('');
@@ -1787,10 +1810,13 @@
       ).join('')
     }</div>`;
     const searchHtml = `${chipHtml}<input class="admin-search" id="all-reqs-search" type="search" placeholder="Filter requests…" value="${esc(qText)}" autocomplete="off"/>`;
-    $('view-body').innerHTML = searchHtml + ((rows || []).map(r => `
+    $('view-body').innerHTML = searchHtml + ((rows || []).map(r => {
+      const pay = payMap[r.id];
+      const payLine = pay ? ` · Pay: ${statusLabel(pay.status)}${pay.amount_cents ? ' ' + money(pay.amount_cents) : ''}` : '';
+      return `
       <div class="card" style="cursor:default">
         <h3>${esc(r.title)}</h3>
-        <p>${esc(statusLabel(r.status))} · ${ago(r.created_at)}${r.location ? ' · ' + esc(r.location) : ''}</p>
+        <p>${esc(statusLabel(r.status))}${payLine} · ${ago(r.created_at)}${r.location ? ' · ' + esc(r.location) : ''}</p>
         <p style="font-size:13px;color:var(--gray);margin:8px 0">${esc((r.description || '').slice(0, 140))}</p>
         <div class="row" style="align-items:center">
           <select class="invite-builder" data-rid="${r.id}" style="flex:1;min-width:160px;padding:10px;border:1px solid var(--border);border-radius:8px">
@@ -1800,7 +1826,8 @@
           <button class="btn btn-primary btn-invite" data-rid="${r.id}">Invite</button>
           <button class="btn btn-ghost btn-open-req" data-rid="${r.id}">Open</button>
         </div>
-      </div>`).join('') || '<p class="empty">No requests' + (qText ? ' match that filter' : '') + '</p>');
+      </div>`;
+    }).join('') || '<p class="empty">No requests' + (qText ? ' match that filter' : '') + '</p>');
     $('all-reqs-search')?.addEventListener('input', (e) => {
       window.__orvoAllReqsQuery = e.target.value;
       clearTimeout(window.__orvoAllReqsSearchT);
@@ -1901,6 +1928,7 @@
   function stopChat() {
     if (chatSub && db) db.removeChannel(chatSub);
     chatSub = null;
+    stopPayWatch();
     if (chatPoll) clearInterval(chatPoll);
     chatPoll = null;
     chatRequestId = null;
@@ -1963,6 +1991,7 @@
     const rid = chatRequestId;
     if (chatSub && db) db.removeChannel(chatSub);
     chatSub = null;
+    stopPayWatch();
     if (chatPoll) clearInterval(chatPoll);
     chatPoll = null;
     chatRequestId = rid;
@@ -2042,7 +2071,9 @@
         const btnLabel = checkoutOpen
           ? (checkoutLive ? 'Continue to Stripe Checkout' : 'Resume checkout')
           : (checkoutLive ? 'Pay with Stripe Checkout' : 'Try checkout again');
+        const confirming = checkoutPollTimer && payStatus !== 'held';
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Payment</b>
+          ${confirming ? '<p style="font-size:12px;color:var(--o);margin:0 0 8px">Confirming payment with Stripe webhook…</p>' : ''}
           <p>${payNote}</p>
           <p style="font-size:12px;color:var(--muted);margin:8px 0">Payment: <span class="badge">${esc(payBadge)}</span>
             ${payRow ? ' · ' + money(payRow.amount_cents) : ''}</p>
@@ -2138,8 +2169,32 @@
     chatInput?.addEventListener('input', updateCount);
     updateCount();
     await renderMsgs();
+    stopPayWatch();
     chatSub = needDb().channel('c-' + rid)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'request_id=eq.' + rid }, renderMsgs)
+      .subscribe();
+    paySub = needDb().channel('pay-' + rid)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'payments', filter: 'request_id=eq.' + rid,
+      }, (payload) => {
+        const st = payload.new?.status;
+        if (st === 'held' || st === 'released') {
+          stopCheckoutPoll();
+          track('payment_realtime_update', { request_id: rid, status: st });
+          toast(st === 'held' ? 'Payment held — funds secured until delivery.' : 'Payment released.', true);
+          loadChat();
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'requests', filter: 'id=eq.' + rid,
+      }, (payload) => {
+        if (payload.new?.status === 'funded') {
+          stopCheckoutPoll();
+          track('request_funded_realtime', { request_id: rid });
+          toast('Project funded — builder can deliver.', true);
+          loadChat();
+        }
+      })
       .subscribe();
     if (chatPoll) clearInterval(chatPoll);
     chatPoll = setInterval(renderMsgs, 4000);

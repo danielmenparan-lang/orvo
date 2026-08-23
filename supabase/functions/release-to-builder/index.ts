@@ -25,7 +25,13 @@ Deno.serve(async (req) => {
     }, 501);
   }
 
-  // TODO: JWT owns request → payment held → Transfer.create(source_transaction) → service-role released + completed
+  // TODO when secrets exist:
+  // 1. Verify JWT — client owns request OR admin
+  // 2. Load payment (held) + request (funded/delivered) + builder Connect account id
+  // 3. stripe.transfers.create({ amount: builder_payout_cents, destination: connect_acct, transfer_group })
+  // 4. service-role UPDATE payments SET status='released', released_at=now()
+  // 5. service-role UPDATE requests SET status='completed'
+  // 6. Return { released: true, transfer_id }
   return jsonResponse({
     error: 'not_implemented',
     message: 'Secrets present but release Transfer not implemented yet.',

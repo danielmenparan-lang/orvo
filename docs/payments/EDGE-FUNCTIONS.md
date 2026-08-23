@@ -52,6 +52,11 @@ Only the webhook writes `held`/`funded`.
 
 **Input:** `{ request_id }`  
 **Auth:** Bearer JWT — request owner or admin (scaffold validates header + body)
+
+When implemented:
+1. Verify payment `held` and request not disputed
+2. `Transfer.create` to builder Connect account
+3. service-role writes `released` + `completed`
 **Requires:** payment `held` + builder Connect account  
 **Output:** `{ ok: true, transfer_id }`  
 
