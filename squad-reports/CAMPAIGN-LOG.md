@@ -27,8 +27,15 @@ Strategy: `docs/WINNING-PRODUCT.md`
 | 2026-08-23 ~01:45 | Wave 2D SQL | `003_chat_and_trust.sql` — `WAVE2D-SQL-DONE.md` |
 | 2026-08-23 ~01:45 | Wave 2B Payments | Pay sheet + Stripe MVP doc + payments lockdown — `WAVE2B-PAY-DONE.md` |
 | 2026-08-23 ~01:48 | Wave 2G GTM | SEO drafts + Day 0 checklist + HE landing — `WAVE2G-GTM-DONE.md` |
+| 2026-08-23 ~01:50 | Wave 2C Loop | Login role route, chat gate, edit-apply — `WAVE2C-LOOP-DONE.md` |
 
-Next: Wire `create-checkout-session` when Stripe secrets exist; continue loop/landing waves.
+## 2026-08-23T01:50Z — Agent C (Loop) Wave 2C
+- **P1-2** Login → role only (`routeAfterLogin`); signup intent never overrides login
+- **P1-1** Message/threads gated to own / quoted / assigned (or admin); cold Message removed
+- **P1-3** Pending Edit application → prefilled form; save stays pending
+- Remaining badges → `statusLabel()`; Done note: `squad-reports/WAVE2C-LOOP-DONE.md`
+
+Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaining Wave 2/3 items.
 - 2026-08-23 Wave2A Agent A: Niche landing locked to Israel WhatsApp AI agents for SMBs.
 - Hero: ORVO brand-dominant + one headline + one lead + Post a request CTA; builders = text link; role cards removed.
 - Trust strip honest (no live Stripe); How it works + builders sections niche-tightened; footer ©2026 + HE UI coming.
