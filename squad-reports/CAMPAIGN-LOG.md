@@ -27,6 +27,7 @@ Strategy: `docs/WINNING-PRODUCT.md`
 | 2026-08-23 ~01:45 | Wave 2D SQL | `003_chat_and_trust.sql` — `WAVE2D-SQL-DONE.md` |
 | 2026-08-23 ~01:45 | Wave 2B Payments | Pay sheet + Stripe MVP doc + payments lockdown — `WAVE2B-PAY-DONE.md` |
 | 2026-08-23 ~01:48 | Wave 2G GTM | SEO drafts + Day 0 checklist + HE landing — `WAVE2G-GTM-DONE.md` |
+| 2026-08-23 ~01:49 | Wave 2E Design | Atmosphere, motion, mobile shell — `WAVE2E-DESIGN-DONE.md` |
 | 2026-08-23 ~01:50 | Wave 2C Loop | Login role route, chat gate, edit-apply — `WAVE2C-LOOP-DONE.md` |
 
 ## 2026-08-23T01:50Z — Agent C (Loop) Wave 2C
@@ -60,3 +61,11 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 ## 2026-08-23T01:48Z — global pivot (forced)
 - Landing + WINNING-PRODUCT: worldwide clients
 - Israel lock removed from hero
+
+## 2026-08-23T01:49Z — Agent E (Design System) Wave 2E
+- Atmosphere: cool mist body gradient + noise; hero ink/citrus + noise overlay (not flat)
+- Type: Playfair brand + Manrope; CSS vars `--font-serif` / `--font-sans` / `--ease`
+- Motion: hero stagger via `.ui-ready`, CTA hover lift, modal entrance (+ mobile sheet); nav blur kept; `prefers-reduced-motion`
+- Mobile: hero stack, modal bottom-sheets + safe-area, dashboard sidebar → horizontal tabs
+- Anti-slop: no purple/glow/pill-close/multi-shadow; preview = atmospheric panel
+- Files: `index.html` CSS, `app.js` `ui-ready` hook; Done: `squad-reports/WAVE2E-DESIGN-DONE.md`
