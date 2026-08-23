@@ -91,3 +91,10 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Client dispute open → request `disputed`, freezes release (P2-4)
 - Delivery demo URL + deliveries row (sql/003)
 - USD budget band chips on post modal (P2-2 lite)
+
+## 2026-08-23T02:29Z — pulse 45m
+- P2-1: sql/005_invites + admin invite UI + builder Invited jobs
+- P2-4: admin disputes resolve panel
+- P2-5: client leave review on completed
+- fees.html disclosure + footer link
+- Invited builders can chat/quote via canChatOnRequest

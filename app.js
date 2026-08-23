@@ -373,7 +373,10 @@
     if (req.assigned_builder_id === user.id) return true;
     const { data: q } = await needDb().from('quotes')
       .select('id').eq('request_id', req.id).eq('builder_id', user.id).limit(1).maybeSingle();
-    return !!q;
+    if (q) return true;
+    const { data: inv } = await needDb().from('request_invites')
+      .select('id').eq('request_id', req.id).eq('builder_id', user.id).limit(1).maybeSingle();
+    return !!inv;
   }
 
   // ── AUTH ACTIONS ──
@@ -485,10 +488,12 @@
     if (isAdmin()) {
       h += `<div class="side-label">Admin</div>
         <button class="side-item" data-view="admin">Review builders</button>
-        <button class="side-item" data-view="all-requests">All requests</button>`;
+        <button class="side-item" data-view="all-requests">All requests</button>
+        <button class="side-item" data-view="disputes">Disputes</button>`;
     }
     if (isBuilder()) {
       h += `<div class="side-label">Builder</div>
+        <button class="side-item" data-view="invites">Invited jobs</button>
         <button class="side-item" data-view="jobs">Browse jobs</button>
         <button class="side-item" data-view="quotes">My quotes</button>
         <button class="side-item" data-view="messages">Messages</button>`;
@@ -526,11 +531,13 @@
       messages: 'Messages', chat: 'Chat', apply: 'Become a builder',
       status: 'Application status', profile: 'Profile',
       admin: 'Review builders', 'all-requests': 'All requests',
+      invites: 'Invited jobs', disputes: 'Disputes',
     };
     $('view-title').textContent = titles[v] || 'Dashboard';
 
     if (v === 'requests') { $('view-action').innerHTML = '<button class="btn btn-primary" data-action="post">+ Post request</button>'; loadRequests(); }
     else if (v === 'jobs') loadJobs();
+    else if (v === 'invites') loadInvites();
     else if (v === 'quotes') loadQuotes();
     else if (v === 'messages') loadThreads();
     else if (v === 'chat') loadChat();
@@ -539,6 +546,7 @@
     else if (v === 'profile') loadProfileView();
     else if (v === 'admin') loadAdmin();
     else if (v === 'all-requests') loadAllRequests();
+    else if (v === 'disputes') loadDisputes();
   }
 
   // ── CLIENT ──
@@ -855,11 +863,145 @@
     } catch (e) { toast(e.message, false); }
   }
 
+  async function loadInvites() {
+    const body = $('view-body');
+    if (!isBuilder()) {
+      body.innerHTML = '<p class="empty">Approved builders only.</p>';
+      return;
+    }
+    body.innerHTML = '<p class="empty">Loading...</p>';
+    const { data, error } = await needDb().from('request_invites')
+      .select('id,note,created_at,request_id, requests(id,title,description,category,budget,status,location)')
+      .eq('builder_id', user.id)
+      .order('created_at', { ascending: false });
+    if (error) {
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>
+        <p class="empty" style="font-size:12px;padding-top:8px">Run sql/005_invites.sql in Supabase if invites are not set up yet.</p>`;
+      return;
+    }
+    if (!data?.length) {
+      body.innerHTML = `<p class="empty">No invited jobs yet.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">ORVO admin will invite you to matching briefs. You can also browse open jobs.</p>
+        <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-goto="jobs">Browse jobs</button>`;
+      return;
+    }
+    body.innerHTML = data.map(inv => {
+      const r = inv.requests || {};
+      return `
+      <div class="card">
+        <span class="tag">${esc(r.category || 'Invite')}</span>
+        <h3>${esc(r.title || 'Request')}</h3>
+        <p>${esc((r.description || '').slice(0, 160))}</p>
+        <p>Budget: ${esc(r.budget || 'Not specified')}${r.location ? ' · ' + esc(r.location) : ''}</p>
+        ${inv.note ? `<p style="font-size:12px;color:var(--gray)">Note: ${esc(inv.note)}</p>` : ''}
+        <div class="row">
+          <button class="btn btn-primary btn-quote" data-rid="${r.id || inv.request_id}">Send quote</button>
+          <button class="btn btn-ghost btn-chat" data-rid="${r.id || inv.request_id}">Message</button>
+        </div>
+      </div>`;
+    }).join('');
+    body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
+    body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
+  }
+
   async function loadAllRequests() {
-    const { data, error } = await needDb().from('requests').select('*').order('created_at', { ascending: false }).limit(30);
+    if (!isAdmin()) {
+      $('view-body').innerHTML = '<p class="empty">Admin only</p>';
+      return;
+    }
+    const { data, error } = await needDb().from('requests').select('*').order('created_at', { ascending: false }).limit(40);
     if (error) { $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
+    const { data: builders } = await needDb().from('profiles')
+      .select('id,full_name,email').eq('builder_status', 'approved').limit(50);
+    const builderOpts = (builders || []).map(b =>
+      `<option value="${b.id}">${esc(b.full_name || b.email || b.id)}</option>`
+    ).join('');
     $('view-body').innerHTML = (data || []).map(r => `
-      <div class="card"><h3>${esc(r.title)}</h3><p>${esc(statusLabel(r.status))} · ${ago(r.created_at)}</p></div>`).join('') || '<p class="empty">No requests</p>';
+      <div class="card" style="cursor:default">
+        <h3>${esc(r.title)}</h3>
+        <p>${esc(statusLabel(r.status))} · ${ago(r.created_at)}${r.location ? ' · ' + esc(r.location) : ''}</p>
+        <p style="font-size:13px;color:var(--gray);margin:8px 0">${esc((r.description || '').slice(0, 140))}</p>
+        <div class="row" style="align-items:center">
+          <select class="invite-builder" data-rid="${r.id}" style="flex:1;min-width:160px;padding:10px;border:1px solid var(--border);border-radius:8px">
+            <option value="">Invite builder…</option>
+            ${builderOpts}
+          </select>
+          <button class="btn btn-primary btn-invite" data-rid="${r.id}">Invite</button>
+          <button class="btn btn-ghost btn-open-req" data-rid="${r.id}">Open</button>
+        </div>
+      </div>`).join('') || '<p class="empty">No requests</p>';
+    $('view-body').querySelectorAll('.btn-invite').forEach(b => {
+      b.addEventListener('click', () => {
+        const sel = $('view-body').querySelector(`select.invite-builder[data-rid="${b.dataset.rid}"]`);
+        inviteBuilder(b.dataset.rid, sel?.value);
+      });
+    });
+    $('view-body').querySelectorAll('.btn-open-req').forEach(b => {
+      b.addEventListener('click', () => go('chat', b.dataset.rid));
+    });
+  }
+
+  async function inviteBuilder(requestId, builderId) {
+    if (!builderId) { toast('Pick a builder', false); return; }
+    try {
+      const { error } = await needDb().from('request_invites').insert({
+        request_id: requestId,
+        builder_id: builderId,
+        invited_by: user.id,
+        note: 'Concierge invite from ORVO admin',
+      });
+      if (error) throw error;
+      toast('Builder invited', true);
+    } catch (e) { toast(e.message, false); }
+  }
+
+  async function loadDisputes() {
+    if (!isAdmin()) {
+      $('view-body').innerHTML = '<p class="empty">Admin only</p>';
+      return;
+    }
+    const { data, error } = await needDb().from('disputes')
+      .select('*').in('status', ['open', 'under_review']).order('created_at', { ascending: false });
+    if (error) {
+      $('view-body').innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
+      return;
+    }
+    if (!data?.length) {
+      $('view-body').innerHTML = '<p class="empty">No open disputes</p>';
+      return;
+    }
+    $('view-body').innerHTML = data.map(d => `
+      <div class="card" style="cursor:default">
+        <h3>Dispute · ${esc(d.reason)}</h3>
+        <p>${esc(d.details)}</p>
+        <p style="font-size:12px;color:var(--gray)">${esc(statusLabel(d.status))} · ${ago(d.created_at)}</p>
+        <div class="row">
+          <button class="btn btn-ghost btn-goto-req" data-rid="${d.request_id}">Open request</button>
+          <button class="btn btn-primary btn-resolve" data-id="${d.id}" data-rid="${d.request_id}" data-how="resolved_client">Resolve → client</button>
+          <button class="btn btn-primary btn-resolve" data-id="${d.id}" data-rid="${d.request_id}" data-how="resolved_builder">Resolve → builder</button>
+        </div>
+      </div>`).join('');
+    $('view-body').querySelectorAll('.btn-goto-req').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
+    $('view-body').querySelectorAll('.btn-resolve').forEach(b => {
+      b.addEventListener('click', () => resolveDispute(b.dataset.id, b.dataset.rid, b.dataset.how));
+    });
+  }
+
+  async function resolveDispute(disputeId, requestId, how) {
+    const note = prompt('Admin note (optional)') || '';
+    try {
+      const { error } = await needDb().from('disputes').update({
+        status: how,
+        admin_note: note || null,
+        resolved_by: user.id,
+        resolved_at: new Date().toISOString(),
+      }).eq('id', disputeId);
+      if (error) throw error;
+      // Return request to delivered so client can release or continue
+      await needDb().from('requests').update({ status: 'delivered' }).eq('id', requestId);
+      toast('Dispute resolved', true);
+      loadDisputes();
+    } catch (e) { toast(e.message, false); }
   }
 
   // ── CHAT ──
@@ -905,7 +1047,9 @@
     }
 
     let escrowHtml = '';
-    if (req && ['awaiting_payment', 'funded', 'delivered', 'in_progress'].includes(req.status)) {
+    if (req?.status === 'disputed') {
+      escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Dispute open</b><p>Release is frozen until ORVO admin reviews.</p></div>`;
+    } else if (req && ['awaiting_payment', 'funded', 'delivered', 'in_progress'].includes(req.status)) {
       const isClient = req.user_id === user.id;
       const isAssigned = req.assigned_builder_id === user.id;
       if (isClient && req.status === 'awaiting_payment') {
@@ -924,9 +1068,11 @@
           <button class="btn btn-primary" id="btn-release-pay" data-rid="${rid}">Release payment to builder</button>
           <button class="btn btn-ghost" id="btn-open-dispute" data-rid="${rid}" style="margin-left:8px">Open dispute</button></div>`;
       }
-      if (req.status === 'disputed') {
-        escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Dispute open</b><p>Release is frozen until ORVO admin reviews.</p></div>`;
-      }
+    }
+    if (req?.status === 'completed' && req.user_id === user.id) {
+      escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Review</b>
+        <p>How was this builder? Leave a 1–5 star review.</p>
+        <button class="btn btn-primary" id="btn-leave-review" data-rid="${rid}" data-builder="${req.assigned_builder_id || ''}">Leave review</button></div>`;
     }
 
     $('view-body').innerHTML = `
@@ -948,6 +1094,9 @@
     $('btn-mark-delivered')?.addEventListener('click', () => markDelivered(rid));
     $('btn-release-pay')?.addEventListener('click', () => releasePayment(rid));
     $('btn-open-dispute')?.addEventListener('click', () => openDispute(rid));
+    $('btn-leave-review')?.addEventListener('click', () => {
+      leaveReview(rid, $('btn-leave-review').dataset.builder);
+    });
     $('chat-form').addEventListener('submit', sendMsg);
     await renderMsgs();
     chatSub = needDb().channel('c-' + rid)
@@ -1044,6 +1193,31 @@
     });
   }
 
+  async function leaveReview(rid, builderId) {
+    if (!builderId) { toast('No builder on this project', false); return; }
+    const raw = prompt('Rating 1–5 stars');
+    if (raw == null) return;
+    const rating = parseInt(raw, 10);
+    if (!(rating >= 1 && rating <= 5)) {
+      toast('Enter a number from 1 to 5', false);
+      return;
+    }
+    const body = prompt('Optional short review (20+ chars, or leave blank)') || '';
+    try {
+      const row = {
+        request_id: rid,
+        client_id: user.id,
+        builder_id: builderId,
+        rating,
+        body: body.trim().length >= 20 ? body.trim() : null,
+      };
+      const { error } = await needDb().from('reviews').insert(row);
+      if (error) throw error;
+      toast('Thanks for the review!', true);
+      loadChat();
+    } catch (e) { toast(e.message, false); }
+  }
+
   async function markDelivered(rid) {
     const url = ($('deliver-url')?.value || '').trim();
     if (!confirm('Mark this project as delivered for client review?')) return;
@@ -1129,6 +1303,12 @@
         toast('Project completed', true);
       }
       loadChat();
+      setTimeout(() => {
+        if (confirm('Leave a quick 1–5 star review for the builder?')) {
+          const builderId = prompt('Confirm — opening review…') ; // noop path
+        }
+      }, 400);
+      // Prefer in-UI review card after reload
     } catch (e) { toast(e.message, false); }
   }
 
