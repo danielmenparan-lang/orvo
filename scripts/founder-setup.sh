@@ -30,6 +30,7 @@ cat <<EOF
 
 5. DEPLOY EDGE FUNCTIONS
    bash scripts/deploy-stripe.sh
+   bash scripts/verify-edge.sh    # quick 401/501 probe
 
 6. STRIPE DASHBOARD
    • Webhook → https://<project>.supabase.co/functions/v1/stripe-webhook

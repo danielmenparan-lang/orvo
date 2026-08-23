@@ -67,7 +67,7 @@
 | **P1-2** | ~~Login routing~~ | `app.js` | **DONE** |
 | **P1-3** | ~~Edit application loop~~ | `app.js` | **DONE** |
 | **P1-4** | ~~Accept & pay sheet~~ | `index.html` | **DONE** |
-| **P1-5** | Stripe Checkout | Edge + `tryCreateCheckoutSession` | **Scaffold + client wire DONE**; live Checkout blocked on secrets. |
+| **P1-5** | Stripe Checkout | Edge + `tryCreateCheckoutSession` | **IMPLEMENTED** — live after secrets + `ORVO_CHECKOUT_LIVE` smoke |
 | **P1-6** | ~~Release from held~~ | `app.js` | **DONE** |
 | **P1-7** | Landing copy | `index.html` | **DONE** — global hire-builders hero (not Israel-only). |
 | **P1-8** | ~~Server chat filter~~ | `sql/003` | **DONE** in repo; founder apply. |

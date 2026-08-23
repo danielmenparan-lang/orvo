@@ -300,3 +300,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Landing **honesty extended** — how-it-works step 3 + builder paid copy (`ORVO_CHECKOUT_LIVE`)
 - Admin sidebar **Founder setup ↗** link; Profile Connect copy updated
 - `STATUS.md` + `sql/README.md` synced to post-finale state
+
+## 2026-08-23T18:00Z — pulse (post-finale)
+- Webhook **payment_intent.succeeded** backup + shared `markPaymentHeld`
+- Pay sheet honest copy (try checkout when Edge configured)
+- `scripts/verify-edge.sh`; LAUNCH-KIT founder prereq; backlog P1-5 → IMPLEMENTED

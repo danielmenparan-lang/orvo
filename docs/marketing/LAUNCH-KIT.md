@@ -11,6 +11,8 @@ Actionable pack for the founder. Everything here is ready to ship; **nothing was
 
 ## Day 0 publish order (checklist)
 
+**Before any publish:** run `bash scripts/founder-setup.sh` — SQL + Stripe must be green unless you are waitlist-only (no payment claims).
+
 Do these in order. One primary CTA for the whole day (clients **or** builders — not both as equal asks).
 
 - [ ] **0.** Admin: confirm Review builders works (`ORVO_ADMIN_EMAIL`)

@@ -43,7 +43,7 @@ No fake `funded`/`paid` from the browser.
 
 Verify `STRIPE_WEBHOOK_SECRET`. Scaffold rejects requests missing `stripe-signature` header (400) before 501.
 
-On `checkout.session.completed`:
+On `checkout.session.completed` or `payment_intent.succeeded`:
 - set payment `status=held`, `paid_at=now()`, store PI id  
 - set request `status=funded`  
 

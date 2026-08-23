@@ -4,6 +4,41 @@ import { requireWebhookSecrets } from '../_shared/stripe-env.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
 import { getStripe } from '../_shared/stripe.ts';
 
+type SupabaseAdmin = ReturnType<typeof createServiceClient>;
+
+async function markPaymentHeld(
+  admin: SupabaseAdmin,
+  stripe: ReturnType<typeof getStripe>,
+  opts: {
+    paymentId: string;
+    requestId: string;
+    quoteId?: string | null;
+    paymentIntentId?: string | null;
+  },
+) {
+  let piId = opts.paymentIntentId ?? null;
+  let chargeId: string | null = null;
+  if (piId) {
+    const pi = await stripe.paymentIntents.retrieve(piId);
+    piId = pi.id;
+    chargeId = typeof pi.latest_charge === 'string'
+      ? pi.latest_charge
+      : pi.latest_charge?.id ?? null;
+  }
+  const now = new Date().toISOString();
+  await admin.from('payments').update({
+    status: 'held',
+    stripe_payment_intent_id: piId,
+    stripe_charge_id: chargeId,
+    held_at: now,
+    paid_at: now,
+  }).eq('id', opts.paymentId);
+  await admin.from('requests').update({ status: 'funded' }).eq('id', opts.requestId);
+  if (opts.quoteId) {
+    await admin.from('quotes').update({ status: 'paid' }).eq('id', opts.quoteId);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'method_not_allowed' }, 405);
@@ -61,29 +96,33 @@ Deno.serve(async (req) => {
       if (!paymentId || !requestId) {
         console.warn('checkout.session.completed missing metadata', session.metadata);
       } else {
-        let piId = typeof session.payment_intent === 'string'
+        const piId = typeof session.payment_intent === 'string'
           ? session.payment_intent
           : session.payment_intent?.id ?? null;
-        let chargeId: string | null = null;
-        if (piId) {
-          const pi = await stripe.paymentIntents.retrieve(piId);
-          piId = pi.id;
-          chargeId = typeof pi.latest_charge === 'string'
-            ? pi.latest_charge
-            : pi.latest_charge?.id ?? null;
-        }
-        const now = new Date().toISOString();
-        await admin.from('payments').update({
-          status: 'held',
-          stripe_payment_intent_id: piId,
-          stripe_charge_id: chargeId,
-          held_at: now,
-          paid_at: now,
-        }).eq('id', paymentId);
-        await admin.from('requests').update({ status: 'funded' }).eq('id', requestId);
-        if (quoteId) {
-          await admin.from('quotes').update({ status: 'paid' }).eq('id', quoteId);
-        }
+        await markPaymentHeld(admin, stripe, {
+          paymentId,
+          requestId,
+          quoteId,
+          paymentIntentId: piId,
+        });
+      }
+    }
+
+    if (event.type === 'payment_intent.succeeded') {
+      const pi = event.data.object as {
+        id?: string;
+        metadata?: Record<string, string>;
+      };
+      const paymentId = pi.metadata?.payment_id;
+      const requestId = pi.metadata?.request_id;
+      const quoteId = pi.metadata?.quote_id;
+      if (paymentId && requestId) {
+        await markPaymentHeld(admin, stripe, {
+          paymentId,
+          requestId,
+          quoteId,
+          paymentIntentId: pi.id ?? null,
+        });
       }
     }
 

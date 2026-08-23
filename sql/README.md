@@ -29,6 +29,7 @@ Numbered files (if you prefer step-by-step):
 
 Founder smoke checklist: `docs/FOUNDER-SQL-SMOKE.md` / `founder-checklist.html`.  
 Founder setup CLI: `bash scripts/founder-setup.sh`  
+Edge probe: `bash scripts/verify-edge.sh`  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md` · deploy: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`.
 
 Also aliased: `sql-FINAL-FIX.sql` / `sql-RUN-NOW.sql` ≈ latest full bootstrap (prefer numbered migrations).

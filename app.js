@@ -765,9 +765,9 @@
       $('pay-confirm-btn').textContent = 'Continue to Stripe Checkout';
     } else {
       $('pay-note').innerHTML =
-        'Card checkout is not live yet. Accepting locks this builder and marks the job ' +
-        '<strong>awaiting payment</strong> — not funded. Stripe Checkout is coming next.';
-      $('pay-confirm-btn').textContent = 'Accept quote — await payment';
+        'Accepting locks this builder as <strong>awaiting payment</strong> (not funded). ' +
+        'ORVO will try Stripe Checkout automatically if configured — otherwise awaiting until live.';
+      $('pay-confirm-btn').textContent = 'Accept quote — try checkout';
     }
     const msg = $('pay-msg');
     msg.className = 'msg hidden';
