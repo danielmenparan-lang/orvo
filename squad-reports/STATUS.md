@@ -7,7 +7,8 @@
 ## Shipped this kickoff
 - Team roster: `docs/TEAM.md`
 - Schema/RLS: `sql/001_mvp_schema.sql`
-- Marketing launch kit (HE): `docs/marketing/LAUNCH-KIT.md`
+- Marketing launch kit (HE): `docs/marketing/LAUNCH-KIT.md` (+ Posts 11–15, digests, templates)
+- Roles 08–10: GTM 30-day, SEO outlines, 15 social drafts (Israel WhatsApp/SMB)
 - UX: post title field; deliver + release escrow controls in chat
 - Local site restored earlier on branch `cursor/orvo-local-site-3bd5`
 - Ops synthesizer: `squad-reports/20-ops-backlog.md` · `docs/WINNING-PRODUCT.md` · `squad-reports/MORNING-BRIEF-HE.md`

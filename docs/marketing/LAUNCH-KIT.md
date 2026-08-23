@@ -132,3 +132,137 @@ UTM for social: `?utm_source=linkedin&utm_medium=social&utm_campaign=launch_d0` 
 ---
 
 *Questions or channel results → feed back into Week 2 of `08-gtm.md` (double down / kill).*
+
+---
+
+## 10. Extra ready posts (gaps filled from Roles 08–10)
+
+Full bilingual drafts live in `squad-reports/10-social.md` (Posts **1–15**). Below: extras not already queued in §1, copy-paste ready.
+
+### Day 4–7 queue add-ons
+
+| Day | Channel | Asset |
+|-----|---------|-------|
+| 4 | LinkedIn | Post **8** (builder proof bar) |
+| 4 | X | Short cut of Post **8** |
+| 5 | LinkedIn / IG | Post **11** (clinic vertical) |
+| 5 | WhatsApp Status | Post **14** one-liner (pay-safe) |
+| 6 | LinkedIn | Post **12** (DIY vs hire) |
+| 6 | X / LinkedIn | Post **13** (ILS pricing honesty) |
+| 7 | LinkedIn | Post **9** or **10** (path reminder / engagement) |
+| Anytime | LinkedIn DM | Post **15** (agency/accountant referral) |
+
+### Post 11 — Clinic (HE, ready)
+
+> בקליניקה הוואטסאפ לא נגמר: “יש תור?”, “מה השעות?”, “אפשר לבטל?”.  
+> סוכן AI לוואטסאפ לא מחליף את המזכירה — הוא מסנן שאלות חוזרות ומתיישב על תורים לפי הכללים שלכם.  
+> ב־ORVO מפרסמים בקשה אחת ומקבלים הצעות מבונים מאומתים.  
+> פרסמו בקשה → https://fantastic-eclair-0b2c66.netlify.app/
+
+### Post 12 — DIY vs hire (HE, ready)
+
+> יש כלים מצוינים לבניית בוט לבד (תבניות, SaaS, BSP).  
+> יש גם רגע שבו צריך מישהו שבונה מותאם: CRM מוזר, התראות מטבח, עברית מדויקת, API רשמי.  
+> ORVO הוא לא עוד כלי DIY — זה מרקטפלייס לגייס בונה מאומת לסוכן וואטסאפ.  
+> אם עברתם את שלב התבניות — פרסמו בקשה.
+
+### Post 13 — Pricing honesty (HE, ready)
+
+> כמה עולה בוט וואטסאפ מותאם בישראל?  
+> בשוק רואים לרוב ₪3,500 לבסיס, ~₪6,500 עם חיבורים, ₪12,000+ לסוכן AI מלא.  
+> ב־ORVO לא ממציאים מחיר קסם — מפרסמים תקציב, מקבלים הצעות מבונים מאומתים, וסוגרים בפלטפורמה.
+
+### Post 14 — Pay-safe (HE, Status-length)
+
+> הצעת מחיר בוואטסאפ בלי הגנה = סיכון. ב־ORVO מדברים ומשלמים בפלטפורמה. סוכן AI לוואטסאפ? → [link]
+
+### Post 15 — Partner ask (HE, DM)
+
+> היי [שם], לקוחות שואלים אותך לפעמים מי בונה בוט וואטסאפ?  
+> ORVO מרכז בונים מאומתים + תשלום מאובטח למותאם (לא מחליף SaaS). אשמח להפניה כשיגיע מקרה כזה: [link]
+
+---
+
+## 11. IG carousel slides (Post 2 — restaurant pain)
+
+Use as 5 slides; caption = Hebrew body from Post 2.
+
+1. **ORVO** — הלקוח כותב ב־23:40  
+2. אתם ישנים. ההזמנה מתה.  
+3. סוכן AI לוואטסאפ: תפריט · הזמנה · מטבח  
+4. מפרסמים ב־ORVO → הצעות מבונים מאומתים  
+5. CTA: פרסמו בקשה + link  
+
+**Clinic variant (Post 11):**  
+1. ORVO · קליניקה  
+2. “יש תור?” כל היום  
+3. סוכן מסנן FAQ + תורים  
+4. בונים מאומתים · תשלום בפלטפורמה  
+5. פרסמו בקשה  
+
+---
+
+## 12. Facebook / WhatsApp group soft post (no spam)
+
+> שאלה לבעלי עסקים: מי מכם כבר משתמש בבוט וואטסאפ להזמנות/תורים?  
+> אני בונה את ORVO — מקום לפרסם בקשה ולקבל הצעות מבונים מאומתים (בלי רולטת פרילנסרים).  
+> אם רלוונטי אשמח ל־DM, בלי ספאם בקבוצה.
+
+---
+
+## 13. Waitlist weekly digest email (HE)
+
+**Subject:** ORVO — 3 סוגי עבודות שפתוחים השבוע  
+
+> היי,  
+> אתם ברשימת המייסדים של ORVO. השבוע אנחנו מחפשים במיוחד:  
+> 1. בוט הזמנות למסעדה (וואטסאפ)  
+> 2. סוכן תורים לקליניקה  
+> 3. FAQ + לידים לעסק מקומי  
+>  
+> לקוחות: פרסמו בקשה → [link]  
+> בונים: הגישו מועמדות לאימות → [link]  
+>  
+> מתאימים ידנית החודש.  
+> — צוות ORVO
+
+**EN subject:** ORVO — 3 job types we’re matching this week  
+(Same structure in English; keep HE as default send for IL list.)
+
+---
+
+## 14. Request brief templates (concierge — paste into product)
+
+**מסעדה:**  
+> בוט וואטסאפ למסעדה: מענה על תפריט ושעות, קבלת הזמנה לאיסוף/משלוח, התראה למטבח. עברית. תקציב משוער ₪6,500.
+
+**קליניקה:**  
+> סוכן וואטסאפ לקליניקה: שאלות חוזרות, בדיקת זמינות תורים לפי כללים, תזכורות. עברית. תקציב משוער ₪6,500–₪12,000.
+
+**לידים:**  
+> סוכן וואטסאפ ללידים: שאלות סינון, העברה לנציג, לוג ל-CRM/Sheets. עברית. תקציב משוער ₪3,500–₪6,500.
+
+---
+
+## 15. UTM cheat sheet
+
+| Channel | Example |
+|---------|---------|
+| LinkedIn | `?utm_source=linkedin&utm_medium=social&utm_campaign=launch_d0` |
+| Instagram | `?utm_source=instagram&utm_medium=social&utm_campaign=launch_d0` |
+| X | `?utm_source=twitter&utm_medium=social&utm_campaign=launch_d0` |
+| WhatsApp | `?utm_source=whatsapp&utm_medium=dm&utm_campaign=launch_d0` |
+| FB group | `?utm_source=facebook&utm_medium=group&utm_campaign=launch_w1` |
+| SEO page | `?utm_source=seo&utm_medium=landing&utm_campaign=wa_restaurant` |
+
+---
+
+## 16. Extended asset checklist
+
+- [ ] Posts **8–15** scheduled across days 4–7 (don’t dump all day 1)  
+- [ ] IG carousel (restaurant or clinic) designed  
+- [ ] 1 soft FB/WA group post  
+- [ ] Waitlist digest template loaded in mail tool  
+- [ ] 3 concierge brief templates saved  
+- [ ] 3 agency/accountant DMs (Post 15)  
+- [ ] Niche language check: every public post says WhatsApp + Israel/SMB, not “AI marketplace for everyone”  
