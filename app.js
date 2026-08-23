@@ -23,6 +23,7 @@
   let disputesChannel = null;
   let quotesChannel = null;
   let notifChannel = null;
+  let checkoutPollTimer = null;
 
   const $ = (id) => document.getElementById(id);
   const FEE = () => window.ORVO_FEE_PERCENT || 0;
@@ -325,6 +326,40 @@
     profile = inserted;
   }
 
+  function stopCheckoutPoll() {
+    if (checkoutPollTimer) {
+      clearInterval(checkoutPollTimer);
+      checkoutPollTimer = null;
+    }
+  }
+
+  /** After Checkout return, poll DB for webhook-written held/funded (honest — no client-side funded). */
+  function pollPaymentAfterCheckout(rid, maxAttempts = 10) {
+    if (!rid || !db || !user) return;
+    stopCheckoutPoll();
+    let n = 0;
+    checkoutPollTimer = setInterval(async () => {
+      n += 1;
+      if (n > maxAttempts) {
+        stopCheckoutPoll();
+        return;
+      }
+      try {
+        const { data: pay } = await needDb().from('payments')
+          .select('status').eq('request_id', rid).maybeSingle();
+        const { data: req } = await needDb().from('requests')
+          .select('status').eq('id', rid).maybeSingle();
+        if (pay?.status === 'held' || req?.status === 'funded') {
+          stopCheckoutPoll();
+          track('checkout_webhook_confirmed', { request_id: rid, payment_status: pay?.status });
+          toast('Payment held — funds secured until you approve delivery.', true);
+          if (view === 'chat' && chatRequestId === rid) loadChat();
+          else if (view === 'requests') loadRequests();
+        }
+      } catch { /* payments optional */ }
+    }, 3000);
+  }
+
   function handleCheckoutReturn() {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get('checkout') || params.get('paid');
@@ -341,11 +376,16 @@
     if (checkout === 'success' || checkout === '1' || checkout === 'true') {
       track('checkout_return_success', { request_id: rid || null });
       toast('Checkout returned — funding confirms when the webhook marks funds held (not instant).', true);
+      if (rid) {
+        try { sessionStorage.setItem('orvo_checkout_poll_rid', rid); } catch { /* private mode */ }
+      }
       clean();
       if (user) {
         ensureDashOpen();
-        if (rid) go('chat', rid);
-        else go('requests');
+        if (rid) {
+          go('chat', rid);
+          pollPaymentAfterCheckout(rid);
+        } else go('requests');
       }
       return;
     }
@@ -432,6 +472,13 @@
       watchIncomingQuotes();
       watchNotifications();
       refreshNotifBadge();
+      try {
+        const pollRid = sessionStorage.getItem('orvo_checkout_poll_rid');
+        if (pollRid) {
+          sessionStorage.removeItem('orvo_checkout_poll_rid');
+          pollPaymentAfterCheckout(pollRid);
+        }
+      } catch { /* storage blocked */ }
     } else {
       if (quotesChannel && db) {
         db.removeChannel(quotesChannel);
@@ -928,6 +975,7 @@
     $('dashboard').classList.remove('open');
     document.body.style.overflow = '';
     stopChat();
+    stopCheckoutPoll();
   }
 
   function renderSidebar() {
@@ -1167,12 +1215,14 @@
     body.innerHTML = filterBar + rows.map(r => {
       const qc = quoteCounts[r.id] || 0;
       const quoteBadge = qc ? ` · ${qc} quote${qc > 1 ? 's' : ''}` : '';
+      const payHint = r.status === 'awaiting_payment' && payByReq[r.id]
+        ? ` · Pay: ${statusLabel(payByReq[r.id].status)}` : '';
       return `
       <div class="card">
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
         <p>${esc(r.description.slice(0, 120))}</p>
-        <span class="badge">${esc(statusLabel(r.status))}${quoteBadge} · ${ago(r.created_at)}</span>
+        <span class="badge">${esc(statusLabel(r.status))}${quoteBadge}${payHint} · ${ago(r.created_at)}</span>
         <div class="row">
           <button class="btn btn-primary btn-open-req" data-rid="${r.id}">Open</button>
           ${r.status === 'awaiting_payment' ? `<button class="btn btn-primary btn-pay-req" data-rid="${r.id}" data-qid="${esc(payByReq[r.id]?.quote_id || '')}">Complete payment</button>` : ''}

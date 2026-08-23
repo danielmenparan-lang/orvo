@@ -46,6 +46,8 @@ On `checkout.session.completed`:
 
 Only the webhook writes `held`/`funded`.
 
+**Client after return:** `app.js` polls payment/request status for ~30s after `?checkout=success&rid=` — refreshes UI when webhook lands (does not set funded client-side).
+
 ## release-to-builder
 
 **Input:** `{ request_id }`  

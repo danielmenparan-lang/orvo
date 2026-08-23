@@ -239,3 +239,7 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - `CAMPAIGN-FINALE-HE.md` expanded (full ~10h summary + tomorrow actions)
 - `JUDGE-WAVE-10h.md` + `docs/WINNING-PRODUCT.md` updated
 - PR #2 body finalized · campaign complete
+
+## 2026-08-23T12:00Z — pulse (post-finale)
+- Checkout success webhook poll (held/funded refresh, no client fake pay)
+- My requests Pay status badge; webhook scaffold idempotency docs
