@@ -359,3 +359,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **`founderSchemaFixHtml`** shared helper — all-requests + disputes + invites/notifications errors
 - Admin All requests status chips show **counts**
 - `prefers-reduced-motion` disables confirming pulse; LAUNCH-KIT Day 0 EN-first; pay CTA default text sync
+
+## 2026-08-23T23:30Z — pulse (post-finale)
+- Schema-error APPLY-ALL on requests/jobs/quotes/admin/chat message errors
+- Admin All requests **Clear filters** empty state; pay awaiting honesty + resume focus
+- Pay sheet done title accent; WINNING-PRODUCT post-finale pointer

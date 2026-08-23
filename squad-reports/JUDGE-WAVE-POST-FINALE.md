@@ -1,4 +1,4 @@
-# JUDGE — Post-finale pulses (~11:42→23:00 UTC)
+# JUDGE — Post-finale pulses (~11:42→23:30 UTC)
 
 ## Verdict
 **Integrity PASS · Stripe IMPLEMENTED (founder deploy pending)**

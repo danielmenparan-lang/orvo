@@ -40,7 +40,9 @@ Branch `cursor/orvo-local-site-3bd5` · [PR #2](https://github.com/danielmenpara
 | SEO | hire / for-builders pages, sitemap, OG meta |
 | Tests | chat-policy, events, status-spine, edge-auth |
 
-**Judge:** `squad-reports/JUDGE-WAVE-10h.md` — integrity **PASS**, Stripe **IMPLEMENTED** (live after founder deploy + smoke).
+**Judge:** `squad-reports/JUDGE-WAVE-10h.md` (finale) · `JUDGE-WAVE-POST-FINALE.md` (post-finale pulses) — integrity **PASS**, Stripe **IMPLEMENTED** (live after founder deploy + smoke).
+
+**Post-finale:** Founder onboarding UX, Edge handlers, Connect/Checkout return flows, admin KPI filters — see `squad-reports/CAMPAIGN-LOG.md`.
 
 **Smoke test:** `docs/payments/STRIPE-SMOKE-TEST.md`
 

@@ -917,9 +917,9 @@
     } else {
       $('pay-note').innerHTML =
         'Quote accepted. Status is <strong>awaiting payment</strong>, not funded. ' +
-        'When Stripe Checkout goes live, you will pay here and funds will be held until you release.';
+        'ORVO will try Checkout if configured — otherwise the job stays awaiting payment until Stripe is live.';
     }
-    showMsg('pay-msg', extraNote || (checkoutLive ? 'Complete checkout to hold funds' : 'Checkout coming — no card charged yet'), true);
+    showMsg('pay-msg', extraNote || (checkoutLive ? 'Complete checkout to hold funds' : 'No card charged yet — awaiting payment'), true);
     $('pay-cancel-btn').textContent = 'Close';
     const resumeBtn = $('pay-resume-btn');
     if (resumeBtn) {
@@ -928,6 +928,7 @@
         resumeBtn.textContent = checkoutOpen
           ? (checkoutLive ? 'Continue to Stripe Checkout' : 'Resume checkout')
           : (checkoutLive ? 'Pay with Stripe Checkout' : 'Try checkout again');
+        setTimeout(() => resumeBtn.focus(), 40);
       } else {
         resumeBtn.classList.add('hidden');
       }
@@ -1360,7 +1361,11 @@
     let q = needDb().from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     if (!showAll) q = q.neq('status', 'cancelled');
     const { data, error } = await q;
-    if (error) { body.innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
+    if (error) {
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Schema missing?')}`;
+      wireFounderSchemaFix(body);
+      return;
+    }
     let rows = data || [];
     if (qText) {
       rows = rows.filter((r) => {
@@ -1520,7 +1525,8 @@
     }
     const { data, error } = await query;
     if (error) {
-      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Jobs query failed — schema may be incomplete.')}`;
+      wireFounderSchemaFix(body);
       return;
     }
     const searchBar = `<input class="admin-search" id="jobs-search" type="search" placeholder="Search jobs by title, category…" value="${esc(window.__orvoJobsQuery || '')}" autocomplete="off"/>`;
@@ -1635,7 +1641,11 @@
     const body = $('view-body');
     body.innerHTML = loadingSkeleton(3);
     const { data, error } = await needDb().from('quotes').select('*, requests(title)').eq('builder_id', user.id).order('created_at', { ascending: false });
-    if (error) { body.innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
+    if (error) {
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Schema missing?')}`;
+      wireFounderSchemaFix(body);
+      return;
+    }
     if (!data?.length) {
       body.innerHTML = `<p class="empty">No quotes yet.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Browse open jobs and send your first quote in USD.</p>
@@ -1851,7 +1861,8 @@
     const { data, error } = await needDb().from('builder_applications')
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = kpiHtml + `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
+      $('view-body').innerHTML = kpiHtml + `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Admin query failed — schema may be incomplete.')}`;
+      wireFounderSchemaFix($('view-body'));
       bindKpiCards();
       return;
     }
@@ -2019,6 +2030,10 @@
       ).join('')
     }</div>`;
     const searchHtml = `${chipHtml}<input class="admin-search" id="all-reqs-search" type="search" placeholder="Filter requests…" value="${esc(qText)}" autocomplete="off"/>`;
+    const emptyMsg = !rows.length
+      ? `<p class="empty">No requests${qText ? ' match that search' : (statusFilter ? ' with that status' : '')}.</p>
+         ${statusFilter || qText ? '<button type="button" class="btn btn-ghost" id="btn-clear-all-reqs-filter" style="margin-top:8px;padding:8px 12px;font-size:12px">Clear filters</button>' : ''}`
+      : '';
     $('view-body').innerHTML = searchHtml + ((rows || []).map(r => {
       const pay = payMap[r.id];
       const payLine = pay ? ` · Pay: ${statusLabel(pay.status)}${pay.amount_cents ? ' ' + money(pay.amount_cents) : ''}` : '';
@@ -2036,7 +2051,12 @@
           <button class="btn btn-ghost btn-open-req" data-rid="${r.id}">Open</button>
         </div>
       </div>`;
-    }).join('') || '<p class="empty">No requests' + (qText ? ' match that filter' : '') + '</p>');
+    }).join('') || emptyMsg);
+    $('btn-clear-all-reqs-filter')?.addEventListener('click', () => {
+      window.__orvoAllReqsStatus = '';
+      window.__orvoAllReqsQuery = '';
+      loadAllRequests();
+    });
     $('all-reqs-search')?.addEventListener('input', (e) => {
       window.__orvoAllReqsQuery = e.target.value;
       clearTimeout(window.__orvoAllReqsSearchT);
@@ -2427,7 +2447,8 @@
     if (!box || !chatRequestId) return;
     const { data, error } = await needDb().from('messages').select('*').eq('request_id', chatRequestId).order('created_at');
     if (error) {
-      box.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
+      box.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Messages table missing?')}`;
+      wireFounderSchemaFix(box);
       return;
     }
     const ids = [...new Set((data || []).map(m => m.sender_id).filter(Boolean))];
