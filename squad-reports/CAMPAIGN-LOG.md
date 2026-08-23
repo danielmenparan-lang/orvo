@@ -171,3 +171,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Pay sheet shows builder name + ETA
 - Admin application filter + builder jobs search
 - `sql/013_request_search.sql` + `tests/events.test.js`
+
+## 2026-08-23T06:40Z — pulse
+- Notifications inbox + unread badge (`?view=notifications`)
+- `sql/014_quote_notify.sql` (quote insert → client notification; invite → builder)
+- Chat timestamps; loading skeletons; toast aria-live
+- `js/status-spine.js` + cancelled rail; `site.webmanifest`; mark-all-read

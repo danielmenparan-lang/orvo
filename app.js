@@ -799,7 +799,21 @@
     else if (v === 'admin') loadAdmin();
     else if (v === 'all-requests') loadAllRequests();
     else if (v === 'disputes') loadDisputes();
-    else if (v === 'notifications') loadNotifications();
+    if (v === 'notifications') {
+      $('view-action').innerHTML = '<button class="btn btn-ghost" id="btn-mark-all-read" style="padding:8px 12px;font-size:12px">Mark all read</button>';
+      $('btn-mark-all-read')?.addEventListener('click', async () => {
+        try {
+          await needDb().from('notifications').update({ read_at: new Date().toISOString() })
+            .eq('user_id', user.id).is('read_at', null);
+          toast('All caught up', true);
+          refreshNotifBadge();
+          loadNotifications();
+        } catch (e) {
+          toast(userFacingErr(e.message), false);
+        }
+      });
+      loadNotifications();
+    }
   }
 
   // ── CLIENT ──
