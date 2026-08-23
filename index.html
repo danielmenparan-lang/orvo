@@ -507,7 +507,15 @@ footer{
       <select id="post-cat"><option>WhatsApp / Chat</option><option>Voice / Phone</option><option>Automation</option><option>CRM / Email</option><option>Other</option></select>
     </div>
     <div class="field"><label>Country (optional)</label><input id="post-country" placeholder="e.g. United States, Germany, Brazil" maxlength="80"/><p class="field-hint">Where the business operates — helps builders quote timezone &amp; language.</p></div>
-    <div class="field"><label>Budget hint (optional)</label><input id="post-budget" placeholder="$500–$2000 (USD)"/></div>
+    <div class="field"><label>Budget hint (optional)</label>
+      <div class="row" style="margin:0 0 8px">
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="$500–$1,500">$500–1.5k</button>
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="$1,500–$5,000">$1.5k–5k</button>
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="$5,000–$15,000">$5k–15k</button>
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="Custom / TBD">Custom</button>
+      </div>
+      <input id="post-budget" placeholder="$500–$2000 (USD)"/>
+    </div>
     <button class="btn-black" id="post-btn">Post request</button>
   </div>
 </div>
@@ -572,7 +580,8 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase-config.js?v=16"></script>
-<script src="app.js?v=16"></script>
+<script src="js/chat-policy.js?v=17"></script>
+<script src="supabase-config.js?v=17"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>

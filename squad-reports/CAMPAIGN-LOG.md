@@ -85,3 +85,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - P2-8: forgot password via Supabase reset email
 - P1-5: Edge Function scaffolds + EDGE-FUNCTIONS.md
 - Confirmed prior P1 (login/chat/pay sheet/global landing) already shipped
+
+## 2026-08-23T02:01Z — pulse 30m
+- Extracted `js/chat-policy.js` (P2-9)
+- Client dispute open → request `disputed`, freezes release (P2-4)
+- Delivery demo URL + deliveries row (sql/003)
+- USD budget band chips on post modal (P2-2 lite)

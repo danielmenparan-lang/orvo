@@ -126,79 +126,10 @@
     el.classList.remove('hidden');
   }
 
-  // ── CHAT FILTER (keep deals on ORVO; allow agent/demo links) ──
-  const CHAT_OFF_PLATFORM = [
-    /whatsapp\.com|wa\.me|web\.whatsapp/i,
-    /t\.me\/|telegram\.(me|org)/i,
-    /paypal\.(com|me)|venmo\.com|cash\.app|zellepay/i,
-    /linkedin\.com\/in\//i,
-    /facebook\.com|fb\.com|messenger\.com/i,
-    /instagram\.com|twitter\.com|x\.com/i,
-    /mailto:/i,
-    /calendly\.com|calendar\.app/i,
-    /discord\.gg|discord\.com\/invite/i,
-  ];
-  const CHAT_AGENT_HOST = [
-    /github\.com|gitlab\.com|bitbucket\.org/i,
-    /vercel\.app|netlify\.app|pages\.dev|cloudflare\.com|workers\.dev/i,
-    /replit\.app|repl\.co|render\.com|railway\.app|fly\.dev|herokuapp\.com/i,
-    /bubble\.io|glide\.page|softr\.app|webflow\.io/i,
-    /supabase\.co/i,
-    /n8n\.io|make\.com|zapier\.com/i,
-    /lovable\.app|v0\.dev|bolt\.new|cursor\.com/i,
-    /notion\.site|airtable\.com/i,
-    /docs\.google\.com|drive\.google\.com/i,
-    /openai\.com\/g\//i,
-    /huggingface\.co/i,
-  ];
-  const CHAT_EMAIL = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/;
-  const CHAT_URL = /(?:https?:\/\/|www\.)[^\s<>"']+|(?:[a-zA-Z0-9-]+\.)+(?:com|io|app|dev|co|net|org|ai|me)\/[^\s]*/gi;
-
-  function chatUrls(text) {
-    return text.match(CHAT_URL) || [];
-  }
-
-  function chatOffPlatform(url) {
-    return CHAT_OFF_PLATFORM.some((re) => re.test(url));
-  }
-
-  function chatAgentLink(url) {
-    if (chatOffPlatform(url)) return false;
-    return CHAT_AGENT_HOST.some((re) => re.test(url));
-  }
-
-  function chatPaidPhase(status) {
-    return status === 'in_progress' || status === 'funded' || status === 'completed';
-  }
-
-  function chatHasPhone(text) {
-    const t = text
-      .replace(/\$\s?[\d,]+(?:\.\d+)?/g, ' ')
-      .replace(/\b[\d,]+\s*(?:usd|dollars?|€|eur|₪|ils)\b/gi, ' ');
-    if (/(?:\+972|972|0)[-.\s]?5\d[-.\s]?\d{7}/.test(t)) return true;
-    if (/(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/.test(t)) return true;
-    const digits = t.replace(/\D/g, '');
-    return digits.length >= 9 && digits.length <= 15;
-  }
-
+  // ── CHAT FILTER (js/chat-policy.js) ──
   function validateChatMessage(body, requestStatus) {
-    if (CHAT_EMAIL.test(body)) {
-      return { ok: false, msg: 'Email addresses are blocked. Keep communication on ORVO.' };
-    }
-    if (chatHasPhone(body)) {
-      return { ok: false, msg: 'Phone numbers are blocked. Keep communication on ORVO.' };
-    }
-    for (const raw of chatUrls(body)) {
-      const url = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
-      if (chatOffPlatform(url)) {
-        return { ok: false, msg: 'WhatsApp, PayPal, social, and similar links are not allowed.' };
-      }
-      if (!chatPaidPhase(requestStatus) && !chatAgentLink(url)) {
-        return {
-          ok: false,
-          msg: 'Before payment: agent/demo links only (GitHub, Vercel, n8n, etc.). After payment, more links are allowed.',
-        };
-      }
+    if (window.ORVO_CHAT?.validateChatMessage) {
+      return window.ORVO_CHAT.validateChatMessage(body, requestStatus);
     }
     return { ok: true };
   }
@@ -983,12 +914,18 @@
           <span class="badge">${esc(statusLabel(req.status))}</span></div>`;
       }
       if (isAssigned && req.status === 'funded') {
-        escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Delivery</b><p>Mark the agent as delivered when the client can test it.</p>
+        escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Delivery</b>
+          <p>Share a demo link (optional) and mark delivered when the client can test.</p>
+          <div class="field" style="margin:12px 0"><input id="deliver-url" placeholder="https://demo.example.com"/></div>
           <button class="btn btn-primary" id="btn-mark-delivered" data-rid="${rid}">Mark delivered</button></div>`;
       }
       if (isClient && (req.status === 'funded' || req.status === 'delivered')) {
-        escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Release</b><p>Status: <span class="badge">${esc(statusLabel(req.status))}</span>. Release payment when you're satisfied.</p>
-          <button class="btn btn-primary" id="btn-release-pay" data-rid="${rid}">Release payment to builder</button></div>`;
+        escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Release</b><p>Status: <span class="badge">${esc(statusLabel(req.status))}</span>. Release when you're satisfied.</p>
+          <button class="btn btn-primary" id="btn-release-pay" data-rid="${rid}">Release payment to builder</button>
+          <button class="btn btn-ghost" id="btn-open-dispute" data-rid="${rid}" style="margin-left:8px">Open dispute</button></div>`;
+      }
+      if (req.status === 'disputed') {
+        escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Dispute open</b><p>Release is frozen until ORVO admin reviews.</p></div>`;
       }
     }
 
@@ -1010,6 +947,7 @@
     });
     $('btn-mark-delivered')?.addEventListener('click', () => markDelivered(rid));
     $('btn-release-pay')?.addEventListener('click', () => releasePayment(rid));
+    $('btn-open-dispute')?.addEventListener('click', () => openDispute(rid));
     $('chat-form').addEventListener('submit', sendMsg);
     await renderMsgs();
     chatSub = needDb().channel('c-' + rid)
@@ -1107,11 +1045,58 @@
   }
 
   async function markDelivered(rid) {
+    const url = ($('deliver-url')?.value || '').trim();
     if (!confirm('Mark this project as delivered for client review?')) return;
     try {
       const { error } = await needDb().from('requests').update({ status: 'delivered' }).eq('id', rid);
       if (error) throw error;
+      // Best-effort delivery row (sql/003); ignore if table missing
+      try {
+        await needDb().from('deliveries').insert({
+          request_id: rid,
+          builder_id: user.id,
+          summary: url ? ('Demo: ' + url) : 'Marked delivered for client review',
+          demo_url: url || null,
+        });
+      } catch (_) { /* optional */ }
+      if (url) {
+        await needDb().from('messages').insert({
+          request_id: rid, sender_id: user.id,
+          body: 'Delivery ready for review: ' + url,
+          is_agent: false,
+        });
+      }
       toast('Marked delivered — waiting for client release', true);
+      loadChat();
+    } catch (e) { toast(e.message, false); }
+  }
+
+  async function openDispute(rid) {
+    const details = prompt('Describe the issue (min 20 characters). This freezes release until admin review.');
+    if (details == null) return;
+    if (details.trim().length < 20) {
+      toast('Please write at least 20 characters', false);
+      return;
+    }
+    try {
+      const { data: req, error: re } = await needDb().from('requests').select('*').eq('id', rid).single();
+      if (re) throw re;
+      if (req.user_id !== user.id && !isAdmin()) throw new Error('Only the client can open a dispute');
+      const against = req.assigned_builder_id;
+      if (!against) throw new Error('No assigned builder');
+      const { data: pay } = await needDb().from('payments').select('id').eq('request_id', rid).maybeSingle();
+      const { error: de } = await needDb().from('disputes').insert({
+        request_id: rid,
+        payment_id: pay?.id || null,
+        opened_by: user.id,
+        against_user_id: against,
+        reason: 'other',
+        details: details.trim(),
+        status: 'open',
+      });
+      if (de) throw de;
+      await needDb().from('requests').update({ status: 'disputed' }).eq('id', rid);
+      toast('Dispute opened — release frozen', true);
       loadChat();
     } catch (e) { toast(e.message, false); }
   }
@@ -1119,6 +1104,8 @@
   async function releasePayment(rid) {
     if (!confirm('Confirm delivery accepted? This completes the project once funds were held.')) return;
     try {
+      const { data: req } = await needDb().from('requests').select('status').eq('id', rid).single();
+      if (req?.status === 'disputed') throw new Error('Dispute open — release is frozen');
       const { data: pay, error: pe } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
       if (pe) throw pe;
       if (!pay) throw new Error('No payment record for this project.');
@@ -1294,10 +1281,18 @@
   });
 
   $('login-btn').addEventListener('click', doLogin);
+  $('forgot-btn')?.addEventListener('click', doForgotPassword);
   $('signup-btn').addEventListener('click', doSignup);
   $('quote-btn').addEventListener('click', doQuote);
   $('post-btn').addEventListener('click', doPost);
   $('pay-confirm-btn').addEventListener('click', confirmAcceptPay);
+
+  document.querySelectorAll('.budget-chip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const budget = btn.getAttribute('data-budget') || '';
+      if ($('post-budget')) $('post-budget').value = budget === 'Custom / TBD' ? '' : budget;
+    });
+  });
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
