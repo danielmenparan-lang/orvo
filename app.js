@@ -1330,8 +1330,11 @@
       });
       refreshNotifBadge();
     } catch (e) {
-      body.innerHTML = `<p class="empty err">${esc(userFacingErr(e.message))}</p>
-        <p class="empty" style="font-size:12px;padding-top:8px">${isAdmin() ? 'Run sql/012_notifications.sql (and 014) in Supabase.' : 'Notifications are not available yet.'}</p>`;
+      const founderFix = (isAdmin() || isConfiguredFounder())
+        ? `<p class="empty" style="font-size:12px;padding-top:8px">Missing notifications tables? <button type="button" class="btn btn-ghost" id="btn-notif-err-sql" style="padding:6px 10px;font-size:12px">Copy APPLY-ALL SQL</button> · <button type="button" class="btn btn-ghost" data-goto="profile" style="padding:6px 10px;font-size:12px">Setup health</button></p>`
+        : `<p class="empty" style="font-size:12px;padding-top:8px">Notifications are not available yet.</p>`;
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(e.message))}</p>${founderFix}`;
+      $('btn-notif-err-sql')?.addEventListener('click', () => copyApplyAllSql());
     }
   }
 

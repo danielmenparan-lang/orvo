@@ -1,6 +1,6 @@
 # Overnight squad status
 
-**Updated:** 2026-08-23 ~22:00 UTC — **10-hour campaign + post-finale pulses ongoing**
+**Updated:** 2026-08-23 ~22:30 UTC — **10-hour campaign + post-finale pulses ongoing**
 
 ## Campaign result
 - Branch: `cursor/orvo-local-site-3bd5` · PR #2

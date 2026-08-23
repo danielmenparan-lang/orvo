@@ -349,3 +349,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Refresh status** on awaiting_payment chat card (re-poll webhook + reload)
 - Notifications empty: founder Copy APPLY-ALL + Setup health (not raw sql/012 hint)
 - Landing builder-paid copy honesty; sql/README prod-applied date placeholder
+
+## 2026-08-23T22:30Z — pulse (post-finale)
+- Invites + notifications **schema error** empty states → Copy APPLY-ALL / Setup health
+- Pay sheet HTML + openPaySheet note honesty (configured, not “when Stripe is live”)
+- Confirming-payment **pulse motion** on chat escrow card
