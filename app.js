@@ -460,8 +460,8 @@
           stopCheckoutPoll();
           track('checkout_webhook_confirmed', { request_id: rid, payment_status: pay?.status });
           toast('Payment held — funds secured until you approve delivery.', true);
-          if (view === 'chat' && chatRequestId === rid) loadChat();
-          else if (view === 'requests') loadRequests();
+          if (view !== 'chat' || chatRequestId !== rid) go('chat', rid);
+          else loadChat();
         }
       } catch { /* payments optional */ }
     }, 3000);
@@ -1479,8 +1479,11 @@
     const payoutNudge = !profile?.stripe_connect_account_id
       ? `<div class="card" style="border-color:var(--o);background:#FFF8F4;margin-bottom:16px;cursor:default">
         <b>Payout setup</b>
-        <p style="font-size:13px;margin:8px 0 12px">Complete Stripe Connect in Profile before accepting funded jobs — release transfers need a connected account.</p>
-        <button type="button" class="btn btn-primary" data-goto="profile">Set up payouts</button>
+        <p style="font-size:13px;margin:8px 0 12px">Complete Stripe Connect before release transfers — ORVO needs a connected account on file.</p>
+        <div class="row" style="gap:8px">
+          <button type="button" class="btn btn-primary" id="btn-jobs-payout-connect" data-default-label="Set up payouts">Set up payouts</button>
+          <button type="button" class="btn btn-ghost" data-goto="profile">Profile</button>
+        </div>
       </div>` : '';
     const activeHtml = (activeJobs || []).length ? `
       <h3 style="font-size:15px;margin:0 0 12px">Your active jobs</h3>
@@ -1507,11 +1510,15 @@
         b.addEventListener('click', () => go('chat', b.dataset.rid));
       });
     };
+    const bindJobsPayoutNudge = () => {
+      $('btn-jobs-payout-connect')?.addEventListener('click', (e) => startConnectOnboarding(e.currentTarget));
+    };
     if (!data?.length) {
       body.innerHTML = searchBar + payoutNudge + activeHtml + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
       bindJobsSearch();
       bindActiveBtns();
+      bindJobsPayoutNudge();
       return;
     }
     const { data: myQuotes } = await needDb().from('quotes').select('request_id,status').eq('builder_id', user.id);
@@ -1535,6 +1542,7 @@
     }).join('');
     bindJobsSearch();
     bindActiveBtns();
+    bindJobsPayoutNudge();
     body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
     body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
   }
@@ -3012,6 +3020,7 @@
         <div class="founder-banner-actions">
           <button type="button" class="btn btn-primary" id="btn-banner-deploy-cmd">Copy deploy command</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-verify-cmd">Copy verify-edge</button>
+          <button type="button" class="btn btn-ghost" id="btn-banner-founder-setup-stripe">Copy setup steps</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
           <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" class="btn btn-ghost">Stripe checklist</a>
           <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-SMOKE-TEST.md" target="_blank" rel="noopener" class="btn btn-ghost">Smoke test</a>
@@ -3019,6 +3028,7 @@
       </div>`;
     $('btn-banner-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
     $('btn-banner-verify-cmd')?.addEventListener('click', () => copyVerifyCmd());
+    $('btn-banner-founder-setup-stripe')?.addEventListener('click', () => copyFounderSetupCmd());
     $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
   }
 
@@ -3144,7 +3154,7 @@
         ${connectId
           ? `Connected account on file (<code>${esc(connectId.slice(0, 12))}…</code>).`
           : 'Connect Express is required before ORVO can transfer held funds to you.'}
-        <button class="btn btn-primary" id="btn-connect-payouts" style="width:100%;margin-top:12px;padding:12px">
+        <button class="btn btn-primary" id="btn-connect-payouts" data-default-label="${connectId ? 'Update payout onboarding' : 'Set up payouts'}" style="width:100%;margin-top:12px;padding:12px">
           ${connectId ? 'Update payout onboarding' : 'Set up payouts'}
         </button>
         <p style="font-size:12px;color:var(--muted);margin-top:8px">Connect Express onboarding — required before release transfers. Needs Stripe secrets deployed.</p>

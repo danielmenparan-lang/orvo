@@ -136,12 +136,12 @@ Timers from `STATUS.md`: wave1 @30m · wave2 @90m · wave3 @3h. Commit + push `c
 
 ### Wave 3 — Niche + money path (~3h)
 
-**Goal:** Shape matches niche; money path scaffolded (not finished Connect).
+**Goal:** Shape matches niche; money path **implemented** (live after founder Stripe deploy).
 
 | Order | Item |
 |------:|------|
 | 1 | **P1-7** Niche hero / CTA declutter |
-| 2 | **P1-5** Checkout Edge stub + webhook contract |
+| 2 | **P1-5** Checkout Edge + webhook (IMPLEMENTED) |
 | 3 | **P1-8** Chat filter trigger |
 | 4 | **P2-1** Invite table + thin admin invite |
 | 5 | **P2-6** / **P2-11** Legal footer |

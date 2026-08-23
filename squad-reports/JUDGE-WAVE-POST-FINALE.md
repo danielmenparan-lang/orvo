@@ -1,4 +1,4 @@
-# JUDGE — Post-finale pulses (~11:42→20:00 UTC)
+# JUDGE — Post-finale pulses (~11:42→20:30 UTC)
 
 ## Verdict
 **Integrity PASS · Stripe IMPLEMENTED (founder deploy pending)**
@@ -26,6 +26,8 @@ Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pu
 | Release edge errors | PASS | `releaseUnavailableMessage` |
 | Builder payout banner | PASS | direct Connect onboarding CTA |
 | Founder setup copy UX | PASS | boot banner + Profile + database phase |
+| Jobs Connect CTA | PASS | direct onboarding from jobs nudge |
+| Checkout poll → chat | PASS | webhook confirm navigates to project |
 
 ## Founder execution (only remaining)
 
@@ -43,4 +45,4 @@ bash scripts/founder-setup.sh   # ordered steps
 - STRIPE_PAYMENT_LINK  
 - Client-written held/funded  
 
-— ORVO Judge · post-finale summary 2026-08-23T20:00Z
+— ORVO Judge · post-finale summary 2026-08-23T20:30Z

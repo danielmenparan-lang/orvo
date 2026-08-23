@@ -326,3 +326,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **`startConnectOnboarding`** — builder payout banner launches Connect directly (not Profile-only)
 - **`copyFounderSetupCmd`** — boot error bar, database founder banner, Profile ops block
 - WINNING-PRODUCT + EDGE-FUNCTIONS doc sync (IMPLEMENTED, not scaffold)
+
+## 2026-08-23T20:30Z — pulse (post-finale)
+- **Jobs payout nudge** — Set up payouts launches Connect directly (Profile secondary)
+- **Checkout webhook poll** — navigates to chat view when funds held
+- **Founder checklist** — copy founder-setup / deploy / verify buttons in Stripe section
+- Stripe founder banner Copy setup steps; backlog Wave 3 sync

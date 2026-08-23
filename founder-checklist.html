@@ -102,7 +102,14 @@ where email = 'danielmen.paran@gmail.com';</pre>
 
   <section id="stripe">
     <h2>Stripe (when ready)</h2>
-    <p style="font-size:13px;margin-bottom:12px">Full deploy order: <code>docs/payments/STRIPE-DEPLOY-CHECKLIST.md</code> · one-shot CLI: <code>bash scripts/deploy-stripe.sh</code></p>
+    <p style="font-size:13px;margin-bottom:12px">Ordered steps: <code>bash scripts/founder-setup.sh</code></p>
+    <p style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <button type="button" class="btn-copy" id="btn-copy-founder-setup">Copy founder-setup</button>
+      <button type="button" class="btn-copy" id="btn-copy-deploy" style="background:var(--ink)">Copy deploy-stripe</button>
+      <button type="button" class="btn-copy" id="btn-copy-verify" style="background:var(--ink)">Copy verify-edge</button>
+      <span id="stripe-copy-status" style="font-size:12px;color:var(--muted)"></span>
+    </p>
+    <p style="font-size:13px;margin-bottom:12px">Full deploy order: <code>docs/payments/STRIPE-DEPLOY-CHECKLIST.md</code></p>
     <p style="font-size:13px;margin-bottom:12px">After deploy, Profile → <b>Setup health</b> → <b>Re-check</b> — Edge rows should show <b>deployed</b> (501 = secrets still pending).</p>
     <p style="font-size:13px;margin-bottom:12px">CLI probe: <code>bash scripts/verify-edge.sh</code> (404 = not deployed · 501 = secrets pending)</p>
     <p style="font-size:13px;margin-bottom:12px">Smoke test: <code>docs/payments/STRIPE-SMOKE-TEST.md</code></p>
@@ -140,6 +147,21 @@ where email = 'danielmen.paran@gmail.com';</pre>
       window.open(APPLY_URL, '_blank', 'noopener');
     }
   });
+  const stripeStatus = document.getElementById('stripe-copy-status');
+  const copyCmd = async (text, okMsg) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (stripeStatus) stripeStatus.textContent = okMsg;
+    } catch {
+      if (stripeStatus) stripeStatus.textContent = text;
+    }
+  };
+  document.getElementById('btn-copy-founder-setup')?.addEventListener('click', () =>
+    copyCmd('bash scripts/founder-setup.sh', 'Copied founder-setup'));
+  document.getElementById('btn-copy-deploy')?.addEventListener('click', () =>
+    copyCmd('bash scripts/deploy-stripe.sh', 'Copied deploy-stripe'));
+  document.getElementById('btn-copy-verify')?.addEventListener('click', () =>
+    copyCmd('bash scripts/verify-edge.sh', 'Copied verify-edge'));
 })();
 </script>
 </body>
