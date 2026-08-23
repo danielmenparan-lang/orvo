@@ -40,8 +40,24 @@
     return d.innerHTML;
   }
 
+  /** Format cents for display. Default settlement currency is USD (global marketplace). */
+  function formatMoney(cents, currency = 'USD') {
+    const amount = (Number(cents) || 0) / 100;
+    const cur = String(currency || 'USD').toUpperCase();
+    try {
+      return new Intl.NumberFormat(cur === 'ILS' ? 'he-IL' : 'en-US', {
+        style: 'currency',
+        currency: cur,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch {
+      const sym = cur === 'ILS' ? '₪' : '$';
+      return sym + amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+  }
+
   function money(c) {
-    return '$' + (c / 100).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    return formatMoney(c, 'USD');
   }
 
   function statusLabel(s) {
@@ -584,17 +600,27 @@
     try {
       const title = ($('post-title')?.value || '').trim();
       const desc = $('post-desc').value.trim();
+      const country = ($('post-country')?.value || '').trim().slice(0, 80);
       if (!title) throw new Error('Add a short title');
       if (!desc) throw new Error('Describe your project');
-      const { error } = await needDb().from('requests').insert({
+      const row = {
         user_id: user.id,
         title: title.slice(0, 80),
         description: desc,
         category: $('post-cat').value,
         budget: $('post-budget').value.trim() || null,
         status: 'open',
-      });
+      };
+      if (country) row.location = country;
+      let { error } = await needDb().from('requests').insert(row);
+      // If location column missing (004 not applied), fall back to description prefix
+      if (error && country && /location|column|schema/i.test(error.message || '')) {
+        delete row.location;
+        row.description = 'Country: ' + country + '\n\n' + desc;
+        ({ error } = await needDb().from('requests').insert(row));
+      }
       if (error) throw error;
+      if ($('post-country')) $('post-country').value = '';
       closePost();
       openDash();
       go('requests');
@@ -609,7 +635,12 @@
     body.innerHTML = '<p class="empty">Loading...</p>';
     const { data, error } = await needDb().from('requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     if (error) { body.innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
-    if (!data?.length) { body.innerHTML = '<p class="empty">No requests yet. Click <b>+ Post request</b></p>'; return; }
+    if (!data?.length) {
+      body.innerHTML = `<p class="empty">No requests yet.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">Post your first agent brief — vetted builders worldwide reply with quotes in USD.</p>
+        <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">+ Post request</button>`;
+      return;
+    }
     body.innerHTML = data.map(r => `
       <div class="card" data-click="${r.id}">
         <span class="tag">${esc(r.category || 'Project')}</span>
@@ -638,7 +669,7 @@
     }
     if (!data?.length) {
       body.innerHTML = `<p class="empty">No open jobs right now.</p>
-        <p class="empty" style="padding-top:8px;font-size:12px">Clients must post with status "open". If you were just approved, sign out and back in.</p>`;
+        <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
       return;
     }
     const { data: myQuotes } = await needDb().from('quotes').select('request_id').eq('builder_id', user.id);
@@ -690,7 +721,12 @@
     const body = $('view-body');
     const { data, error } = await needDb().from('quotes').select('*, requests(title)').eq('builder_id', user.id).order('created_at', { ascending: false });
     if (error) { body.innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
-    if (!data?.length) { body.innerHTML = '<p class="empty">No quotes yet</p>'; return; }
+    if (!data?.length) {
+      body.innerHTML = `<p class="empty">No quotes yet.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">Browse open jobs and send your first quote in USD.</p>
+        <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-goto="jobs">Browse jobs</button>`;
+      return;
+    }
     body.innerHTML = data.map(q => `
       <div class="card" data-click="${q.request_id}">
         <h3>${esc(q.requests?.title || 'Project')}</h3>
@@ -703,14 +739,22 @@
   }
 
   async function loadApply() {
+    // Approved builders belong on jobs — pending builders may edit a prefilled form (no bounce to status).
     if (isBuilder()) { go('jobs'); return; }
     const editing = isPending();
     let existing = null;
     if (editing) {
-      const { data } = await needDb().from('builder_applications').select('*').eq('user_id', user.id).maybeSingle();
+      const { data, error } = await needDb().from('builder_applications').select('*').eq('user_id', user.id).maybeSingle();
+      if (error) {
+        toast(userFacingErr(error.message), false);
+      }
       existing = data;
     }
+    $('view-title').textContent = editing ? 'Edit application' : 'Become a builder';
     const btnLabel = editing ? 'Save changes' : 'Submit application';
+    const skillsStr = Array.isArray(existing?.skills)
+      ? existing.skills.join(', ')
+      : (existing?.skills || '');
     $('view-body').innerHTML = `
       <p style="color:var(--gray);font-size:14px;margin-bottom:20px">${editing
         ? 'Update your application below. Status stays pending until ORVO reviews.'
@@ -724,10 +768,12 @@
       ${editing ? '<button class="btn btn-ghost" id="apply-cancel" style="margin-top:10px;width:100%;padding:12px">Back to status</button>' : ''}`;
     if (existing) {
       $('apply-bio').value = existing.bio || '';
-      $('apply-skills').value = existing.skills || '';
+      $('apply-skills').value = skillsStr;
       $('apply-portfolio').value = existing.portfolio_url || '';
       $('apply-linkedin').value = existing.linkedin_url || '';
       $('apply-years').value = String(existing.experience_years ?? 0);
+    } else if (editing) {
+      toast('Could not load your application to edit. Try again or contact support.', false);
     }
     $('apply-btn').addEventListener('click', doApply);
     $('apply-cancel')?.addEventListener('click', () => go('status'));
@@ -903,7 +949,8 @@
           <h3>${esc(names[q.builder_id] || 'Builder')} — ${money(q.amount_cents)}</h3>
           <p>${esc(q.message)}</p>
           ${q.status === 'pending' ? `<button class="btn btn-primary btn-pay" data-qid="${q.id}" data-rid="${rid}">Accept & pay</button>` : `<span class="badge">${esc(statusLabel(q.status))}</span>`}
-        </div>`).join('') : '<p class="empty">Waiting for quotes...</p>';
+        </div>`).join('') : `<p class="empty">Waiting for quotes...</p>
+          <p class="empty" style="padding-top:8px;font-size:13px">Vetted builders worldwide will reply here with USD quotes.</p>`;
     }
 
     let escrowHtml = '';
@@ -1025,7 +1072,8 @@
 
     const list = [...byId.values()].sort((a, b) => new Date(b.t || 0) - new Date(a.t || 0));
     if (!list.length) {
-      $('view-body').innerHTML = '<p class="empty">No conversations yet. Quote a job or post a request to start messaging.</p>';
+      $('view-body').innerHTML = `<p class="empty">No conversations yet.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">Post a request or send a quote to start messaging on ORVO.</p>`;
       return;
     }
     $('view-body').innerHTML = list.map(r => `

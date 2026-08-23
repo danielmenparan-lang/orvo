@@ -49,6 +49,14 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - SPA note: `pages/README.md` (niche HTML at site root, not `/pages/`)
 - Done note: `squad-reports/WAVE2G-GTM-DONE.md`
 
+## 2026-08-23T01:46Z — Global marketplace money + empty states
+- `formatMoney(cents, currency='USD')` + `money()` keeps USD default
+- Quote modal: **Price (USD)** + hint “Global marketplace — quote in USD for now”
+- Post budget placeholder: `$500–$2000 (USD)`
+- Dashboard empty states rewritten for global clients/builders
+- `loadApply`: pending edit stays prefilled (title + skills coerce + load error toast); no status bounce
+- Cache bump `app.js` / config `?v=15`
+
 ## 2026-08-23T01:48Z — global pivot (forced)
 - Landing + WINNING-PRODUCT: worldwide clients
 - Israel lock removed from hero
