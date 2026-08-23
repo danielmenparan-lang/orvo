@@ -1302,5 +1302,8 @@
     db.auth.onAuthStateChange(refreshUser);
   }
 
+  // Design: gate hero entrance motion (CSS .ui-ready)
+  requestAnimationFrame(() => document.body.classList.add('ui-ready'));
+
   boot();
 })();

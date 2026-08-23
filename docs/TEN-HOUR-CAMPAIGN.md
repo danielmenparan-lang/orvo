@@ -3,7 +3,7 @@
 **Start:** 2026-08-23 ~01:41 UTC  
 **Target duration:** ≥10 hours of continuous wave work  
 **Branch:** `cursor/orvo-local-site-3bd5`  
-**Strategy lock:** `docs/WINNING-PRODUCT.md` (Israel WhatsApp SMB + concierge + hold→release)
+**Strategy lock:** `docs/WINNING-PRODUCT.md` — **GLOBAL** clients hire vetted builders for custom AI agents (not Israel-only).
 
 ## Agent roster (parallel waves)
 
