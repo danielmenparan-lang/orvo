@@ -354,3 +354,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Invites + notifications **schema error** empty states → Copy APPLY-ALL / Setup health
 - Pay sheet HTML + openPaySheet note honesty (configured, not “when Stripe is live”)
 - Confirming-payment **pulse motion** on chat escrow card
+
+## 2026-08-23T23:00Z — pulse (post-finale)
+- **`founderSchemaFixHtml`** shared helper — all-requests + disputes + invites/notifications errors
+- Admin All requests status chips show **counts**
+- `prefers-reduced-motion` disables confirming pulse; LAUNCH-KIT Day 0 EN-first; pay CTA default text sync

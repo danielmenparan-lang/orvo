@@ -46,8 +46,8 @@ Do these in order. One primary CTA for the whole day (clients **or** builders â€
 
 | Time | Channel | What to publish | Source |
 |------|---------|-----------------|--------|
-| 08:30 | LinkedIn | Post **7** (waitlist) Hebrew | `10-social.md` |
-| 08:35 | X | Short cut of Post **7** English or Hebrew | same |
+| 08:30 | LinkedIn | Post **7** (waitlist) **English** (HE only if IL outreach day) | `10-social.md` |
+| 08:35 | X | Short cut of Post **7** English | same |
 | 08:40 | IG Story | Waitlist sticker + one line from Post **7** | same |
 | 09:00 | WhatsApp Status | One line from Post **2** + link | same |
 | 12:00 | LinkedIn comment / X | Post **4** (how it works) | same |

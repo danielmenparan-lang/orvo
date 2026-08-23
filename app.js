@@ -261,6 +261,20 @@
     }
   }
 
+  /** Founder/admin hint when a table/migration is missing. */
+  function founderSchemaFixHtml(hint) {
+    if (!(isAdmin() || isConfiguredFounder())) return '';
+    return `<p class="empty" style="font-size:12px;padding-top:8px">${esc(hint)}
+      <button type="button" class="btn btn-ghost btn-copy-apply-err" style="padding:6px 10px;font-size:12px">Copy APPLY-ALL SQL</button>
+      · <button type="button" class="btn btn-ghost" data-goto="profile" style="padding:6px 10px;font-size:12px">Setup health</button></p>`;
+  }
+
+  function wireFounderSchemaFix(root) {
+    (root || document).querySelectorAll('.btn-copy-apply-err').forEach((btn) => {
+      btn.addEventListener('click', () => copyApplyAllSql());
+    });
+  }
+
   function isConfiguredFounder() {
     const logged = myEmail();
     const cfg = cfgAdminEmail();
@@ -862,7 +876,7 @@
     } else {
       $('pay-note').innerHTML =
         'Accepting locks this builder as <strong>awaiting payment</strong> (not funded). ' +
-        'ORVO will try Stripe Checkout automatically if configured — otherwise awaiting until live.';
+        'ORVO will try Stripe Checkout automatically if configured — otherwise the job stays awaiting payment.';
       $('pay-confirm-btn').textContent = 'Accept quote — try checkout';
     }
     const msg = $('pay-msg');
@@ -1330,11 +1344,11 @@
       });
       refreshNotifBadge();
     } catch (e) {
-      const founderFix = (isAdmin() || isConfiguredFounder())
-        ? `<p class="empty" style="font-size:12px;padding-top:8px">Missing notifications tables? <button type="button" class="btn btn-ghost" id="btn-notif-err-sql" style="padding:6px 10px;font-size:12px">Copy APPLY-ALL SQL</button> · <button type="button" class="btn btn-ghost" data-goto="profile" style="padding:6px 10px;font-size:12px">Setup health</button></p>`
-        : `<p class="empty" style="font-size:12px;padding-top:8px">Notifications are not available yet.</p>`;
-      body.innerHTML = `<p class="empty err">${esc(userFacingErr(e.message))}</p>${founderFix}`;
-      $('btn-notif-err-sql')?.addEventListener('click', () => copyApplyAllSql());
+      const founderFix = founderSchemaFixHtml('Missing notifications tables?');
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(e.message))}</p>${
+        founderFix || '<p class="empty" style="font-size:12px;padding-top:8px">Notifications are not available yet.</p>'
+      }`;
+      wireFounderSchemaFix(body);
     }
   }
 
@@ -1917,8 +1931,12 @@
       .eq('builder_id', user.id)
       .order('created_at', { ascending: false });
     if (error) {
-      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>
-        <p class="empty" style="font-size:12px;padding-top:8px">${isAdmin() ? 'Run sql/005_invites.sql in Supabase if invites are not set up yet.' : 'Invites are not available yet — browse open jobs instead.'}</p>`;
+      const founderFix = founderSchemaFixHtml('Missing invites table?');
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${
+        founderFix || `<p class="empty" style="font-size:12px;padding-top:8px">Invites are not available yet — browse open jobs instead.</p>
+           <button class="btn btn-primary" style="margin-top:12px;padding:12px 24px" data-goto="jobs">Browse jobs</button>`
+      }`;
+      wireFounderSchemaFix(body);
       return;
     }
     if (!data?.length) {
@@ -1955,7 +1973,11 @@
     const qText = (window.__orvoAllReqsQuery || '').trim().toLowerCase();
     const statusFilter = window.__orvoAllReqsStatus || '';
     const { data, error } = await needDb().from('requests').select('*').order('created_at', { ascending: false }).limit(40);
-    if (error) { $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
+    if (error) {
+      $('view-body').innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Schema missing?')}`;
+      wireFounderSchemaFix($('view-body'));
+      return;
+    }
     let rows = data || [];
     if (statusFilter) rows = rows.filter((r) => r.status === statusFilter);
     if (qText) {
@@ -1980,6 +2002,8 @@
     const builderOpts = (builders || []).map(b =>
       `<option value="${b.id}">${esc(b.full_name || b.email || b.id)}</option>`
     ).join('');
+    const allRows = data || [];
+    const countFor = (key) => (key === '' ? allRows.length : allRows.filter((r) => r.status === key).length);
     const statusChips = [
       { key: '', label: 'All' },
       { key: 'open', label: 'Open' },
@@ -1991,7 +2015,7 @@
     ];
     const chipHtml = `<div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">${
       statusChips.map((c) =>
-        `<button type="button" class="btn btn-ghost channel-chip${statusFilter === c.key ? ' on' : ''}" data-status="${c.key}" style="padding:6px 12px;font-size:12px">${c.label}</button>`
+        `<button type="button" class="btn btn-ghost channel-chip${statusFilter === c.key ? ' on' : ''}" data-status="${c.key}" style="padding:6px 12px;font-size:12px">${c.label} (${countFor(c.key)})</button>`
       ).join('')
     }</div>`;
     const searchHtml = `${chipHtml}<input class="admin-search" id="all-reqs-search" type="search" placeholder="Filter requests…" value="${esc(qText)}" autocomplete="off"/>`;
@@ -2058,7 +2082,8 @@
     const { data, error } = await needDb().from('disputes')
       .select('*').in('status', ['open', 'under_review']).order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
+      $('view-body').innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Missing disputes table?')}`;
+      wireFounderSchemaFix($('view-body'));
       return;
     }
     if (!data?.length) {
@@ -2258,7 +2283,7 @@
           : (checkoutLive ? 'Pay with Stripe Checkout' : 'Try checkout again');
         const confirming = checkoutPollTimer && payStatus !== 'held';
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Payment</b>
-          ${confirming ? '<p style="font-size:12px;color:var(--o);margin:0 0 8px">Confirming payment with Stripe webhook…</p>' : ''}
+          ${confirming ? '<p class="pay-confirming" style="font-size:12px;margin:0 0 8px">Confirming payment with Stripe webhook…</p>' : ''}
           <p>${payNote}</p>
           <p style="font-size:12px;color:var(--muted);margin:8px 0">Payment: <span class="badge">${esc(payBadge)}</span>
             ${payRow ? ' · ' + money(payRow.amount_cents) : ''}</p>

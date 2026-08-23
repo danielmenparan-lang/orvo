@@ -401,6 +401,8 @@ footer{
 .pay-sheet .pay-actions{display:flex;flex-direction:column;gap:8px}
 .pay-sheet .pay-actions .btn-ghost{width:100%;padding:12px}
 .pay-sheet.done .pay-rows,.pay-sheet.done #pay-confirm-btn{display:none}
+@keyframes pay-confirm-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.pay-confirming{color:var(--o);font-weight:600;animation:pay-confirm-pulse 1.4s var(--ease) infinite}
 .pay-actions{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .pay-actions .btn-ghost,.pay-actions .btn-black{width:100%;padding:12px}
 .star-row{display:flex;gap:6px}
@@ -481,6 +483,7 @@ footer{
   .skel-line{background:var(--bg-2)}
   .btn,.btn-primary,.btn-ghost,.btn-black{transition:none}
   .btn-primary:hover,.btn-ghost:hover,.btn-black:hover,nav .btn-ghost:hover{transform:none}
+  .pay-confirming{animation:none!important}
 }
 </style>
 </head>
@@ -728,7 +731,7 @@ footer{
       ORVO will try Stripe Checkout if configured — otherwise the job stays awaiting payment.
     </p>
     <div class="pay-actions">
-      <button class="btn-black" id="pay-confirm-btn">Accept quote — await payment</button>
+      <button class="btn-black" id="pay-confirm-btn">Accept quote — try checkout</button>
       <button class="btn-black hidden" id="pay-resume-btn">Try checkout again</button>
       <button class="btn btn-ghost" data-action="close-pay" id="pay-cancel-btn">Cancel</button>
     </div>
