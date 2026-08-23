@@ -43,6 +43,32 @@
     return '$' + (c / 100).toLocaleString('en-US', { maximumFractionDigits: 0 });
   }
 
+  function statusLabel(s) {
+    const map = {
+      open: 'Open',
+      in_progress: 'In progress',
+      awaiting_payment: 'Awaiting payment',
+      funded: 'Funded',
+      delivered: 'Delivered',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      disputed: 'Disputed',
+      pending: 'Pending',
+      accepted: 'Accepted',
+      paid: 'Paid',
+      rejected: 'Declined',
+      withdrawn: 'Withdrawn',
+      held: 'Held',
+      released: 'Released',
+    };
+    return map[s] || s || 'Unknown';
+  }
+
+  function userFacingErr(msg) {
+    if (isAdmin()) return msg;
+    return String(msg || 'Something went wrong').replace(/sql-[\w.-]+\.sql/gi, 'database setup').replace(/Supabase/gi, 'database');
+  }
+
   function parseMoney(s) {
     const m = String(s || '').replace(/,/g, '').match(/\d+(\.\d+)?/);
     return m ? Math.round(parseFloat(m[0]) * 100) : 0;
@@ -521,7 +547,7 @@
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
         <p>${esc(r.description.slice(0, 120))}</p>
-        <span class="badge">${esc(r.status)} · ${ago(r.created_at)}</span>
+        <span class="badge">${esc(statusLabel(r.status))} · ${ago(r.created_at)}</span>
       </div>`).join('');
     body.querySelectorAll('[data-click]').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.click));
@@ -539,7 +565,7 @@
     }
     const { data, error } = await needDb().from('requests').select('*').eq('status', 'open').order('created_at', { ascending: false });
     if (error) {
-      body.innerHTML = `<p class="empty err">${esc(error.message)}<br><small>Run sql-fix-jobs.sql in Supabase</small></p>`;
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
       return;
     }
     if (!data?.length) {
@@ -639,7 +665,7 @@
       };
       const { data: saved, error: e1 } = await needDb().from('builder_applications')
         .upsert(row, { onConflict: 'user_id' }).select().single();
-      if (e1) throw new Error('Save failed: ' + e1.message + ' — run sql-FINAL-FIX.sql in Supabase once');
+      if (e1) throw new Error('Could not save application. Please try again.');
       const { error: e2 } = await needDb().from('profiles')
         .update({ builder_status: 'pending' }).eq('id', user.id);
       if (e2) throw new Error('Profile update failed: ' + e2.message);
@@ -785,15 +811,20 @@
     }
 
     let escrowHtml = '';
-    if (req && ['funded', 'delivered', 'in_progress'].includes(req.status)) {
+    if (req && ['awaiting_payment', 'funded', 'delivered', 'in_progress'].includes(req.status)) {
       const isClient = req.user_id === user.id;
       const isAssigned = req.assigned_builder_id === user.id;
+      if (isClient && req.status === 'awaiting_payment') {
+        escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Payment</b>
+          <p>Quote accepted. Card checkout is coming soon — ORVO will hold funds until you approve delivery.</p>
+          <span class="badge">${esc(statusLabel(req.status))}</span></div>`;
+      }
       if (isAssigned && req.status === 'funded') {
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Delivery</b><p>Mark the agent as delivered when the client can test it.</p>
           <button class="btn btn-primary" id="btn-mark-delivered" data-rid="${rid}">Mark delivered</button></div>`;
       }
       if (isClient && (req.status === 'funded' || req.status === 'delivered')) {
-        escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Escrow</b><p>Status: <span class="badge">${esc(req.status)}</span>. Release payment when you're satisfied.</p>
+        escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Release</b><p>Status: <span class="badge">${esc(statusLabel(req.status))}</span>. Release payment when you're satisfied.</p>
           <button class="btn btn-primary" id="btn-release-pay" data-rid="${rid}">Release payment to builder</button></div>`;
       }
     }
@@ -830,7 +861,7 @@
     if (!box || !chatRequestId) return;
     const { data, error } = await needDb().from('messages').select('*').eq('request_id', chatRequestId).order('created_at');
     if (error) {
-      box.innerHTML = `<p class="empty err">${esc(error.message)}<br><small>Run sql-FINAL-FIX.sql in Supabase for chat permissions</small></p>`;
+      box.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
       return;
     }
     const ids = [...new Set((data || []).map(m => m.sender_id).filter(Boolean))];
@@ -859,7 +890,7 @@
       });
       if (error) {
         if (/row-level security|permission denied/i.test(error.message)) {
-          throw new Error('Cannot send message — run sql-FINAL-FIX.sql in Supabase (chat permissions)');
+          throw new Error(userFacingErr('Cannot send message right now. Please try again.'));
         }
         throw error;
       }
@@ -903,8 +934,16 @@
   }
 
   async function releasePayment(rid) {
-    if (!confirm('Release escrow to the builder? This confirms the work is accepted.')) return;
+    if (!confirm('Release funds to the builder? This confirms the work is accepted.')) return;
     try {
+      const { data: pay, error: pe } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
+      if (pe) throw pe;
+      if (!pay || !['held', 'paid'].includes(pay.status)) {
+        throw new Error('Nothing to release yet — payment must be held first.');
+      }
+      if (pay.status === 'paid' && !isAdmin()) {
+        throw new Error('This project is not funded yet.');
+      }
       const { error: e1 } = await needDb().from('requests').update({ status: 'completed' }).eq('id', rid);
       if (e1) throw e1;
       const { error: e2 } = await needDb().from('payments')
@@ -921,52 +960,58 @@
     if (!q) return;
     const fee = FEE() > 0 ? Math.round(q.amount_cents * FEE() / 100) : 0;
     const stripeLink = (window.STRIPE_PAYMENT_LINK || '').trim();
-    const feeLine = fee > 0 ? `\n\nORVO fee (${FEE()}%): ${money(fee)}\nBuilder receives: ${money(q.amount_cents - fee)}` : '';
+    const feeLine = fee > 0 ? `\n\nORVO fee (${FEE()}%): ${money(fee)}\nBuilder receives: ${money(q.amount_cents - fee)}` : '\n\nFounding fee: 0%';
     const msg = stripeLink
-      ? `Pay ${money(q.amount_cents)} via Stripe?${feeLine}`
-      : `Confirm payment of ${money(q.amount_cents)}?${feeLine}${feeLine ? '' : '\n\n(Stripe will be connected soon — recording payment manually for now.)'}`;
+      ? `Accept this quote for ${money(q.amount_cents)} and continue to checkout?${feeLine}`
+      : `Accept this quote for ${money(q.amount_cents)}?${feeLine}\n\nCard checkout is not live yet — accepting locks the builder and marks the job awaiting payment (not funded).`;
     if (!confirm(msg)) return;
     try {
-      await needDb().from('quotes').update({ status: 'accepted' }).eq('id', qid);
-      await needDb().from('requests').update({ status: 'in_progress', assigned_builder_id: q.builder_id }).eq('id', rid);
-      await needDb().from('payments').insert({
+      const { error: e1 } = await needDb().from('quotes').update({ status: 'accepted' }).eq('id', qid);
+      if (e1) throw e1;
+      // Decline sibling pending quotes
+      await needDb().from('quotes')
+        .update({ status: 'rejected' })
+        .eq('request_id', rid)
+        .eq('status', 'pending')
+        .neq('id', qid);
+      const { error: e2 } = await needDb().from('requests').update({
+        status: 'awaiting_payment',
+        assigned_builder_id: q.builder_id,
+      }).eq('id', rid);
+      if (e2) throw e2;
+      const { error: e3 } = await needDb().from('payments').insert({
         user_id: user.id, request_id: rid, quote_id: qid,
         amount_cents: q.amount_cents, platform_fee_cents: fee,
         builder_payout_cents: q.amount_cents - fee,
-        status: stripeLink ? 'pending' : 'paid',
+        status: 'pending',
       });
+      if (e3) throw e3;
       if (stripeLink) {
         window.open(stripeLink, '_blank');
-        toast('Complete payment in Stripe, then refresh', true);
-        return;
+        toast('Complete checkout to fund the project', true);
+      } else {
+        toast('Quote accepted — awaiting payment (not funded yet)', true);
       }
-      await needDb().from('quotes').update({ status: 'paid' }).eq('id', qid);
-      await needDb().from('requests').update({ status: 'funded' }).eq('id', rid);
-      toast('Payment recorded — project funded!', true);
       loadChat();
     } catch (e) { toast(e.message, false); }
   }
 
   async function loadProfileView() {
-    const cfg = adminEmail();
     const logged = (user?.email || '').toLowerCase().trim();
     const adminOk = isAdmin();
-    const bs = profile?.builder_status || '(none)';
+    const bs = profile?.builder_status || 'none';
     const role = adminOk ? 'ORVO Admin' : isBuilder() ? 'Approved builder' : isPending() ? 'Application pending' : 'Client';
+    const debugBlock = adminOk ? `
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8">
+        <b>Admin status</b><br>
+        Logged in: <code>${esc(logged)}</code><br>
+        Builder status: <b>${esc(bs)}</b><br>
+        DB is_admin: <b>yes</b>
+      </div>` : '';
     $('view-body').innerHTML = `
       <p><b>${esc(profile?.full_name)}</b></p>
       <p style="color:var(--gray);margin:4px 0 16px">${esc(logged)} · ${role}</p>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8">
-        <b>Status check</b><br>
-        Logged in: <code>${esc(logged)}</code><br>
-        Admin email in config: <code>${esc(cfg || 'MISSING — edit supabase-config.js')}</code><br>
-        Admin match: <b>${adminOk ? 'YES ✓' : 'NO ✗'}</b><br>
-        Builder status: <b>${esc(bs)}</b>
-        ${!adminOk && cfg === 'your@email.com' ? '<br><span style="color:var(--red)">Set ORVO_ADMIN_EMAIL in supabase-config.js</span>' : ''}
-        ${!adminOk && cfg && cfg !== logged ? '<br><span style="color:var(--red)">Sign in with the same email as in config</span>' : ''}
-        ${bs !== 'approved' && !adminOk ? '<br><span style="color:var(--gray)">To see client posts: get approved as builder first</span>' : ''}
-        <br><span style="color:var(--gray)">Red bar at top? Run sql-RUN-NOW.sql in Supabase</span>
-      </div>
+      ${debugBlock}
       ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="admin">Review builder applications</button>' : ''}
       ${isBuilder() ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="jobs">Browse jobs</button>' : ''}
       ${!isBuilder() && !isPending() && !adminOk ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="apply">Apply as a builder</button>' : ''}
