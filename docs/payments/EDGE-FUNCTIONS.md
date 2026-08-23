@@ -47,6 +47,10 @@ On `checkout.session.completed`:
 - set payment `status=held`, `paid_at=now()`, store PI id  
 - set request `status=funded`  
 
+On `charge.dispute.created`:
+- set request `status=disputed`  
+- insert `disputes` row (`under_review`) if none active — freezes release  
+
 Only the webhook writes `held`/`funded`.
 
 **Client after return:** `app.js` polls payment/request status for ~30s after `?checkout=success&rid=` — refreshes UI when webhook lands (does not set funded client-side).

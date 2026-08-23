@@ -21,7 +21,8 @@ See `sql/README.md` — run **001 → 020**, then:
 update public.profiles set is_admin = true where email = 'your@email.com';
 ```
 
-Founder checklist: `founder-checklist.html`
+Founder checklist: `founder-checklist.html`  
+Founder setup steps: `bash scripts/founder-setup.sh`
 
 ## Stripe (when ready)
 

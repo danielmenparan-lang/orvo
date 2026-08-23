@@ -37,7 +37,9 @@
 
 **Founder still:** Apply SQL 001→020 on Supabase; set `is_admin`; add Stripe secrets + deploy functions (`STRIPE-DEPLOY-CHECKLIST.md`); flip `ORVO_CHECKOUT_LIVE` when Checkout is live.
 
-**Next code polish:** all P0/P1/P2 repo items **DONE** (2026-08-23 finale). Remaining: **live Stripe implementation** (founder secrets).
+**Next code polish:** all P0/P1/P2 repo items **DONE** (2026-08-23 finale). Stripe Edge **implemented** — founder secrets + smoke test remain.
+
+**Founder setup script:** `bash scripts/founder-setup.sh`
 
 **Campaign:** ~10h complete — see `squad-reports/CAMPAIGN-FINALE-HE.md` · `JUDGE-WAVE-10h.md`.
 

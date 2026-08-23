@@ -103,6 +103,46 @@ Deno.serve(async (req) => {
         }
       }
     }
+
+    if (event.type === 'charge.dispute.created') {
+      const disputeObj = event.data.object as { charge?: string | { id?: string } | null };
+      const chargeId = typeof disputeObj.charge === 'string'
+        ? disputeObj.charge
+        : disputeObj.charge?.id ?? null;
+      if (chargeId) {
+        const { data: payment } = await admin.from('payments')
+          .select('id, request_id, builder_id, user_id')
+          .eq('stripe_charge_id', chargeId)
+          .maybeSingle();
+        if (payment?.request_id) {
+          await admin.from('requests').update({ status: 'disputed' }).eq('id', payment.request_id);
+          const { data: req } = await admin.from('requests')
+            .select('user_id, assigned_builder_id')
+            .eq('id', payment.request_id)
+            .maybeSingle();
+          const againstId = payment.builder_id || req?.assigned_builder_id;
+          const openedBy = payment.user_id || req?.user_id;
+          if (openedBy && againstId) {
+            const { data: existing } = await admin.from('disputes')
+              .select('id')
+              .eq('request_id', payment.request_id)
+              .in('status', ['open', 'under_review'])
+              .maybeSingle();
+            if (!existing) {
+              await admin.from('disputes').insert({
+                request_id: payment.request_id,
+                payment_id: payment.id,
+                opened_by: openedBy,
+                against_user_id: againstId,
+                reason: 'payment_issue',
+                details: 'Stripe chargeback opened automatically. ORVO admin will review; release is frozen.',
+                status: 'under_review',
+              });
+            }
+          }
+        }
+      }
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('stripe-webhook handler:', event.type, msg);

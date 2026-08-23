@@ -2915,6 +2915,7 @@
           <button type="button" class="btn btn-primary" id="btn-banner-deploy-cmd">Copy deploy command</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
           <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" class="btn btn-ghost">Stripe checklist</a>
+          <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-SMOKE-TEST.md" target="_blank" rel="noopener" class="btn btn-ghost">Smoke test</a>
         </div>
       </div>`;
     $('btn-banner-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
@@ -2969,6 +2970,7 @@
           <button type="button" class="btn btn-primary" id="btn-copy-apply-all" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy APPLY-ALL SQL</button>
           <button type="button" class="btn btn-ghost" id="btn-copy-admin-sql" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy is_admin SQL</button>
           <a href="founder-checklist.html" target="_blank" rel="noopener" style="color:var(--o)">Founder checklist →</a>
+          · <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-SMOKE-TEST.md" target="_blank" rel="noopener" style="color:var(--o)">Smoke test →</a>
         </div>
       </div>`;
   }
@@ -2995,7 +2997,7 @@
         <b>${adminOk ? 'Admin' : 'Founder'} ops</b><br>
         ${adminOk ? `Logged in: <code>${esc(logged)}</code><br>Builder status: <b>${esc(bs)}</b><br>DB is_admin: <b>yes</b><br>` : `Signed in as founder · run is_admin SQL after signup<br>`}
         <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe deploy checklist →</a><br>
-        <span style="font-size:12px;color:var(--muted)">CLI: <code>bash scripts/deploy-stripe.sh</code></span>
+        <span style="font-size:12px;color:var(--muted)">CLI: <code>bash scripts/deploy-stripe.sh</code> · <code>bash scripts/founder-setup.sh</code></span>
       </div>` : '';
     const connectBlock = isBuilder() ? `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
@@ -3186,6 +3188,14 @@
   $('reset-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitPasswordReset(); });
   $('reset-btn')?.addEventListener('click', submitPasswordReset);
 
+  function wireLandingHonesty() {
+    const copy = $('trust-pay-copy');
+    if (!copy) return;
+    copy.textContent = window.ORVO_CHECKOUT_LIVE
+      ? 'quote → Stripe Checkout (held) → release when done'
+      : 'quote → await Checkout → release when done';
+  }
+
   // ── BOOT ──
   $('boot-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
 
@@ -3217,6 +3227,7 @@
     consumeViewDeepLink();
     wireNavScroll();
     wireOfflineBanner();
+    wireLandingHonesty();
     track('app_boot', { authed: !!user });
   }
 

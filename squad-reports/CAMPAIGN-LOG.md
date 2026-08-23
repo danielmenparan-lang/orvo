@@ -285,3 +285,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Release stops on Connect/charge errors (no silent fallback except 501)
 - Builder Connect warning on release card; My requests **Continue checkout** label
 - `docs/payments/STRIPE-SMOKE-TEST.md` founder end-to-end guide
+
+## 2026-08-23T16:30Z — pulse (post-finale)
+- Webhook **charge.dispute.created** → request disputed + admin dispute row
+- `scripts/founder-setup.sh` ordered setup steps
+- Landing trust strip honesty (`ORVO_CHECKOUT_LIVE`); health panel smoke test link
