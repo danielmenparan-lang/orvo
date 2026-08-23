@@ -6,10 +6,11 @@
 הנישה: **סוכני WhatsApp בעברית לעסקים קטנים בישראל** (הזמנות, תורים, שאלות נפוצות, לידים). לקוח מפרסם בקשה → ORVO מתאים ידנית בונים מאומתים → הצעות מחיר → צ'אט בפלטפורמה → תשלום מוחזק עד אישור מסירה.
 
 **מה מנצח עכשיו:** אמון + התאמה אנושית (concierge) עד שיש נזילות (~20 עסקאות ששולמו).  
-**מה אסור:** לספר שיש Stripe מאובטח בזמן ש־`Accept & pay` מסמן "שולם" בלי כסף אמיתי; לפתוח לוח משרות ריק לכל העולם; להתרחב לקטגוריות AI כלליות לפני שיש צפיפות בנישה.
+**מה כבר תוקן בלילה:** העתקה באתר כבר לא טוענת "Stripe"; `is_admin` לא נכתב מהדפדפן; יש UI של delivered/release.  
+**מה עדיין אסור:** `Accept & pay` עדיין יכול לסמן funded בלי כסף — **לא לפרסם תשלום מאובטח** עד ש־P0-1 בבאקלוג ירוק.
 
 **כסף:** Checkout של Stripe → כסף אצל ORVO (hold) → בונה מסמן נמסר → לקוח משחרר → העברה ל־Connect Express. עמלה מייסדים 0%, יעד 10–12%.  
-**GTM:** וואטסאפ + לינקדאין + קוהורט בונים; נכסים מוכנים ב־`docs/marketing/LAUNCH-KIT.md` — הפרסום ידני של המייסד.
+**GTM:** וואטסאפ + לינקדאין + קוהורט בונים; נכסים ב־`docs/marketing/LAUNCH-KIT.md` — הפרסום ידני של המייסד.
 
 ---
 
@@ -20,18 +21,18 @@
 | Lock | Detail |
 |------|--------|
 | Buyer | Restaurant / clinic / salon / local service owner drowning in WhatsApp |
-| Job | Custom agent (not DIY SaaS template) — orders, booking, FAQ, lead capture |
-| Supply | 8–15 hand-vetted builders who know Meta WA Cloud API / n8n / Hebrew UX |
+| Job | Custom agent (not DIY SaaS) — orders, booking, FAQ, lead capture |
+| Supply | 8–15 hand-vetted builders (Meta WA Cloud API / n8n / Hebrew UX) |
 | Geography | Israel beachhead; Hebrew-first demand; English OK for builders |
-| Price band | ~₪3,500–₪12,000 custom builds (market anchors) |
-| Out of scope (v1) | Voice agents, generic RAG apps, enterprise agents, “any AI freelance,” public builder directory |
+| Price band | ~₪3,500–₪12,000 custom builds |
+| Out of scope (v1) | Voice agents, generic RAG, enterprise, “any AI freelance,” public builder directory |
 
-**Sharpness test:** Remove the logo. The first screen must still say WhatsApp agents for Israeli businesses — not “AI marketplace.”
+**Sharpness test:** Remove the logo. First screen still says WhatsApp agents for Israeli businesses — not “AI marketplace.”
 
-**Why this beats alternatives**
+**Why this wins**
 
 - vs **Upwork** — aisle, not mall; no Connects tax; Hebrew SMB journey  
-- vs **ServedByAI / Moltify** — locale + request-first + human WA delivery, not global AI catalog / autonomous micro-tasks  
+- vs **ServedByAI / Moltify** — locale + request-first + human WA delivery  
 - vs **Gambot / Manychat** — they are the highway (SaaS/BSP); ORVO finds the driver for custom work  
 
 ---
@@ -47,88 +48,82 @@ Client brief → Admin triage → Invite 1–3 builders → Quotes + chat
 
 | Object | Role |
 |--------|------|
-| Request | Spine of the journey (status, chat, pay, delivery) |
+| Request | Spine (status, chat, pay, delivery) |
 | Invite | Concierge assignment (add; demote browse-all) |
 | Quote | Price + scope; one winner per request |
-| Message | On-platform thread; contact leak blocked |
+| Message | On-platform; contact leak blocked server-side |
 | Payment | Hold → release (escrow-*like*, not legal escrow) |
-| Delivery | Structured handoff (URL + notes) before release |
+| Delivery | Mark delivered → client release |
 
-**Roles:** Client · Builder (pending → approved) · Admin (vet + match + exceptions). Dual-role is data-ok; do not design MVP nav around it.
+**Roles:** Client · Builder (pending → approved) · Admin (vet + match). Dual-role data-ok; do not design MVP nav around it.
 
 **Statuses (MVP truth)**
 
-- Request: `open` → `in_progress` / awaiting payment → `funded` → `delivered` → `completed` (+ `disputed` / `cancelled`)  
-- Payment: `pending` → `held` → `released` (never client-forged `paid` without Stripe)  
+- Request: `open` → `in_progress` / awaiting payment → `funded` → `delivered` → `completed` (+ `disputed`)  
+- Payment: `pending` → `held` → `released` (never client-forged `paid`)  
 - Quote: `pending` → `accepted` → `paid` after hold; siblings → `rejected`
 
-**IA rule:** One **Request detail** owns quotes, chat, pay, delivery. Lists are indexes, not the product.
+**IA:** One **Request detail** owns quotes, chat, pay, delivery. Lists are indexes.
 
 ---
 
 ## 3. Payments
 
-**Architecture (locked by Role 03):** Stripe **Connect Express** + **separate charges & transfers** + **Checkout Sessions**. Platform is merchant of record; funds sit on platform until client release; then `Transfer` with `source_transaction`.
+**Architecture (Role 03 lock):** Stripe **Connect Express** + **separate charges & transfers** + **Checkout Sessions**. Platform = merchant of record; funds on platform until client release; then `Transfer` with `source_transaction`.
 
 | Phase | Behavior |
 |-------|----------|
-| Now (honest) | No fake funded. Manual/ops path labeled clearly OR blocked |
-| Next | Edge Function creates Checkout per quote; webhook writes `held` + `funded` |
-| Release | Client (or auto 72h after deliver) → Transfer to builder Express account |
-| Fee | Founding **0%**; publish path to **10–12%** (builder net shown before accept) |
-| Currency | USD settlement MVP; **ILS display** for IL locale ASAP (agorot/`currency` column) |
+| Now (honest) | Landing copy OK; **still kill** fake `acceptQuote` funded path |
+| Next | Edge Function Checkout per quote; webhook writes `held` + `funded` |
+| Release | Client (or auto 72h after deliver) → Transfer to builder Express |
+| Fee | Founding **0%** → **10–12%**; builder net shown before accept |
+| Currency | USD settlement MVP; **ILS display** for IL ASAP |
 
 **UX language:** “Funds held by ORVO until you approve.” Avoid “escrow account” unless counsel says otherwise.
 
-**Hard rules**
-
-- Browser never sole authority for `held` / `released` / `funded`  
-- Fee percent authoritative on server  
-- Kill `STRIPE_PAYMENT_LINK` as the product path  
+**Hard rules:** Browser never sole authority for `held`/`released`/`funded` · fee authoritative on server · kill `STRIPE_PAYMENT_LINK` as product path.
 
 ---
 
 ## 4. UX principles
 
-1. **Brand-first hero** — ORVO as hero signal; one headline; one supporting line; one CTA group; full-bleed scene (WhatsApp-in-business atmosphere). No role cards, no fake job card in the first viewport.  
-2. **Client primary CTA** — “Post a WhatsApp agent request”; builder = quiet text link + builders section.  
-3. **Quotes before chat dump** — client sees quotes + Accept sheet with fee math.  
-4. **Delivery is a first-class step** — Mark delivered → Release payment (already stubbed in UI; must bind to real hold).  
-5. **Chat policy** — Keep deals on ORVO; demo hosts OK pre-pay; contact/payment diversion blocked; enforce **server-side**.  
-6. **Empty honesty** — “We’re matching you with 2 builders” beats a ghost board.  
-7. **Israel readiness** — RTL + Hebrew pack + ₪ formatting are product requirements for the beachhead (not polish).  
+1. **Brand-first hero** — ORVO hero-level; one headline; one line; one CTA group; full-bleed WhatsApp-in-business scene. No role cards / fake job card in first viewport.  
+2. **Client primary CTA** — “Post a WhatsApp agent request”; builder = quiet text link.  
+3. **Quotes before chat dump** — Accept sheet with fee math.  
+4. **Delivery first-class** — Mark delivered → Release (UI stubbed; bind to real hold).  
+5. **Chat policy** — Deals on ORVO; demo hosts OK pre-pay; enforce **server-side**.  
+6. **Empty honesty** — “Matching you with 2 builders” beats a ghost board.  
+7. **Israel ready** — RTL + Hebrew pack + ₪ are beachhead requirements.
 
 ---
 
 ## 5. GTM (30 days)
 
-**North star:** 40 waitlist/signups · 8 approved builders · 12 requests · 3 deals in motion (paid when rails allow).
+**North star:** 40 waitlist/signups · 8 approved builders · 12 requests · 3 deals in motion.
 
 | Priority | Move |
 |----------|------|
 | 1 | Seed **builders first** (8–15), WhatsApp/IL only |
 | 2 | Concierge demand via founder WhatsApp + LinkedIn |
-| 3 | Founding waitlist + manual match promise (48h, 2–3 quotes) |
+| 3 | Founding waitlist + manual match (48h, 2–3 quotes) |
 | 4 | Publish from `LAUNCH-KIT.md` / `10-social.md` — **founder only** |
-| 5 | SEO later: HE restaurant page + EN builders page (`09-content.md`) |
+| 5 | SEO later: HE restaurant page + EN builders (`09-content.md`) |
 
-**Offers that are allowed:** founding waitlist, founding builder cohort, founder-helped briefs, 0% fee on first deals.  
-**Forbidden:** fake profiles/jobs, fake social proof, “guaranteed results,” pushing pay-via-Stripe before P0 honesty gates.
+**Allowed:** waitlist, founding builders, founder-helped briefs, 0% first deals.  
+**Forbidden:** fake profiles/jobs, fake proof, “guaranteed results,” Stripe pay claims before P0-1 green.
 
-**Liquidity rule:** No public browse-jobs as the main loop until quote coverage ≥2 builders in 48h is real.
+**Liquidity:** No public browse-jobs as main loop until quote coverage ≥2 builders in 48h is real.
 
 ---
 
 ## 6. What “done” means for MVP
 
-A shippable ORVO MVP is **not** “feature-complete vs Upwork.” It is:
-
 1. Niche-clear landing and post form  
 2. Manual vetting + concierge invite → quote  
-3. Real hold payment (or explicitly pre-pay beta with no Stripe claims)  
-4. Deliver → release path both sides understand  
-5. Chat that cannot trivially leak the deal off-platform  
-6. Admin that is not a public email hardcoded in JS  
+3. Real hold payment (or explicit pre-pay beta with no Stripe claims)  
+4. Deliver → release both sides understand  
+5. Chat cannot trivially leak off-platform  
+6. Admin not a public email hardcoded as authority  
 
 Until item 3 is true, market **matching and waitlist**, not “secure Stripe marketplace.”
 
@@ -145,7 +140,7 @@ Until item 3 is true, market **matching and waitlist**, not “secure Stripe mar
 | Fee | 0% founding → 10–12% |
 | Expansion | Only after in-niche liquidity proven |
 
-**Sources:** `squad-reports/05`, `06`, `07`, `03`, `13`, `16`, `17`, `08`, `LAUNCH-KIT.md`.
+**Sources:** `squad-reports/01–08`, `11–14`, `16–17`, `19–20`, `LAUNCH-KIT.md`.
 
 ---
 
