@@ -14,6 +14,7 @@ Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops
 - [ ] `sql/008_quote_eta.sql` (`quotes.delivery_days`)
 - [ ] `sql/009_loop_hygiene.sql` (quote status + indexes)
 - [ ] `sql/010_payment_stripe_fields.sql` (held_at + Connect fields)
+- [ ] `sql/011_message_limits.sql` (body ≤ 2000)
 
 ## Privilege
 

@@ -358,6 +358,70 @@
   }
 
   // ── MODALS ──
+  function openPasswordResetModal() {
+    hideMsg('reset-msg');
+    if ($('reset-pass')) $('reset-pass').value = '';
+    if ($('reset-pass2')) $('reset-pass2').value = '';
+    $('reset-modal')?.classList.add('open');
+  }
+  function closePasswordReset() {
+    $('reset-modal')?.classList.remove('open');
+  }
+  async function submitPasswordReset() {
+    const p1 = ($('reset-pass')?.value || '');
+    const p2 = ($('reset-pass2')?.value || '');
+    if (p1.length < 6) {
+      showMsg('reset-msg', 'Password must be at least 6 characters', false);
+      return;
+    }
+    if (p1 !== p2) {
+      showMsg('reset-msg', 'Passwords do not match', false);
+      return;
+    }
+    const btn = $('reset-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating…'; }
+    try {
+      const { error } = await needDb().auth.updateUser({ password: p1 });
+      if (error) throw error;
+      closePasswordReset();
+      track('password_updated', {});
+      toast('Password updated — you are signed in', true);
+      routeAfterLogin();
+    } catch (e) {
+      showMsg('reset-msg', userFacingErr(e.message), false);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Update password'; }
+    }
+  }
+
+  function consumeViewDeepLink() {
+    if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get('view');
+    if (!v) return;
+    const allowed = new Set([
+      'requests', 'jobs', 'invites', 'quotes', 'messages', 'apply', 'status',
+      'profile', 'admin', 'all-requests', 'disputes',
+    ]);
+    if (!allowed.has(v)) return;
+    // Role gate soft: still open dash; go() will render empty/admin-only as needed
+    ensureDashOpen();
+    go(v);
+    params.delete('view');
+    const u = new URL(window.location.href);
+    u.search = params.toString();
+    window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
+  }
+
+  function wireNavScroll() {
+    const nav = document.querySelector('nav');
+    if (!nav) return;
+    const onScroll = () => {
+      nav.classList.toggle('scrolled', window.scrollY > 28);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
   function openAuth(tab) {
     hideMsg('login-msg'); hideMsg('signup-msg');
     $('auth-modal').classList.add('open');
@@ -1448,6 +1512,10 @@
     const input = $('chat-input');
     const body = input.value.trim();
     if (!body || !chatRequestId) return;
+    if (body.length > 2000) {
+      toast('Message too long (max 2000 characters)', false);
+      return;
+    }
     if (!isAdmin()) {
       const { data: req } = await needDb().from('requests').select('id,user_id,assigned_builder_id,status').eq('id', chatRequestId).maybeSingle();
       if (!(await canChatOnRequest(req))) {

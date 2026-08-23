@@ -13,6 +13,7 @@
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="ORVO — Custom AI agents, vetted builders"/>
 <meta name="twitter:description" content="Hire vetted builders for WhatsApp, voice, CRM, and automation agents worldwide."/>
+<meta name="theme-color" content="#0B1220"/>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B1220'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='18' font-weight='700' fill='%23FF6B35'%3EO%3C/text%3E%3C/svg%3E"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -70,6 +71,12 @@ nav{
   background:rgba(11,18,32,.72);backdrop-filter:blur(16px) saturate(1.05);
   -webkit-backdrop-filter:blur(16px) saturate(1.05);
   border-bottom:1px solid rgba(255,255,255,.06);
+  transition:background .25s var(--ease),box-shadow .25s var(--ease),border-color .25s;
+}
+nav.scrolled{
+  background:rgba(11,18,32,.92);
+  border-bottom-color:rgba(255,255,255,.1);
+  box-shadow:0 8px 28px rgba(11,18,32,.28);
 }
 .logo{font-family:var(--font-serif);font-size:24px;font-weight:600;color:var(--hero-fg);letter-spacing:-.01em}.logo span{color:var(--o)}
 .nav-links{display:flex;gap:32px;list-style:none}
@@ -558,6 +565,19 @@ footer{
   </div>
 </div>
 
+<!-- PASSWORD RESET (from email recovery link) -->
+<div class="modal-bg" id="reset-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-action="close-reset">✕</button>
+    <h2>Set a new password</h2>
+    <p class="sub">Choose a new password for your ORVO account</p>
+    <div id="reset-msg" class="msg hidden"></div>
+    <div class="field"><label>New password</label><input id="reset-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
+    <div class="field"><label>Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password"/></div>
+    <button class="btn-black" id="reset-btn">Update password</button>
+  </div>
+</div>
+
 <!-- POST -->
 <div class="modal-bg" id="post-modal">
   <div class="modal-box">
@@ -725,9 +745,9 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=24"></script>
-<script src="js/events.js?v=24"></script>
-<script src="supabase-config.js?v=24"></script>
-<script src="app.js?v=24"></script>
+<script src="js/chat-policy.js?v=25"></script>
+<script src="js/events.js?v=25"></script>
+<script src="supabase-config.js?v=25"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>
