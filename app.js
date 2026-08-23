@@ -20,6 +20,7 @@
   let postSignupIntent = 'client';
   let pendingClientPost = false;
   let adminChannel = null;
+  let disputesChannel = null;
   let quotesChannel = null;
   let notifChannel = null;
 
@@ -405,6 +406,16 @@
       .subscribe();
   }
 
+  function watchDisputes() {
+    if (!db || !isAdmin() || disputesChannel) return;
+    disputesChannel = needDb().channel('admin-disputes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'disputes' }, () => {
+        refreshDisputesBadge();
+        if ($('dashboard').classList.contains('open') && view === 'disputes') loadDisputes();
+      })
+      .subscribe();
+  }
+
   async function refreshUser() {
     if (!db) return;
     const { data: { session } } = await db.auth.getSession();
@@ -415,6 +426,7 @@
     if (user && isAdmin()) {
       refreshAdminBadge();
       watchBuilderApplications();
+      watchDisputes();
     }
     if (user) {
       watchIncomingQuotes();
@@ -428,6 +440,14 @@
       if (notifChannel && db) {
         db.removeChannel(notifChannel);
         notifChannel = null;
+      }
+      if (adminChannel && db) {
+        db.removeChannel(adminChannel);
+        adminChannel = null;
+      }
+      if (disputesChannel && db) {
+        db.removeChannel(disputesChannel);
+        disputesChannel = null;
       }
     }
   }
@@ -1244,6 +1264,11 @@
     }
     const qText = (window.__orvoJobsQuery || '').trim().replace(/[%_,]/g, ' ').slice(0, 80);
     body.innerHTML = loadingSkeleton(3);
+    const { data: activeJobs } = await needDb().from('requests')
+      .select('*')
+      .eq('assigned_builder_id', user.id)
+      .in('status', ['awaiting_payment', 'funded', 'delivered', 'in_progress', 'disputed'])
+      .order('updated_at', { ascending: false });
     let query = needDb().from('requests').select('*').eq('status', 'open').order('created_at', { ascending: false });
     if (qText) {
       query = query.or(`title.ilike.%${qText}%,description.ilike.%${qText}%,category.ilike.%${qText}%`);
@@ -1254,20 +1279,42 @@
       return;
     }
     const searchBar = `<input class="admin-search" id="jobs-search" type="search" placeholder="Search jobs by title, category…" value="${esc(window.__orvoJobsQuery || '')}" autocomplete="off"/>`;
-    if (!data?.length) {
-      body.innerHTML = searchBar + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
-        <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
+    const activeHtml = (activeJobs || []).length ? `
+      <h3 style="font-size:15px;margin:0 0 12px">Your active jobs</h3>
+      ${(activeJobs || []).map((r) => `
+      <div class="card" style="border-left:3px solid var(--o);margin-bottom:12px">
+        <h3>${esc(r.title)}</h3>
+        <p style="font-size:13px;color:var(--gray);margin:6px 0 10px">${esc((r.description || '').slice(0, 100))}${(r.description || '').length > 100 ? '…' : ''}</p>
+        <div class="row">
+          <span class="badge">${esc(statusLabel(r.status))}</span>
+          <button class="btn btn-primary btn-open-active" data-rid="${r.id}">Open project</button>
+        </div>
+      </div>`).join('')}
+      <hr style="border:none;border-top:1px solid var(--border);margin:20px 0 16px"/>
+      <h3 style="font-size:15px;margin:0 0 12px">Browse open jobs</h3>` : '';
+    const bindJobsSearch = () => {
       $('jobs-search')?.addEventListener('input', (e) => {
         window.__orvoJobsQuery = e.target.value || '';
         clearTimeout(window.__orvoJobsSearchT);
         window.__orvoJobsSearchT = setTimeout(loadJobs, 280);
       });
+    };
+    const bindActiveBtns = () => {
+      body.querySelectorAll('.btn-open-active').forEach((b) => {
+        b.addEventListener('click', () => go('chat', b.dataset.rid));
+      });
+    };
+    if (!data?.length) {
+      body.innerHTML = searchBar + activeHtml + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
+      bindJobsSearch();
+      bindActiveBtns();
       return;
     }
     const { data: myQuotes } = await needDb().from('quotes').select('request_id,status').eq('builder_id', user.id);
     const quotedIds = new Set((myQuotes || []).map(q => q.request_id));
     const pendingIds = new Set((myQuotes || []).filter(q => q.status === 'pending').map(q => q.request_id));
-    body.innerHTML = searchBar + data.map(r => {
+    body.innerHTML = searchBar + activeHtml + data.map(r => {
       const canMsg = isAdmin() || quotedIds.has(r.id) || r.assigned_builder_id === user.id;
       const already = pendingIds.has(r.id);
       return `
@@ -1283,11 +1330,8 @@
         </div>
       </div>`;
     }).join('');
-    $('jobs-search')?.addEventListener('input', (e) => {
-      window.__orvoJobsQuery = e.target.value || '';
-      clearTimeout(window.__orvoJobsSearchT);
-      window.__orvoJobsSearchT = setTimeout(loadJobs, 280);
-    });
+    bindJobsSearch();
+    bindActiveBtns();
     body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
     body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
   }
@@ -2111,20 +2155,29 @@
     const byId = new Map();
     // Own requests (client relationship)
     const { data: own } = await needDb().from('requests')
-      .select('id,title,created_at').eq('user_id', user.id);
-    (own || []).forEach(r => byId.set(r.id, { id: r.id, title: r.title, t: r.created_at }));
+      .select('id,title,created_at,status').eq('user_id', user.id);
+    (own || []).forEach(r => byId.set(r.id, { id: r.id, title: r.title, t: r.created_at, status: r.status }));
 
     if (isBuilder() || isAdmin()) {
       const { data: quotes } = await needDb().from('quotes')
-        .select('request_id, requests(title,created_at)').eq('builder_id', user.id);
+        .select('request_id, requests(title,created_at,status)').eq('builder_id', user.id);
       (quotes || []).forEach(q => {
         if (!q.request_id || byId.has(q.request_id)) return;
-        byId.set(q.request_id, { id: q.request_id, title: q.requests?.title, t: q.requests?.created_at });
+        byId.set(q.request_id, {
+          id: q.request_id,
+          title: q.requests?.title,
+          t: q.requests?.created_at,
+          status: q.requests?.status,
+        });
       });
       const { data: assigned } = await needDb().from('requests')
-        .select('id,title,created_at').eq('assigned_builder_id', user.id);
+        .select('id,title,created_at,status').eq('assigned_builder_id', user.id);
       (assigned || []).forEach(r => {
-        if (!byId.has(r.id)) byId.set(r.id, { id: r.id, title: r.title, t: r.created_at });
+        if (!byId.has(r.id)) byId.set(r.id, { id: r.id, title: r.title, t: r.created_at, status: r.status });
+        else {
+          const cur = byId.get(r.id);
+          cur.status = r.status;
+        }
       });
     }
 
@@ -2167,6 +2220,7 @@
         <p class="thread-snippet">${esc(snippet)}</p>
         <div class="thread-meta">
           ${isUnread ? '<span class="badge-new">New</span>' : ''}
+          ${r.status ? `<span class="badge">${esc(statusLabel(r.status))}</span>` : ''}
           <span class="badge">${ago(t)}</span>
         </div>
       </div>`;
@@ -2549,7 +2603,8 @@
         Logged in: <code>${esc(logged)}</code><br>
         Builder status: <b>${esc(bs)}</b><br>
         DB is_admin: <b>yes</b><br>
-        <a href="founder-checklist.html" target="_blank" rel="noopener" style="color:var(--o)">Founder SQL smoke checklist →</a>
+        <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" style="color:var(--o)">Founder SQL smoke checklist →</a><br>
+        <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe deploy checklist →</a>
       </div>` : '';
     const connectBlock = isBuilder() ? `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">

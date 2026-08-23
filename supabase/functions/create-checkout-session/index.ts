@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
   //      metadata: { request_id, quote_id },
   //      payment_intent_data: { transfer_group: `orvo_${request_id}` },
   //    })
-  // 4. Upsert payments.stripe_checkout_session_id
+  // 4. Upsert payments: status = checkout_open, stripe_checkout_session_id
   // 5. Return { url: session.url }
   return jsonResponse({
     error: 'not_implemented',

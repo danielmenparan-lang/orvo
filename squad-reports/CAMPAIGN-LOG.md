@@ -229,3 +229,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Checkout return `rid` deep link → request chat
 - Admin all-requests status filter chips; confirm note counter
 - `CAMPAIGN-FINALE-HE.md` + `JUDGE-WAVE-10h.md` (campaign finale)
+
+## 2026-08-23T11:30Z — pulse
+- Builder active jobs strip; thread status badges
+- Admin disputes Realtime badge; founder Stripe deploy links
+- Edge checkout `checkout_open` upsert documented
