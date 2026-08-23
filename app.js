@@ -1283,6 +1283,7 @@
     }
     $('apply-btn').addEventListener('click', doApply);
     $('apply-cancel')?.addEventListener('click', () => go('status'));
+    wireFieldCounter('apply-bio', 'apply-bio-count', 2000);
   }
 
   async function doApply() {
@@ -1776,12 +1777,21 @@
       const isClient = req.user_id === user.id;
       const isAssigned = req.assigned_builder_id === user.id;
       if (isClient && req.status === 'awaiting_payment') {
+        const payStatus = payRow?.status || 'pending';
         const payBadge = payRow ? statusLabel(payRow.status) : 'No payment row';
+        const checkoutOpen = payStatus === 'checkout_open';
+        const checkoutLive = !!window.ORVO_CHECKOUT_LIVE;
+        const payNote = checkoutOpen
+          ? 'You started checkout but did not finish. Complete payment to hold funds until delivery — not funded until Checkout succeeds.'
+          : 'Quote accepted. Checkout holds funds until you approve delivery — not funded until Checkout completes.';
+        const btnLabel = checkoutOpen
+          ? (checkoutLive ? 'Continue to Stripe Checkout' : 'Resume checkout')
+          : (checkoutLive ? 'Pay with Stripe Checkout' : 'Try checkout again');
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Payment</b>
-          <p>Quote accepted. Checkout holds funds until you approve delivery — not funded until Checkout completes.</p>
+          <p>${payNote}</p>
           <p style="font-size:12px;color:var(--muted);margin:8px 0">Payment: <span class="badge">${esc(payBadge)}</span>
             ${payRow ? ' · ' + money(payRow.amount_cents) : ''}</p>
-          <button class="btn btn-primary" id="btn-retry-checkout" data-rid="${rid}" data-qid="${payRow?.quote_id || ''}">Try checkout again</button>
+          <button class="btn btn-primary" id="btn-retry-checkout" data-rid="${rid}" data-qid="${payRow?.quote_id || ''}" data-label="${esc(btnLabel)}">${esc(btnLabel)}</button>
           </div>`;
       }
       if (isAssigned && req.status === 'funded') {
@@ -1855,7 +1865,7 @@
         return;
       }
       btn.disabled = false;
-      btn.textContent = 'Try checkout again';
+      btn.textContent = btn.dataset.label || 'Try checkout again';
       toast(checkout.reason === 'not_configured'
         ? 'Checkout not live yet — no card charged'
         : 'Checkout unavailable — still awaiting payment', false);
@@ -2015,6 +2025,7 @@
     pendingReview = { rid, builderId, rating: 0 };
     hideMsg('review-msg');
     if ($('review-body')) $('review-body').value = '';
+    wireFieldCounter('review-body', 'review-count', 500);
     document.querySelectorAll('.star-btn').forEach((b) => b.classList.remove('on'));
     $('review-modal')?.classList.add('open');
   }
@@ -2120,6 +2131,7 @@
     pendingDisputeRid = rid;
     hideMsg('dispute-msg');
     if ($('dispute-details')) $('dispute-details').value = '';
+    wireFieldCounter('dispute-details', 'dispute-count', 2000);
     $('dispute-modal')?.classList.add('open');
   }
 

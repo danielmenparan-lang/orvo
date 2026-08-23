@@ -554,6 +554,7 @@ footer{
   <footer>
     <div class="footer-meta">
       <span>© 2026 ORVO — Custom AI agents · Global marketplace</span>
+      <span class="footer-he">Hebrew UI coming · USD quotes · 0% founding fee</span>
     </div>
     <div class="footer-links">
       <a href="#how">How it works</a>
@@ -715,7 +716,8 @@ footer{
     <div id="dispute-msg" class="msg hidden"></div>
     <div class="field">
       <label>What went wrong?</label>
-      <textarea id="dispute-details" rows="5" placeholder="Describe the issue (at least 20 characters)…"></textarea>
+      <textarea id="dispute-details" rows="5" placeholder="Describe the issue (at least 20 characters)…" maxlength="2000"></textarea>
+      <p class="chat-meta" id="dispute-count">0 / 2000</p>
     </div>
     <div class="pay-actions">
       <button class="btn-black" id="dispute-confirm-btn">Open dispute</button>
@@ -761,7 +763,8 @@ footer{
     </div>
     <div class="field">
       <label>Short review <span style="font-weight:400;color:var(--gray)">(optional, 20+ chars)</span></label>
-      <textarea id="review-body" rows="3" placeholder="What went well?"></textarea>
+      <textarea id="review-body" rows="3" placeholder="What went well?" maxlength="500"></textarea>
+      <p class="chat-meta" id="review-count">0 / 500</p>
     </div>
     <div class="pay-actions">
       <button class="btn-black" id="review-confirm-btn">Submit review</button>
@@ -789,10 +792,10 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=33"></script>
-<script src="js/events.js?v=33"></script>
-<script src="js/status-spine.js?v=33"></script>
-<script src="supabase-config.js?v=33"></script>
-<script src="app.js?v=33"></script>
+<script src="js/chat-policy.js?v=35"></script>
+<script src="js/events.js?v=35"></script>
+<script src="js/status-spine.js?v=35"></script>
+<script src="supabase-config.js?v=35"></script>
+<script src="app.js?v=35"></script>
 </body>
 </html>

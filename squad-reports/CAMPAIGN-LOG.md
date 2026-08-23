@@ -213,3 +213,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Post title / apply bio / dispute char counters
 - `sql/020_payment_checkout_open.sql`; release Edge uses stripe-env
 - `checkout_open` payment status label
+
+## 2026-08-23T10:00Z — pulse
+- Dispute + apply bio counters committed; review modal counter (500)
+- `checkout_open` resume/continue checkout UX in chat escrow card
+- Footer HE line; `JUDGE-WAVE-8h.md` (integrity PASS, Stripe blocked)

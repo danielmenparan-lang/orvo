@@ -35,7 +35,7 @@
 
 **Honesty status (code):** Accept → `awaiting_payment` + `payments.pending` only. Client checkout calls Edge Function; without secrets → awaiting UI (not funded). Release requires `held`. Sibling quotes rejected.
 
-**Founder still:** Apply SQL 001→019 on Supabase; set `is_admin`; add Stripe secrets + deploy functions (`STRIPE-DEPLOY-CHECKLIST.md`); flip `ORVO_CHECKOUT_LIVE` when Checkout is live.
+**Founder still:** Apply SQL 001→020 on Supabase; set `is_admin`; add Stripe secrets + deploy functions (`STRIPE-DEPLOY-CHECKLIST.md`); flip `ORVO_CHECKOUT_LIVE` when Checkout is live.
 
 **Next code polish:** ~~quote counts on requests~~ · ~~form counters~~ · ~~jobs search debounce~~ · ~~release stripe-env~~ — remaining: live Stripe implementation.
 
