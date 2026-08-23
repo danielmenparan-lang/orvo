@@ -171,16 +171,64 @@ alter table public.payments enable row level security;
 -- profiles
 drop policy if exists profiles_select on public.profiles;
 create policy profiles_select on public.profiles for select to authenticated
-  using (true);
+  using (
+    id = auth.uid()
+    or public.is_orvo_admin()
+    or exists (
+      select 1 from public.quotes q
+      join public.requests r on r.id = q.request_id
+      where (q.builder_id = profiles.id and r.user_id = auth.uid())
+         or (q.builder_id = auth.uid() and r.user_id = profiles.id)
+         or (r.assigned_builder_id = profiles.id and r.user_id = auth.uid())
+    )
+  );
 
 drop policy if exists profiles_insert_own on public.profiles;
 create policy profiles_insert_own on public.profiles for insert to authenticated
-  with check (id = auth.uid());
+  with check (id = auth.uid() and coalesce(is_admin, false) = false);
 
 drop policy if exists profiles_update_own on public.profiles;
 create policy profiles_update_own on public.profiles for update to authenticated
   using (id = auth.uid() or public.is_orvo_admin())
   with check (id = auth.uid() or public.is_orvo_admin());
+
+-- Prevent privilege escalation on profiles
+create or replace function public.protect_profile_privileges()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.is_admin := false;
+    if new.builder_status is null or new.builder_status not in ('none', 'pending') then
+      new.builder_status := 'none';
+    end if;
+    return new;
+  end if;
+
+  if not public.is_orvo_admin() then
+    new.is_admin := old.is_admin;
+    -- users may only move themselves into pending (apply as builder)
+    if new.builder_status is distinct from old.builder_status then
+      if not (
+        new.builder_status = 'pending'
+        and coalesce(old.builder_status, 'none') in ('none', 'pending', 'rejected')
+      ) then
+        new.builder_status := old.builder_status;
+      end if;
+    end if;
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_protect_profile_privileges on public.profiles;
+create trigger trg_protect_profile_privileges
+  before insert or update on public.profiles
+  for each row execute function public.protect_profile_privileges();
 
 -- builder_applications
 drop policy if exists apps_select on public.builder_applications;
@@ -191,9 +239,31 @@ drop policy if exists apps_insert on public.builder_applications;
 create policy apps_insert on public.builder_applications for insert to authenticated
   with check (user_id = auth.uid());
 
+-- Applicants may update their own pending application text; only admin changes status
 drop policy if exists apps_update on public.builder_applications;
 create policy apps_update on public.builder_applications for update to authenticated
-  using (user_id = auth.uid() or public.is_orvo_admin());
+  using (user_id = auth.uid() or public.is_orvo_admin())
+  with check (user_id = auth.uid() or public.is_orvo_admin());
+
+create or replace function public.protect_application_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_orvo_admin() then
+    new.status := old.status;
+    new.reviewed_at := old.reviewed_at;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_protect_application_status on public.builder_applications;
+create trigger trg_protect_application_status
+  before update on public.builder_applications
+  for each row execute function public.protect_application_status();
 
 -- requests
 drop policy if exists requests_select on public.requests;

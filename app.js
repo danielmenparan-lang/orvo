@@ -233,15 +233,13 @@
 
     const cfg = cfgAdminEmail();
     const my = myEmail();
-    const makeAdmin = cfg && my && cfg === my;
+    // Admin is granted only in Supabase SQL — never self-elevate from the client
+    const isConfiguredAdmin = !!(cfg && my && cfg === my);
 
     if (data) {
       profile = { ...data, email: data.email || user.email };
-      if (makeAdmin) {
-        profile.is_admin = true;
-        if (!data.is_admin) {
-          await needDb().from('profiles').update({ is_admin: true, email: user.email }).eq('id', user.id);
-        }
+      if (isConfiguredAdmin && !data.is_admin) {
+        console.warn('ORVO: set is_admin=true in Supabase for', my, '(client cannot self-elevate)');
       }
       return;
     }
@@ -251,8 +249,8 @@
       full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
       email: user.email,
       role: 'client',
-      builder_status: null,
-      is_admin: makeAdmin,
+      builder_status: 'none',
+      is_admin: false,
     };
     const { data: inserted, error: insErr } = await needDb().from('profiles').insert(row).select().single();
     if (insErr) {
