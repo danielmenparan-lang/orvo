@@ -19,6 +19,7 @@
   let postSignupIntent = 'client';
   let adminChannel = null;
   let quotesChannel = null;
+  let notifChannel = null;
 
   const $ = (id) => document.getElementById(id);
   const FEE = () => window.ORVO_FEE_PERCENT || 0;
@@ -352,11 +353,39 @@
       refreshAdminBadge();
       watchBuilderApplications();
     }
-    if (user) watchIncomingQuotes();
-    else if (quotesChannel && db) {
-      db.removeChannel(quotesChannel);
-      quotesChannel = null;
+    if (user) {
+      watchIncomingQuotes();
+      watchNotifications();
+      refreshNotifBadge();
+    } else {
+      if (quotesChannel && db) {
+        db.removeChannel(quotesChannel);
+        quotesChannel = null;
+      }
+      if (notifChannel && db) {
+        db.removeChannel(notifChannel);
+        notifChannel = null;
+      }
     }
+  }
+
+  function watchNotifications() {
+    if (!db || !user || notifChannel) return;
+    notifChannel = needDb().channel('notif-in')
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'notifications',
+        filter: 'user_id=eq.' + user.id,
+      }, (payload) => {
+        const n = payload.new;
+        if (!n) return;
+        track('notification_received', { kind: n.kind });
+        toast(n.title || 'New notification', true);
+        refreshNotifBadge();
+        if ($('dashboard').classList.contains('open') && view === 'notifications') {
+          loadNotifications();
+        }
+      })
+      .subscribe();
   }
 
   // ── NAV ──
@@ -483,9 +512,23 @@
     $('panel-login').classList.toggle('hidden', !login);
     $('panel-signup').classList.toggle('hidden', login);
   }
+  function wireFieldCounter(inputId, metaId, max) {
+    const input = $(inputId);
+    const meta = $(metaId);
+    if (!input || !meta) return;
+    const sync = () => {
+      const n = (input.value || '').length;
+      meta.textContent = n + ' / ' + max;
+      meta.classList.toggle('warn', n > max * 0.9);
+    };
+    input.addEventListener('input', sync);
+    sync();
+  }
+
   function openPost() {
     if (!user) { openAuth('login'); showMsg('login-msg', 'Sign in first', false); return; }
     hideMsg('post-msg');
+    wireFieldCounter('post-desc', 'post-count', 4000);
     $('post-modal').classList.add('open');
   }
   function closePost() { $('post-modal').classList.remove('open'); }
@@ -495,6 +538,7 @@
     $('quote-price').value = '';
     if ($('quote-eta')) $('quote-eta').value = '';
     $('quote-text').value = '';
+    wireFieldCounter('quote-text', 'quote-count', 2000);
     $('quote-modal').classList.add('open');
   }
   function closeQuote() { $('quote-modal').classList.remove('open'); quoteRequestId = null; }
@@ -799,7 +843,7 @@
     else if (v === 'admin') loadAdmin();
     else if (v === 'all-requests') loadAllRequests();
     else if (v === 'disputes') loadDisputes();
-    if (v === 'notifications') {
+    else if (v === 'notifications') {
       $('view-action').innerHTML = '<button class="btn btn-ghost" id="btn-mark-all-read" style="padding:8px 12px;font-size:12px">Mark all read</button>';
       $('btn-mark-all-read')?.addEventListener('click', async () => {
         try {
@@ -886,6 +930,7 @@
             const rid = new URLSearchParams(link.replace(/^\?/, '')).get('rid');
             if (rid) { go('chat', rid); return; }
           }
+          if (link.includes('view=invites')) { go('invites'); return; }
           if (link.includes('view=messages')) { go('messages'); return; }
           loadNotifications();
         });
@@ -1240,8 +1285,22 @@
       return;
     }
     refreshAdminBadge();
-    $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button>';
+    $('view-action').innerHTML = `
+      <button class="btn btn-ghost" id="admin-events" title="Copy client analytics buffer">Copy events</button>
+      <button class="btn btn-ghost" id="admin-refresh">Refresh</button>`;
     $('admin-refresh')?.addEventListener('click', loadAdmin);
+    $('admin-events')?.addEventListener('click', async () => {
+      const rows = window.ORVO_EVENTS?.dump?.() || [];
+      const text = JSON.stringify(rows, null, 2);
+      try {
+        await navigator.clipboard.writeText(text);
+        toast('Copied ' + rows.length + ' session events', true);
+      } catch {
+        toast(rows.length ? 'Events in console' : 'No events yet', true);
+        console.info('[ORVO] events dump', rows);
+      }
+      track('admin_events_copied', { n: rows.length });
+    });
 
     const countOf = async (table, filter) => {
       let q = needDb().from(table).select('*', { count: 'exact', head: true });

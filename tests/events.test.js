@@ -6,10 +6,19 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
+const store = {};
 const code = fs.readFileSync(path.join(__dirname, '../js/events.js'), 'utf8');
-const sandbox = { console, CustomEvent: class CustomEvent {
-  constructor(type, init) { this.type = type; this.detail = init && init.detail; }
-} };
+const sandbox = {
+  console,
+  localStorage: {
+    getItem: (k) => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v); },
+    removeItem: (k) => { delete store[k]; },
+  },
+  CustomEvent: class CustomEvent {
+    constructor(type, init) { this.type = type; this.detail = init && init.detail; }
+  },
+};
 sandbox.globalThis = sandbox;
 sandbox.window = sandbox;
 sandbox.dispatchEvent = () => {};
@@ -26,5 +35,9 @@ api.track('unit_test', { ok: true });
 const dump = api.dump();
 assert(Array.isArray(dump) && dump.length >= 1, 'dump has events');
 assert(dump[dump.length - 1].event === 'unit_test', 'last event name');
+assert(typeof api.clear === 'function', 'clear exists');
+assert(store.orvo_events_v1, 'persisted to localStorage');
+api.clear();
+assert(api.dump().length === 0, 'cleared');
 
 console.log('events tests passed');

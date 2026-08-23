@@ -629,7 +629,8 @@ footer{
         <button type="button" class="btn btn-ghost goal-chip" data-goal="Capture and qualify leads into my CRM">Leads</button>
         <button type="button" class="btn btn-ghost goal-chip" data-goal="Automate internal ops workflows">Ops</button>
       </div>
-      <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..."></textarea>
+      <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..." maxlength="4000"></textarea>
+      <p class="chat-meta" id="post-count">0 / 4000</p>
     </div>
     <div class="field"><label>Category</label>
       <select id="post-cat"><option>WhatsApp / Chat</option><option>Voice / Phone</option><option>Automation</option><option>CRM / Email</option><option>Other</option></select>
@@ -661,7 +662,9 @@ footer{
       <p class="field-hint">Minimum $50 · Global marketplace — quote in USD for now</p>
     </div>
     <div class="field"><label>Delivery estimate (days)</label><input id="quote-eta" type="number" min="1" max="180" placeholder="e.g. 14"/></div>
-    <div class="field"><label>Message</label><textarea id="quote-text" placeholder="Why you're the right builder..."></textarea></div>
+    <div class="field"><label>Message</label><textarea id="quote-text" placeholder="Why you're the right builder..." maxlength="2000"></textarea>
+      <p class="chat-meta" id="quote-count">0 / 2000</p>
+    </div>
     <button class="btn-black" id="quote-btn">Send quote</button>
   </div>
 </div>
@@ -773,10 +776,10 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=28"></script>
-<script src="js/events.js?v=28"></script>
-<script src="js/status-spine.js?v=28"></script>
-<script src="supabase-config.js?v=28"></script>
-<script src="app.js?v=28"></script>
+<script src="js/chat-policy.js?v=29"></script>
+<script src="js/events.js?v=29"></script>
+<script src="js/status-spine.js?v=29"></script>
+<script src="supabase-config.js?v=29"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>
