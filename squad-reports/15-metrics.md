@@ -1,231 +1,238 @@
-# 15 — Metrics
+# 15 — Metrics & Analytics
 
-**Role:** Metrics  
-**Product:** ORVO — client posts → vetted builders quote → chat & pay on-platform  
-**Instrumentation target:** `analytics_events` (see `14-schema.md`) + Stripe + admin SQL views
+**Role:** Product metrics  
+**Sources:** `app.js` flows, `sql/001_mvp_schema.sql` event surfaces  
+**Date:** 2026-08-23
 
 ---
 
-## 1. North star
+## Verdict
 
-**Primary north star:** **Funded projects per week**  
-Definition: count of distinct `payments` that reach status `held` (client money in escrow) in the week (UTC).
+ORVO’s north star is **completed escrowed jobs** (client paid → builder delivered → client released). Everything else is a funnel into that. Instrument **product events** in the client first (lightweight), then mirror critical money events from Stripe webhooks + SQL when payments leave the browser.
 
-Why this metric:
-- Proves both sides of the marketplace worked (request + approved builder + quote + trust to pay).
-- Leads revenue (`sum(platform_fee_cents)` on later `released`).
-- Harder to game than signups or pageviews.
+---
 
-**Guardrail north stars (always read with primary):**
+## North star
 
-| Guardrail | Definition | Red flag |
+| Metric | Definition | Why |
+|--------|------------|-----|
+| **NS: Completed funded jobs / week** | Count of `requests` where `status` became `completed` **and** linked `payments.status = 'released'` in the period | Proves marketplace value: money moved under ORVO escrow promise |
+
+### Guardrail metrics (do not optimize NS alone)
+
+| Guardrail | Definition | Alert if |
 |-----------|------------|----------|
-| **Release rate** | `released` / `held` within 30 days | < 70% → delivery/trust broken |
-| **Dispute rate** | disputes opened / held payments | > 8% → quality or scope issues |
-| **Take-home GMV** | sum `amount_cents` where status ∈ (`held`,`released`) | flat while signups rise → fake demand |
+| Chargeback / refund rate | `payments` → `refunded` / funded | Rising after Stripe live |
+| Off-platform block rate | Chat validation failures / messages attempted | Spike = UX confusion or evasion surge |
+| Time-to-admin-review | `builder_applications.reviewed_at − created_at` | p50 > 48h (product copy promise) |
+| Builder approval rate | approved / (approved+rejected) trailing 30d | Collapse = supply dry-up or bar too high |
 
-**Secondary business metric:** **Net platform revenue / week** = sum `platform_fee_cents` where payment `released` that week.
+### Supporting product KPIs
 
----
-
-## 2. Funnel metrics
-
-### A. Client acquisition → first fund
-
-| Step | Event / SQL | Conversion |
-|------|-------------|------------|
-| 1 Land | `page_view` (landing) | — |
-| 2 Signup intent client | `signup_start` `{intent:client}` | land → start |
-| 3 Account created | `signup_complete` | start → complete |
-| 4 First request posted | `request_created` | complete → post |
-| 5 First quote received | `quote_received` (client-side on load) | post → quote |
-| 6 Accept & pay started | `checkout_started` | quote → checkout |
-| 7 Escrow held | `payment_held` | checkout → held |
-| 8 Delivery approved / auto-release | `payment_released` | held → released |
-| 9 Review submitted | `review_submitted` | released → review |
-
-**MVP client funnel KPIs (weekly):**
-- Signup → first request: target ≥ 40%
-- Request → ≥1 quote within 72h: target ≥ 50% (liquidity)
-- Quote → held: target ≥ 25%
-- Held → released ≤14d: target ≥ 80%
-
-### B. Builder acquisition → first payout
-
-| Step | Event |
-|------|--------|
-| 1 Builder CTA | `signup_start` `{intent:builder}` |
-| 2 Application submit | `builder_apply_submitted` |
-| 3 Approved | `builder_approved` |
-| 4 First quote sent | `quote_sent` |
-| 5 Quote accepted | `quote_accepted` |
-| 6 First held job | `builder_first_funded` |
-| 7 First release | `builder_first_payout` |
-
-**Builder KPIs:**
-- Apply → approve (7d): track median time + rate
-- Approve → first quote (7d): ≥ 60%
-- Quote → accept: ≥ 15% (early market)
-- Funded → payout: ≥ 85%
-
-### C. Trust / chat funnel (leakage)
-
-| Metric | Definition |
-|--------|------------|
-| Moderation block rate | `chat_moderation_events` / messages attempted |
-| Off-platform intent density | blocks per funded request |
-| Pre-fund link blocks | blocks where request not yet `funded` |
-
-Rising block rate with flat held payments → filter noise. Rising blocks + falling held → leakage pressure.
+| KPI | Formula (SQL-friendly) |
+|-----|------------------------|
+| Liquidity | open requests with ≥1 quote / open requests |
+| Quote→accept | quotes `accepted`+`paid` / quotes created |
+| Accept→fund | payments `paid`\|`held` / quotes accepted |
+| Fund→complete | requests completed / requests funded |
+| GMV | sum `payments.amount_cents` where status in (`paid`,`held`,`released`) |
+| Net revenue | sum `platform_fee_cents` on `released` (or `held` once Stripe) |
+| Active builders | distinct `builder_id` with quote or message in 30d |
+| Active clients | distinct `user_id` with request in 30d |
 
 ---
 
-## 3. Admin dashboard KPIs
+## Funnels
 
-Group for a single **Ops** screen (alongside Review builders).
+### A — Client acquisition → first post
 
-### Liquidity
-| KPI | Query sketch |
-|-----|----------------|
-| Open requests | `count(*) from requests where status = 'open'` |
-| Pending builder apps | `count(*) from builder_applications where status = 'pending'` |
-| Approved builders (active 14d) | approved profiles with quote or message in 14d |
-| Quotes per open request (7d) | avg quotes on requests created last 7d |
-| Time-to-first-quote (p50) | median hours open → first quote |
+```
+land (marketing / home)
+  → signup_intent=client | login
+  → auth_success
+  → request_posted          -- doPost
+  → request_opened_chat     -- go('chat')
+  → quote_received          -- first quotes row for request
+  → quote_accepted          -- acceptQuote start
+  → payment_recorded        -- payments insert (manual or Stripe)
+  → delivery_marked         -- status delivered
+  → payment_released        -- completed + released
+```
 
-### Money
-| KPI | Definition |
-|-----|------------|
-| GMV held (MTD) | sum amount_cents where held_at in month |
-| GMV released (MTD) | sum where released_at in month |
-| Fees accrued / collected | fee on held vs released |
-| Pending payouts | held, not released, no open dispute |
-| Auto-release due ≤24h | `auto_release_at < now() + 24h` |
+**Primary conversion:** `auth_success (client)` → `request_posted` → `payment_released`  
+**Drop-off to watch:** post→quote (supply), accept→pay (trust/Stripe), fund→release (delivery quality).
 
-### Trust
-| KPI | Definition |
-|-----|------------|
-| Open disputes | status in (`open`,`under_review`) |
-| Dispute age p50/p90 | hours since created_at |
-| Avg builder rating (30d) | from reviews |
-| Chat blocks (24h) | moderation events |
-| Trust holds | `profiles.trust_hold = true` |
+### B — Builder acquisition → first paid job
 
-### Quality / SLA
-| KPI | Target |
-|-----|--------|
-| Application review lag | p50 < 24h, p90 < 48h |
-| Dispute resolve lag | p50 < 72h |
-| Stuck funded (>14d, not delivered) | count → intervene |
+```
+land
+  → signup_intent=builder | apply CTA
+  → auth_success
+  → builder_application_submitted
+  → builder_approved | builder_rejected
+  → job_viewed (browse open)
+  → quote_sent
+  → quote_accepted (as assignee)
+  → delivery_marked
+  → payout_released
+```
 
-### Suggested admin tiles (8)
-1. Funded this week (north star)  
-2. Pending applications  
-3. Open disputes  
-4. GMV held  
-5. Release rate 30d  
-6. Open requests w/ 0 quotes  
-7. Chat blocks 24h  
-8. Fee revenue MTD  
+**Primary conversion:** `builder_application_submitted` → `builder_approved` → `quote_sent` → `payout_released`
+
+### C — Admin ops
+
+```
+builder_application_submitted
+  → admin_badge_seen / admin_review_opened
+  → builder_approved | builder_rejected
+```
+
+Track review latency; not a growth funnel but a bottleneck for Funnel B.
+
+### Funnel stage ownership (data)
+
+| Stage | Source of truth |
+|-------|-----------------|
+| Auth / intent | Client events + `auth.users` |
+| Requests / quotes / messages | Tables in `001` |
+| Applications / approve | `builder_applications` + `profiles.builder_status` |
+| Money | `payments` (+ Stripe webhooks later) |
+| Chat policy blocks | Client-only until Edge moderation |
 
 ---
 
-## 4. Event tracking plan
+## Event catalog
 
-### Principles
-- Emit from client for UX funnels; **confirm money events from server/webhook** (`payment_held`, `payment_released`).
-- `event_name` snake_case; `properties` JSON; always include `request_id` / `quote_id` / `payment_id` when relevant.
-- Do not put PII in properties (no message bodies, emails). Use ids + hashed moderation snippets server-side only.
-- Idempotency: payment events keyed by `payment_id` + status (dedupe in warehouse later).
+Name events in `snake_case`. Properties below are minimum; always attach `user_id`, `role` (`client|builder|admin|pending`), `timestamp`.
 
-### Event catalog
+### Auth & navigation
 
-| event_name | When | properties |
-|------------|------|------------|
-| `page_view` | Landing / key pages | `path`, `referrer` |
-| `cta_click` | Hero / nav CTAs | `cta` (`client_start`\|`builder_start`\|`post`) |
-| `signup_start` | Auth signup tab | `intent` |
-| `signup_complete` | Session after signup | `intent` |
-| `login` | Successful login | — |
-| `request_created` | After insert requests | `request_id`, `category` |
-| `request_opened_chat` | Client opens chat | `request_id` |
-| `builder_apply_submitted` | Application upsert | `application_id` |
-| `builder_approved` | Admin approve | `builder_id` |
-| `builder_rejected` | Admin reject | `builder_id` |
-| `jobs_viewed` | Builder loads open jobs | `count` |
-| `quote_sent` | Quote insert | `quote_id`, `request_id`, `amount_cents` |
-| `quote_received` | Client sees new quote | `quote_id`, `request_id` |
-| `checkout_started` | Accept & pay confirm | `quote_id`, `request_id`, `amount_cents` |
-| `payment_pending` | payments insert pending | `payment_id` |
-| `payment_held` | Webhook/admin → held | `payment_id`, `amount_cents` |
-| `payment_released` | Release | `payment_id`, `fee_cents` |
-| `payment_refunded` | Refund | `payment_id` |
-| `delivery_submitted` | deliveries insert | `request_id` |
-| `delivery_approved` | Client approve | `request_id` |
-| `auto_release_fired` | Cron/job | `request_id`, `payment_id` |
-| `dispute_opened` | Dispute create | `dispute_id`, `reason` |
-| `dispute_resolved` | Admin resolve | `dispute_id`, `outcome` |
-| `review_submitted` | Review create | `rating`, `builder_id` |
-| `chat_message_sent` | Message insert ok | `request_id`, `request_status` |
-| `chat_message_blocked` | Filter/trigger reject | `request_id`, `reason` |
-| `trust_hold_set` | Admin | `user_id` |
+| Event | When (app.js) | Props |
+|-------|---------------|-------|
+| `session_boot` | `boot()` success | `has_session` |
+| `boot_error` | `bootErr` | `message` (sanitized) |
+| `auth_signup_success` | `doSignup` session | `intent` |
+| `auth_signup_confirm_required` | signup without session | `intent` |
+| `auth_login_success` | `doLogin` | |
+| `auth_login_fail` | catch | `reason` class only |
+| `auth_logout` | `doLogout` | |
+| `dashboard_open` | `openDash` | `default_view` |
+| `view_change` | `go(v)` | `view`, `request_id?` |
 
-### Client helper (suggested)
+### Client
+
+| Event | When | Props |
+|-------|------|-------|
+| `request_post_click` | open post modal | |
+| `request_posted` | `doPost` ok | `request_id`, `category`, `has_budget` |
+| `request_post_fail` | catch | `error_code` |
+| `quote_accept_click` | Accept & pay | `quote_id`, `request_id`, `amount_cents` |
+| `payment_manual_recorded` | accept path no Stripe | `payment` fields |
+| `payment_stripe_redirect` | `STRIPE_PAYMENT_LINK` open | `quote_id` |
+| `delivery_release_click` | `releasePayment` | `request_id` |
+| `payment_released` | update ok | `request_id` |
+
+### Builder
+
+| Event | When | Props |
+|-------|------|-------|
+| `builder_apply_submit` | `doApply` ok | `skills_count`, `has_portfolio`, `has_linkedin`, `experience_years` |
+| `builder_apply_fail` | catch | |
+| `jobs_list_view` | `loadJobs` | `open_count` |
+| `quote_sent` | `doQuote` ok | `request_id`, `amount_cents` |
+| `delivery_marked` | `markDelivered` | `request_id` |
+
+### Admin
+
+| Event | When | Props |
+|-------|------|-------|
+| `admin_review_open` | `loadAdmin` | `pending_count` |
+| `builder_approved` | `approveBuilder` | `builder_id` |
+| `builder_rejected` | `rejectBuilder` | `builder_id` |
+
+### Chat / trust
+
+| Event | When | Props |
+|-------|------|-------|
+| `chat_open` | `loadChat` | `request_id`, `request_status` |
+| `chat_message_sent` | `sendMsg` ok | `request_id`, `len` |
+| `chat_message_blocked` | `validateChatMessage` fail | `request_id`, `reason` (`email|phone|off_platform|link_phase`) |
+| `chat_message_fail_rls` | RLS error path | `request_id` |
+
+### Derived (warehouse / SQL — no client emit required)
+
+| Derived | SQL sketch |
+|---------|------------|
+| `funnel_client_ns` | requests joined payments by week |
+| `time_to_first_quote` | min(quote.created_at) − request.created_at |
+| `time_to_fund` | payment.created_at − request.created_at |
+| `time_to_complete` | request updated to completed − funded |
+
+---
+
+## Instrumentation plan (vanilla, low friction)
+
+### Phase 0 — Console / stub (same PR as modularize Phase 0)
 
 ```js
-async function track(event_name, properties = {}) {
-  if (!db || !user) return;
-  await db.from('analytics_events').insert({
-    user_id: user.id,
-    event_name,
-    properties,
-  });
+// js/analytics.js
+export function track(event, props = {}) {
+  const payload = { event, ...props, ts: Date.now() };
+  if (window.ORVO_DEBUG_ANALYTICS) console.info('[orvo]', payload);
+  window.ORVO_ANALYTICS?.track?.(event, props); // Plausible/PostHog/GA later
 }
 ```
 
-Wire at: signup, `doPost`, `doQuote`, `doApply`, `acceptQuote`, `approveBuilder`, `sendMsg` (success/fail), delivery/dispute/review when built.
+Call sites: wrap existing success/fail paths listed above — **do not** block UX on analytics errors.
 
-### Server / SQL rollups (views for admin)
+### Phase 1 — Product analytics SaaS
 
-```sql
--- Example: weekly north star
-create or replace view public.metrics_funded_weekly as
-select
-  date_trunc('week', coalesce(held_at, created_at)) as week,
-  count(*) as funded_count,
-  sum(amount_cents) as gmv_cents,
-  sum(platform_fee_cents) as fees_cents
-from public.payments
-where status in ('held', 'released', 'refunded')
-  and coalesce(held_at, created_at) is not null
-group by 1
-order by 1 desc;
-```
+Pick one:
 
-(Restrict view to admin via `security_invoker` + RLS on underlying table, or query only with service role.)
+| Option | Fit |
+|--------|-----|
+| **PostHog** (or Mixpanel) | Funnels + session replay for chat friction |
+| **Plausible** | Privacy-light page + custom events only |
 
-### External tools (optional)
-- **PostHog / Plausible** for landing funnels (`page_view`, `cta_click`) without auth.
-- **Stripe Dashboard** as source of truth for cash movement; reconcile weekly vs `payments`.
+Store keys in `supabase-config.js` as `ORVO_ANALYTICS_*` (public write keys only).
 
----
+### Phase 2 — Server truth for money
 
-## 5. Reporting cadence
+- Stripe webhook Edge Function emits `payment_held`, `payment_failed`, `transfer_released`  
+- Never trust browser alone for GMV / revenue dashboards  
 
-| Cadence | Audience | Content |
-|---------|----------|---------|
-| Daily | Admin | Pending apps, open disputes, blocks 24h, stuck funded |
-| Weekly | Founder | North star, funnel conversion, GMV, release/dispute rates |
-| Monthly | Strategy | Cohort: signup week → % funded; builder quality by rating |
+### Phase 3 — Ops dashboard
+
+Supabase SQL views or Metabase:
+
+- Pending applications count (already in admin badge)  
+- Open jobs without quotes (>48h)  
+- Funded jobs without delivery (>7d)  
+- Delivered awaiting release (>3d)  
 
 ---
 
-## 6. Instrumentation priority (ship order)
+## Dashboard v1 (what founder opens weekly)
 
-1. `request_created`, `quote_sent`, `checkout_started`, `payment_held`, `payment_released`  
-2. Builder apply/approve events  
-3. `chat_message_blocked` + admin tile  
-4. Dispute/review events  
-5. Landing `cta_click` / `page_view`  
+1. **NS:** completed+released jobs (7d / 30d)  
+2. Client funnel: signup → post → funded → released  
+3. Builder funnel: apply → approve → quote → released  
+4. Supply: open jobs, approved builders, quotes/job  
+5. Trust: chat blocks by reason; refunds when live  
 
-Without (1), do not trust any growth narrative.
+---
+
+## Anti-metrics (ignore for now)
+
+- Raw pageviews as success  
+- “Messages sent” as engagement without deal context  
+- Signup count without `intent` split  
+- GMV on `pending` payments  
+
+---
+
+## Acceptance
+
+- [ ] `track()` stub wired on auth, post, quote, accept, apply, approve, chat block  
+- [ ] One weekly SQL (or table) answering: “How many escrow completions last 7 days?”  
+- [ ] Funnels A and B documented in this file stay the product language for GTM (roles 08/11/12)  

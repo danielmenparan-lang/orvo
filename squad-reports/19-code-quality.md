@@ -2,13 +2,13 @@
 
 **Role:** Code quality / maintainability  
 **Date:** 2026-08-23  
-**Scope:** Vanilla JS marketplace SPA — `/workspace/app.js` (~1039 lines), `/workspace/index.html`, `/workspace/supabase-config.js`
+**Scope:** Vanilla JS marketplace SPA — `/workspace/app.js` (~1082 lines), `/workspace/index.html`, `/workspace/supabase-config.js`
 
 ---
 
 ## Verdict
 
-`app.js` is a **competent MVP monolith**: single IIFE, clear section banners, delegated click router, real product rules (chat off-platform filter, builder vetting, manual payment confirm). It is already past the “one more feature” comfort zone. Next 3–5 features (ILS/RTL, Stripe, disputes, i18n) will fight global mutable state and untestable DOM coupling unless we modularize with a thin test harness that stays vanilla (no React rewrite required).
+`app.js` is a **competent MVP monolith**: single IIFE, clear section banners, delegated click router, real product rules (chat off-platform filter, builder vetting, manual payment confirm). It is already past the “one more feature” comfort zone. Next features (ILS/RTL, Stripe, disputes, i18n, analytics) will fight global mutable state and untestable DOM coupling unless we modularize with a thin test harness that stays vanilla (no React rewrite required).
 
 ---
 
@@ -20,23 +20,24 @@
 |---------|----------|----------|
 | IIFE + `'use strict'` | top | No accidental globals |
 | Section banners (`STATE`, `UTILS`, `CHAT FILTER`, …) | throughout | Navigable for humans |
-| `data-action` / `data-goto` event router | ~946–1004 | Decouples HTML from many listeners |
-| Chat policy as pure-ish helpers | `validateChatMessage`, URL/phone checks | Highest-value extract for unit tests |
-| `needDb()` guard | ~203 | Fail loud when offline |
+| `data-action` / `data-goto` event router | ~990–1047 | Decouples HTML from many listeners |
+| Chat policy as pure-ish helpers | `validateChatMessage`, URL/phone checks (~84–159) | Highest-value extract for unit tests |
+| `needDb()` guard | ~203–206 | Fail loud when offline |
 | Config via `window.ORVO_*` | `supabase-config.js` | Simple deploy knobs |
 
 ### Structural smells
 
-1. **God module (~1040 LOC)** — auth, profiles, admin, jobs, quotes, chat realtime, payments UX, nav, and boot share one closure.
+1. **God module (~1080 LOC)** — auth, profiles, admin, jobs, quotes, chat realtime, payments UX, nav, and boot share one closure.
 2. **Mutable shared state** — `db`, `user`, `profile`, `view`, `chatRequestId`, `chatSub`, `chatPoll`, `postSignupIntent`, `adminChannel` with no single state transition log → hard to reason about race (auth change vs chat poll).
 3. **DOM ID coupling** — `$('…')` everywhere; renaming an HTML id silently breaks flows; no component boundary.
 4. **Inline HTML strings** — `loadJobs` / `loadQuotes` / `loadChat` / `loadAdmin` build markup via template literals; XSS mostly mitigated by `esc()`, but presentation mixed with data fetching.
 5. **Money hardcodes USD** — `money()` uses `'$'` + `en-US` despite chat filter knowing `₪`/`ILS` (blocks IL GTM; see report 16).
 6. **Admin email fallback in source** — `ADMIN_EMAIL` constant duplicates config; elevates whoever matches on client (`isAdmin` also trusts `profile.is_admin`).
-7. **Silent `catch`** — e.g. `refreshAdminBadge` swallows errors (“SQL not ready”); hides schema drift.
+7. **Silent `catch`** — e.g. `refreshAdminBadge` swallows errors (“SQL not ready”); hides schema drift (report 14).
 8. **Dual chat sync** — subscription + `chatPoll` interval; easy to leak timers if `stopChat` missed.
-9. **Payment path is `confirm()` + row update** — fine for MVP; must isolate before Stripe so UI does not fork in 5 places.
+9. **Payment path is `confirm()` + row update** — fine for MVP; must isolate before Stripe so UI does not fork in 5 places (report 03).
 10. **No modules / no tests** — zero automated regression for chat policy (security-sensitive) or fee math.
+11. **Schema drift in client** — `loadProfile` inserts `role` / null `builder_status`; `doApply` writes columns missing from `001_mvp_schema.sql` (report 14 P0).
 
 ### Dependency graph (today)
 
@@ -58,19 +59,20 @@ Everything depends on everything via closure. That is the core maintainability r
 
 ## Modularization plan (stay vanilla)
 
-**Goal:** ES modules (or IIFE bundles) with **pure core** testable in Node; **DOM adapters** thin. No framework migration.
+**Goal:** ES modules with **pure core** testable in Node; **DOM adapters** thin. No framework migration.
 
 ### Phase 0 — Extract pure kernels (1 PR, low risk)
 
-Create `js/` (or `src/`) without changing UX:
+Create `js/` without changing UX:
 
 | Module | Exports | Pulled from |
 |--------|---------|-------------|
 | `js/chat-policy.js` | `validateChatMessage`, URL/phone helpers, allowlists | lines ~84–159 |
 | `js/money.js` | `formatMoney(cents, currency)`, `parseMoney`, `platformFee(cents, pct)` | `money`, `parseMoney`, fee lines in `acceptQuote` |
 | `js/roles.js` | `isAdmin(profile, email, cfg)`, `isBuilder`, `isPending` | ~161–170 |
+| `js/analytics.js` | `track(event, props)` stub | report 15 |
 
-Wire via `<script type="module" src="app.js">` **or** keep classic scripts and attach `window.ORVO.chatPolicy` for zero-build deploys (Netlify static). Prefer **type=module** if local `python -m http.server` is the dev path (already is).
+Wire via `<script type="module" src="app.js">` **or** keep classic scripts and attach `window.ORVO.chatPolicy` for zero-build deploys. Prefer **type=module** if local static serving is the dev path.
 
 ### Phase 1 — Services + state (2nd PR)
 
@@ -83,6 +85,7 @@ Wire via `<script type="module" src="app.js">` **or** keep classic scripts and a
 | `js/api/quotes.js` | quote + accept |
 | `js/api/chat.js` | messages, subscribe, poll, `stopChat` |
 | `js/api/builders.js` | apply / approve / reject |
+| `js/api/payments.js` | acceptQuote money writes → Stripe adapter later |
 
 Keep SQL table names in one place.
 
@@ -121,10 +124,11 @@ Keep SQL table names in one place.
     chat-policy.js
     money.js
     roles.js
+    analytics.js
     config.js
     state.js
     supabase-client.js
-    api/{requests,quotes,chat,builders}.js
+    api/{requests,quotes,chat,builders,payments}.js
     ui/{dom,nav,dashboard,render-list,chat-view}.js
     router-events.js
   tests/
@@ -142,7 +146,7 @@ Keep SQL table names in one place.
 - **Node 20+** + **node:test** (built-in) or **Vitest** if team prefers watch mode  
 - Pure modules only in CI first — no Playwright until auth staging stable  
 - Script: `"test": "node --test tests/"`  
-- Optional later: Playwright smoke against `python3 -m http.server` + Supabase test project  
+- Optional later: Playwright smoke against static server + Supabase test project  
 
 ### Tier A — Unit (must have before modularization merges)
 
@@ -175,7 +179,7 @@ Keep SQL table names in one place.
 |------|--------|
 | matching admin email | admin |
 | `builder_status: 'approved'` | builder |
-| pending / null | client paths |
+| pending / null / `'none'` | client paths |
 
 ### Tier B — Integration (Supabase local or disposable project)
 
@@ -183,13 +187,13 @@ Use service role **only in CI secrets**, never in browser bundle.
 
 | Flow | Assert |
 |------|--------|
-| Signup → profile row | profile exists, role client |
-| Apply builder → pending | `builder_applications` row |
+| Signup → profile row | profile exists (trigger preferred — report 14) |
+| Apply builder → pending | `builder_applications` row with full columns |
 | Admin approve | `builder_status === 'approved'` |
 | Post request → visible on jobs | RLS: builder can read open jobs |
 | Quote → client sees quote | |
 | Accept quote → status + payment row | fee fields correct |
-| Chat insert → validateChatMessage enforced client-side; add DB check constraint or Edge later |
+| Chat insert → validateChatMessage enforced client-side; add DB check or Edge later |
 
 ### Tier C — Browser smoke (manual → Playwright)
 
@@ -207,6 +211,7 @@ Use service role **only in CI secrets**, never in browser bundle.
 - [ ] Fee percent 0 and >0 both format correctly  
 - [ ] `stopChat` clears sub + poll (no duplicate messages after navigate)  
 - [ ] Admin path does not expose in UI for non-admin (RLS is source of truth)  
+- [ ] Profile insert fields match live schema (no phantom `role` column)  
 
 ### Coverage targets (pragmatic)
 
@@ -218,14 +223,16 @@ Use service role **only in CI secrets**, never in browser bundle.
 ## Priority backlog (for Ops / implementers)
 
 1. **Extract `chat-policy` + unit tests** — security-sensitive, already pure enough  
-2. **Fix `money()` for ILS** — unlocks Israel GTM (report 16)  
-3. **`stopChat` audit + single realtime strategy** — prevent leaks  
-4. **Split api vs render** for quotes/chat — next feature velocity  
-5. **Stripe adapter module** — replace `confirm()` without rewriting UI  
-6. **i18n/RTL module** — after money  
+2. **Align client writes with schema** — remove `role` insert; match `builder_status` (report 14)  
+3. **Fix `money()` for ILS** — unlocks Israel GTM (report 16)  
+4. **`stopChat` audit + single realtime strategy** — prevent leaks  
+5. **Split api vs render** for quotes/chat — next feature velocity  
+6. **Stripe adapter module** — replace `confirm()` without rewriting UI  
+7. **Wire `track()`** — report 15 events on success paths  
+8. **i18n/RTL module** — after money  
 
 ---
 
 ## Honesty bar
 
-Do **not** rewrite the marketplace for elegance. Ship Phase 0 tests this week; modularize only at the seams above. The monolith is acceptable until Stripe + Hebrew land — then it becomes a liability.
+Do **not** rewrite the marketplace for elegance. Ship Phase 0 tests first; modularize only at the seams above. The monolith is acceptable until Stripe + Hebrew land — then it becomes a liability.
