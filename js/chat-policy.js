@@ -82,8 +82,25 @@
     return { ok: true };
   }
 
+  /**
+   * Pure relationship gate (no network). Pass flags from quotes/invites queries.
+   * @param {object|null} request
+   * @param {{ myId?: string, isAdmin?: boolean, hasQuoted?: boolean, hasInvite?: boolean }} ctx
+   */
+  function canOpenChat(request, ctx) {
+    const myId = ctx && ctx.myId;
+    if (!request || !myId) return { ok: false, reason: 'Sign in required.' };
+    if (ctx.isAdmin) return { ok: true };
+    if (request.user_id === myId) return { ok: true };
+    if (request.assigned_builder_id === myId) return { ok: true };
+    if (ctx.hasQuoted) return { ok: true };
+    if (ctx.hasInvite) return { ok: true };
+    return { ok: false, reason: 'Chat opens after you quote or get invited.' };
+  }
+
   global.ORVO_CHAT = {
     validateChatMessage,
+    canOpenChat,
     chatPaidPhase,
     chatHasPhone,
     chatOffPlatform,

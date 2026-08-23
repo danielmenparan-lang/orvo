@@ -16,3 +16,5 @@ After first admin signup:
 ```sql
 update public.profiles set is_admin = true where email = 'danielmen.paran@gmail.com';
 ```
+
+**Prod apply status:** *not confirmed by agents — founder must run 001→005 in Supabase SQL Editor and note the date here.*

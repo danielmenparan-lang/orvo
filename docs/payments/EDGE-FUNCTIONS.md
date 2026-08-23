@@ -14,6 +14,14 @@ Pseudo:
 3. Upsert `payments` row pending + `stripe_checkout_session_id`  
 4. Return session.url  
 
+### Client wiring (live)
+
+`app.js` `confirmAcceptPay` → `tryCreateCheckoutSession({ requestId, quoteId })`:
+- On `{ url }` → redirect to Stripe Checkout
+- On `501` / `not_configured` / network → stay on **awaiting payment** (honest; not funded)
+
+No fake `funded`/`paid` from the browser.
+
 ## stripe-webhook
 
 Verify `STRIPE_WEBHOOK_SECRET`. On `checkout.session.completed`:

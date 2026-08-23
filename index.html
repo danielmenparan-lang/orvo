@@ -570,6 +570,24 @@ footer{
   </div>
 </div>
 
+<!-- DISPUTE -->
+<div class="modal-bg" id="dispute-modal">
+  <div class="modal-box">
+    <button class="modal-close" data-action="close-dispute">✕</button>
+    <h2>Open a dispute</h2>
+    <p class="sub">This freezes release until ORVO admin reviews. Keep details factual.</p>
+    <div id="dispute-msg" class="msg hidden"></div>
+    <div class="field">
+      <label>What went wrong?</label>
+      <textarea id="dispute-details" rows="5" placeholder="Describe the issue (at least 20 characters)…"></textarea>
+    </div>
+    <div class="pay-actions">
+      <button class="btn-black" id="dispute-confirm-btn">Open dispute</button>
+      <button class="btn btn-ghost" data-action="close-dispute">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- DASHBOARD -->
 <div class="screen" id="dashboard">
   <div class="screen-head">
@@ -589,8 +607,8 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=17"></script>
-<script src="supabase-config.js?v=17"></script>
-<script src="app.js?v=17"></script>
+<script src="js/chat-policy.js?v=18"></script>
+<script src="supabase-config.js?v=18"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>

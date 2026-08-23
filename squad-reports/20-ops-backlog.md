@@ -11,7 +11,7 @@
 
 | Decision | Winner |
 |----------|--------|
-| Niche | **Israel WhatsApp AI agents for SMBs** (orders / booking / FAQ / leads) |
+| Niche | **GLOBAL** hire vetted builders for custom AI agents (EN UI). WhatsApp/Israel = optional acquisition, not product geography. |
 | Shape | **Concierge marketplace** — human match until ~20 paid txns |
 | Money | **Hold → deliver → release**; Stripe Checkout + Connect Express (Role 03) |
 | Honesty | No fake `funded`/`paid` in prod UX; no “via Stripe” until webhook live |
@@ -33,7 +33,9 @@
 | Winning product + this backlog + HE brief | `docs/WINNING-PRODUCT.md`, this file, `MORNING-BRIEF-HE.md` |
 | Research pack | `squad-reports/01`…`17`, `19` (no 18 — covered by 04/07) |
 
-**Still fake:** `acceptQuote` can insert `payments.status = 'paid'` and set request `funded` with empty Stripe (`STRIPE_PAYMENT_LINK = ''`). Release updates `payments` from the browser without requiring `held`.
+**Honesty status (code):** Accept → `awaiting_payment` + `payments.pending` only. Client checkout calls Edge Function; without secrets → awaiting UI (not funded). Release requires `held`. Sibling quotes rejected.
+
+**Founder still:** Apply SQL 001→005 on Supabase; set `is_admin`; add Stripe secrets + deploy functions.
 
 ---
 
@@ -43,28 +45,28 @@
 
 | ID | Change | Files | Acceptance criteria |
 |----|--------|-------|---------------------|
-| **P0-1** | Kill fake pay path | `app.js` `acceptQuote`; `supabase-config.js` | Empty Stripe → **cannot** set `paid`/`funded`. Max: quote `accepted`, request `awaiting_payment` or `in_progress`, payment `pending` **or** blocked toast “Payments coming.” |
-| **P0-2** | ~~Honest Stripe copy~~ | `index.html` | **DONE** (hire flow / fund → release). Keep: never re-add “via Stripe” until Checkout+webhook. |
-| **P0-3** | ~~Stop client `is_admin` elevate~~ | `app.js` `loadProfile` | **DONE** (no browser write). Remaining: hide admin email from Profile debug for non-admins (**P1-10**). |
-| **P0-4** | Privilege RLS live in prod | `sql/001_mvp_schema.sql` (+ migration if needed) | Triggers/RPC already in schema file — **confirm applied** on Supabase. Smoke: second user cannot self-approve / self-admin. |
-| **P0-5** | Apply schema in Supabase | `sql/001_mvp_schema.sql`, `sql/README.md` | Prod has tables + RLS; no red SQL bar for core tables. Note “ran on DATE” in README. |
-| **P0-6** | Decline sibling quotes on accept | `app.js` `acceptQuote` | On accept: other `pending` quotes → `rejected`. One assigned builder. |
-| **P0-7** | Payments not client-writable for terminal states | RLS / Edge | Authenticated clients cannot insert `paid`/`held`/`released`. Webhook/service-role only. |
+| **P0-1** | ~~Kill fake pay path~~ | `app.js` | **DONE** — pending only; no browser `funded`/`paid`. |
+| **P0-2** | ~~Honest Stripe copy~~ | `index.html` | **DONE** |
+| **P0-3** | ~~Stop client `is_admin` elevate~~ | `app.js` | **DONE** |
+| **P0-4** | Privilege RLS live in prod | `sql/001` | **Founder:** confirm applied on Supabase. |
+| **P0-5** | Apply schema in Supabase | `sql/README.md` | **Founder:** run 001→005; note date in README. |
+| **P0-6** | ~~Decline sibling quotes~~ | `app.js` | **DONE** |
+| **P0-7** | ~~Payments lockdown SQL~~ | `sql/002` | **DONE** in repo; founder apply. |
 
 ### P1 — core loop / integrity
 
 | ID | Change | Files | Acceptance criteria |
 |----|--------|-------|---------------------|
-| **P1-1** | Gate chat to relationship | `app.js` `loadJobs`, `loadThreads`, `sendMsg`; RLS | Message only if quoted **or** assigned (or invited). Threads ≠ all open jobs. |
-| **P1-2** | Fix login routing | `app.js` `doLogin`, `routeAfterAuth` | Approved builder → jobs. Pending → status. Client → requests. Signup intent must not override role on **login**. |
-| **P1-3** | Fix pending Edit application loop | `app.js` `loadApply`, `loadStatus` | Edit opens prefilled form; save stays `pending`; no bounce status↔apply. |
-| **P1-4** | Accept & pay sheet (not `confirm()`) | `app.js` + modal in `index.html` | Amount, fee %, builder net, honest Stripe/manual state. CTA matches P0-1. |
-| **P1-5** | Stripe Checkout scaffold | Edge Function + `acceptQuote` | `create-checkout-session` contract in repo; webhook sole writer of `held`/`funded`. Kill `STRIPE_PAYMENT_LINK`. Align `held_at`, `stripe_*` (Role 03). |
-| **P1-6** | Release = held → released only | `app.js` `releasePayment` + RPC | Requires payment `held` (or admin). Sets request `completed`. No release from fake `paid`. |
-| **P1-7** | Niche landing copy lock | `index.html` hero / CTAs | Hero = WhatsApp agents for Israeli SMBs; ORVO brand-level; one primary CTA + builder text link (04/07). |
-| **P1-8** | Server-side chat filter | SQL trigger or Edge Fn | Direct REST insert of phone/email/WA fails. |
-| **P1-9** | Human status labels | `app.js` badges | Open / Funded / Delivered / Completed (EN; HE later). |
-| **P1-10** | Strip user-facing SQL / admin debug | `app.js` Profile, empty states | Non-admin never sees `sql-*.sql` or config admin email. |
+| **P1-1** | ~~Gate chat~~ | `app.js` + `canOpenChat` | **DONE** (+ invites). |
+| **P1-2** | ~~Login routing~~ | `app.js` | **DONE** |
+| **P1-3** | ~~Edit application loop~~ | `app.js` | **DONE** |
+| **P1-4** | ~~Accept & pay sheet~~ | `index.html` | **DONE** |
+| **P1-5** | Stripe Checkout | Edge + `tryCreateCheckoutSession` | **Scaffold + client wire DONE**; live Checkout blocked on secrets. |
+| **P1-6** | ~~Release from held~~ | `app.js` | **DONE** |
+| **P1-7** | Landing copy | `index.html` | **DONE** — global hire-builders hero (not Israel-only). |
+| **P1-8** | ~~Server chat filter~~ | `sql/003` | **DONE** in repo; founder apply. |
+| **P1-9** | ~~Human status labels~~ | `app.js` | **DONE** |
+| **P1-10** | ~~Strip SQL / admin debug~~ | `app.js` | **DONE** — `sanitizePublicErr` + admin-only Profile debug. |
 
 ### P2 — liquidity / GTM / polish
 

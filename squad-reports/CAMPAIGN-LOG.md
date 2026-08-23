@@ -105,3 +105,11 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - robots.txt + sitemap.xml
 - chat-policy node smoke tests
 - docs/marketing/METRICS.md
+
+## 2026-08-23T02:35Z — pulse (10h continuation)
+- P1-10: `sanitizePublicErr` on boot banner (no sql-*.sql / admin email)
+- `ORVO_CHAT.canOpenChat` + expanded `tests/chat-policy.test.js`
+- Pay path: `tryCreateCheckoutSession` after accept (501 → awaiting, not funded)
+- Dispute modal replaces `prompt()`; Edge create-checkout CORS + secret gate
+- Backlog lock → GLOBAL; P0/P1 marked DONE in `20-ops-backlog.md`
+- Note: `squad-reports/PULSE-0231-DONE.md`

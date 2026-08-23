@@ -83,9 +83,17 @@
     return map[s] || s || 'Unknown';
   }
 
+  function sanitizePublicErr(msg) {
+    return String(msg || 'Something went wrong')
+      .replace(/sql-[\w.-]+\.sql/gi, 'database setup')
+      .replace(/run\s+[\w./-]+\.sql[^.!]*/gi, 'complete database setup')
+      .replace(/Supabase/gi, 'database')
+      .replace(/danielmen\.paran@gmail\.com/gi, 'ORVO support');
+  }
+
   function userFacingErr(msg) {
     if (isAdmin()) return msg;
-    return String(msg || 'Something went wrong').replace(/sql-[\w.-]+\.sql/gi, 'database setup').replace(/Supabase/gi, 'database');
+    return sanitizePublicErr(msg);
   }
 
   function parseMoney(s) {
@@ -122,8 +130,10 @@
 
   function bootErr(msg) {
     const el = $('boot-error');
-    el.textContent = msg;
+    // Banner is always public-safe (P1-10); detail stays in console for ops
+    el.textContent = sanitizePublicErr(msg);
     el.classList.remove('hidden');
+    console.warn('ORVO boot:', msg);
   }
 
   // ── CHAT FILTER (js/chat-policy.js) ──
@@ -190,7 +200,7 @@
 
     let { data, error } = await needDb().from('profiles').select('*').eq('id', user.id).maybeSingle();
     if (error) {
-      bootErr('Database error — run sql-fix-profiles.sql in Supabase. ' + error.message);
+      bootErr('Database error — complete database setup, then refresh. ' + error.message);
       return;
     }
 
@@ -199,7 +209,7 @@
       await new Promise((r) => setTimeout(r, 600));
       ({ data, error } = await needDb().from('profiles').select('*').eq('id', user.id).maybeSingle());
       if (error) {
-        bootErr('Database error — run sql-fix-profiles.sql in Supabase. ' + error.message);
+        bootErr('Database error — complete database setup, then refresh. ' + error.message);
         return;
       }
     }
@@ -232,10 +242,10 @@
         if (again) { profile = again; return; }
       }
       if (insErr.code === '23503') {
-        bootErr('Session out of sync — Sign out, run sql-fix-profiles.sql in Supabase, then Sign in again.');
+        bootErr('Session out of sync — sign out, then sign in again after database setup.');
         return;
       }
-      bootErr('Profile error — run sql-fix-profiles.sql in Supabase. ' + insErr.message);
+      bootErr('Profile error — complete database setup, then refresh. ' + insErr.message);
       return;
     }
     profile = inserted;
@@ -341,7 +351,7 @@
     if (sheet) sheet.classList.remove('done');
   }
 
-  function showPayAwaitingState() {
+  function showPayAwaitingState(extraNote) {
     const sheet = $('pay-sheet');
     sheet.classList.add('done');
     $('pay-title').textContent = 'Awaiting payment';
@@ -349,8 +359,37 @@
     $('pay-note').innerHTML =
       'Quote accepted. Status is <strong>awaiting payment</strong>, not funded. ' +
       'When Stripe Checkout goes live, you will pay here and funds will be held until you release.';
-    showMsg('pay-msg', 'Checkout coming — no card charged yet', true);
+    showMsg('pay-msg', extraNote || 'Checkout coming — no card charged yet', true);
     $('pay-cancel-btn').textContent = 'Close';
+  }
+
+  /** Call Edge Function; 501/not_configured → caller shows awaiting state. */
+  async function tryCreateCheckoutSession({ requestId, quoteId }) {
+    const base = window.SUPABASE_URL;
+    if (!base || !db) return { ok: false, reason: 'not_configured' };
+    try {
+      const { data: { session } } = await needDb().auth.getSession();
+      if (!session?.access_token) return { ok: false, reason: 'auth' };
+      const res = await fetch(`${base}/functions/v1/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: window.SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({ request_id: requestId, quote_id: quoteId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 501 || body.error === 'not_configured') {
+        return { ok: false, reason: 'not_configured' };
+      }
+      if (!res.ok || !body.url) {
+        return { ok: false, reason: body.message || body.error || 'checkout_failed' };
+      }
+      return { ok: true, url: body.url };
+    } catch {
+      return { ok: false, reason: 'network' };
+    }
   }
 
   /** Signup only: honor intent. Login always uses role via openDash(). */
@@ -365,7 +404,7 @@
     openDash();
   }
 
-  /** True if user owns the request, quoted it, is assigned, or is admin. */
+  /** True if user owns the request, quoted it, is assigned, invited, or is admin. */
   async function canChatOnRequest(req) {
     if (!user || !req) return false;
     if (isAdmin()) return true;
@@ -373,10 +412,17 @@
     if (req.assigned_builder_id === user.id) return true;
     const { data: q } = await needDb().from('quotes')
       .select('id').eq('request_id', req.id).eq('builder_id', user.id).limit(1).maybeSingle();
-    if (q) return true;
     const { data: inv } = await needDb().from('request_invites')
       .select('id').eq('request_id', req.id).eq('builder_id', user.id).limit(1).maybeSingle();
-    return !!inv;
+    if (window.ORVO_CHAT?.canOpenChat) {
+      return window.ORVO_CHAT.canOpenChat(req, {
+        myId: user.id,
+        isAdmin: isAdmin(),
+        hasQuoted: !!q,
+        hasInvite: !!inv,
+      }).ok;
+    }
+    return !!(q || inv);
   }
 
   // ── AUTH ACTIONS ──
@@ -1285,13 +1331,30 @@
     } catch (e) { toast(e.message, false); }
   }
 
-  async function openDispute(rid) {
-    const details = prompt('Describe the issue (min 20 characters). This freezes release until admin review.');
-    if (details == null) return;
-    if (details.trim().length < 20) {
-      toast('Please write at least 20 characters', false);
+  let pendingDisputeRid = null;
+
+  function openDisputeSheet(rid) {
+    pendingDisputeRid = rid;
+    hideMsg('dispute-msg');
+    if ($('dispute-details')) $('dispute-details').value = '';
+    $('dispute-modal')?.classList.add('open');
+  }
+
+  function closeDispute() {
+    $('dispute-modal')?.classList.remove('open');
+    pendingDisputeRid = null;
+  }
+
+  async function submitDispute() {
+    const rid = pendingDisputeRid;
+    if (!rid) return;
+    const details = ($('dispute-details')?.value || '').trim();
+    if (details.length < 20) {
+      showMsg('dispute-msg', 'Please write at least 20 characters', false);
       return;
     }
+    const btn = $('dispute-confirm-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
     try {
       const { data: req, error: re } = await needDb().from('requests').select('*').eq('id', rid).single();
       if (re) throw re;
@@ -1305,14 +1368,24 @@
         opened_by: user.id,
         against_user_id: against,
         reason: 'other',
-        details: details.trim(),
+        details,
         status: 'open',
       });
       if (de) throw de;
       await needDb().from('requests').update({ status: 'disputed' }).eq('id', rid);
+      closeDispute();
       toast('Dispute opened — release frozen', true);
       loadChat();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) {
+      showMsg('dispute-msg', userFacingErr(e.message), false);
+      toast(userFacingErr(e.message), false);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Open dispute'; }
+    }
+  }
+
+  async function openDispute(rid) {
+    openDisputeSheet(rid);
   }
 
   async function releasePayment(rid) {
@@ -1390,8 +1463,19 @@
         status: 'pending',
       });
       if (e3) throw e3;
-      // Ignore STRIPE_PAYMENT_LINK — no fake fund path; Checkout Session comes next
-      showPayAwaitingState();
+      // Ignore STRIPE_PAYMENT_LINK — try Checkout Edge Function; 501 → awaiting state
+      btn.textContent = 'Starting checkout…';
+      const checkout = await tryCreateCheckoutSession({ requestId: rid, quoteId: qid });
+      if (checkout.ok && checkout.url) {
+        toast('Redirecting to secure checkout…', true);
+        pendingPay = null;
+        window.location.href = checkout.url;
+        return;
+      }
+      const note = checkout.reason === 'not_configured' || checkout.reason === 'network'
+        ? 'Checkout not live yet — no card charged'
+        : `Checkout unavailable (${checkout.reason}) — job is awaiting payment`;
+      showPayAwaitingState(note);
       toast('Quote accepted — awaiting payment (not funded yet)', true);
       pendingPay = null;
       loadChat();
@@ -1457,7 +1541,7 @@
     else if (a === 'tab-signup') setAuthTab('signup');
     else if (a === 'home') {
       e.preventDefault();
-      closeDash(); closeAuth(); closePost(); closeQuote(); closePay();
+      closeDash(); closeAuth(); closePost(); closeQuote(); closePay(); closeDispute();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     else if (a === 'dashboard') {
@@ -1492,6 +1576,7 @@
     else if (a === 'close-quote') closeQuote();
     else if (a === 'close-post') closePost();
     else if (a === 'close-pay') closePay();
+    else if (a === 'close-dispute') closeDispute();
   });
 
   $('login-btn').addEventListener('click', doLogin);
@@ -1500,6 +1585,7 @@
   $('quote-btn').addEventListener('click', doQuote);
   $('post-btn').addEventListener('click', doPost);
   $('pay-confirm-btn').addEventListener('click', confirmAcceptPay);
+  $('dispute-confirm-btn')?.addEventListener('click', submitDispute);
 
   document.querySelectorAll('.budget-chip').forEach((btn) => {
     btn.addEventListener('click', () => {
