@@ -15,7 +15,10 @@ Deno.serve(async (req) => {
     }, 501);
   }
 
-  // TODO: verify JWT → create/retrieve Express account → Account Links.create → { url }
+  // TODO: verify JWT → create/retrieve Express account → Account Links.create
+  //   refresh_url: `${SITE_URL}/?connect=refresh`
+  //   return_url: `${SITE_URL}/?connect=success`
+  // → { url }
   return jsonResponse({
     error: 'not_implemented',
     message: 'Connect onboarding not implemented yet — secrets present.',

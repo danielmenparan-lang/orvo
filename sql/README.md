@@ -19,6 +19,7 @@ Run in Supabase SQL Editor, **in order**:
 15. `015_status_notify.sql` — request status change → client (+ assigned builder) inbox  
 16. `016_message_notify.sql` — new chat message → counterparty inbox  
 17. `017_stripe_webhook_events.sql` — Stripe evt idempotency (webhook only; optional until Stripe live)  
+18. `018_builder_application_notify.sql` — approved/rejected → builder inbox  
 
 Founder smoke checklist: `docs/FOUNDER-SQL-SMOKE.md` / `founder-checklist.html`.  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md` · deploy: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`.
@@ -30,4 +31,4 @@ After first admin signup:
 update public.profiles set is_admin = true where email = 'danielmen.paran@gmail.com';
 ```
 
-**Prod apply status:** *not confirmed by agents — founder must run 001→017 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*
+**Prod apply status:** *not confirmed by agents — founder must run 001→018 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*

@@ -195,3 +195,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Client **My requests** search filter
 - `sql/017_stripe_webhook_events.sql` + `STRIPE-DEPLOY-CHECKLIST.md`
 - Landing hire-flow honesty copy; admin skeletons
+
+## 2026-08-23T08:30Z — pulse
+- `?connect=success|refresh|cancel` return handler → Profile
+- `sql/018_builder_application_notify.sql` (approve/reject → inbox)
+- Login routes to role home (`admin` / `invites` / `status` / `requests`)
+- Admin all-requests filter + Review builders skeleton

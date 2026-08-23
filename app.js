@@ -333,6 +333,34 @@
     }
   }
 
+  function handleConnectReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const connect = params.get('connect');
+    if (!connect) return;
+    const clean = () => {
+      const u = new URL(window.location.href);
+      u.searchParams.delete('connect');
+      window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+    };
+    if (connect === 'success' || connect === 'refresh') {
+      track('connect_return', { status: connect });
+      toast(connect === 'success'
+        ? 'Payout onboarding returned — ORVO syncs Connect status when webhooks are live.'
+        : 'Continue payout setup from Profile when Connect is live.', true);
+      clean();
+      if (user) {
+        ensureDashOpen();
+        go('profile');
+      }
+      return;
+    }
+    if (connect === 'cancel') {
+      track('connect_return_cancel', {});
+      toast('Payout setup cancelled — you can retry from Profile.', false);
+      clean();
+    }
+  }
+
   function watchIncomingQuotes() {
     if (!db || !user || quotesChannel) return;
     // Client hears new quotes on their requests (best-effort; needs Realtime enabled)
@@ -650,10 +678,10 @@
     if (intent === 'builder' && !isBuilder() && !isPending()) go('apply');
   }
 
-  /** Login / session restore: role only — never signup intent. */
+  /** Login / session restore: role home — never signup intent. */
   function routeAfterLogin() {
     postSignupIntent = 'client';
-    openDash();
+    openDash(homeViewForRole());
   }
 
   /** True if user owns the request, quoted it, is assigned, invited, or is admin. */
@@ -1333,6 +1361,8 @@
       track('admin_events_copied', { n: rows.length });
     });
 
+    $('view-body').innerHTML = loadingSkeleton(4);
+
     const countOf = async (table, filter) => {
       let q = needDb().from(table).select('*', { count: 'exact', head: true });
       if (filter) q = filter(q);
@@ -1424,6 +1454,7 @@
       if (e2) throw new Error('Profile update failed: ' + e2.message);
       if (uid === user.id) await refreshUser();
       toast('Builder approved!', true);
+      track('builder_approved', { user_id: uid });
       loadAdmin();
     } catch (e) { toast(e.message, false); }
   }
@@ -1488,14 +1519,23 @@
       return;
     }
     $('view-body').innerHTML = loadingSkeleton(4);
+    const qText = (window.__orvoAllReqsQuery || '').trim().toLowerCase();
     const { data, error } = await needDb().from('requests').select('*').order('created_at', { ascending: false }).limit(40);
     if (error) { $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}</p>`; return; }
+    let rows = data || [];
+    if (qText) {
+      rows = rows.filter((r) => {
+        const hay = ((r.title || '') + ' ' + (r.description || '') + ' ' + (r.status || '') + ' ' + (r.location || '')).toLowerCase();
+        return hay.includes(qText);
+      });
+    }
     const { data: builders } = await needDb().from('profiles')
       .select('id,full_name,email').eq('builder_status', 'approved').limit(50);
     const builderOpts = (builders || []).map(b =>
       `<option value="${b.id}">${esc(b.full_name || b.email || b.id)}</option>`
     ).join('');
-    $('view-body').innerHTML = (data || []).map(r => `
+    const searchHtml = `<input class="admin-search" id="all-reqs-search" type="search" placeholder="Filter requests…" value="${esc(qText)}" autocomplete="off"/>`;
+    $('view-body').innerHTML = searchHtml + ((rows || []).map(r => `
       <div class="card" style="cursor:default">
         <h3>${esc(r.title)}</h3>
         <p>${esc(statusLabel(r.status))} · ${ago(r.created_at)}${r.location ? ' · ' + esc(r.location) : ''}</p>
@@ -1508,7 +1548,12 @@
           <button class="btn btn-primary btn-invite" data-rid="${r.id}">Invite</button>
           <button class="btn btn-ghost btn-open-req" data-rid="${r.id}">Open</button>
         </div>
-      </div>`).join('') || '<p class="empty">No requests</p>';
+      </div>`).join('') || '<p class="empty">No requests' + (qText ? ' match that filter' : '') + '</p>');
+    $('all-reqs-search')?.addEventListener('input', (e) => {
+      window.__orvoAllReqsQuery = e.target.value;
+      clearTimeout(window.__orvoAllReqsSearchT);
+      window.__orvoAllReqsSearchT = setTimeout(loadAllRequests, 280);
+    });
     $('view-body').querySelectorAll('.btn-invite').forEach(b => {
       b.addEventListener('click', () => {
         const sel = $('view-body').querySelector(`select.invite-builder[data-rid="${b.dataset.rid}"]`);
@@ -2488,6 +2533,7 @@
       if (event === 'SIGNED_IN') consumeViewDeepLink();
     });
     handleCheckoutReturn();
+    handleConnectReturn();
     consumeViewDeepLink();
     wireNavScroll();
     wireOfflineBanner();

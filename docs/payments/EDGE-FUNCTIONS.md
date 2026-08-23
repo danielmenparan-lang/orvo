@@ -52,6 +52,8 @@ Client: `releasePayment` → `tryReleaseToBuilder`. On 501: mark request `comple
 
 Client: Profile → **Set up payouts** → `tryCreateConnectAccount` (501 → toast until secrets).
 
+Return URLs (when live): `?connect=success`, `?connect=refresh`, `?connect=cancel` — handled in `app.js` `handleConnectReturn`.
+
 Schema: `sql/006_connect.sql` (`stripe_connect_account_id`).
 
 ### Checkout return URLs

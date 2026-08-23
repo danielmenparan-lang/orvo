@@ -15,7 +15,7 @@ Branch / PR: `cursor/orvo-local-site-3bd5`
 
 ## Supabase SQL (order)
 
-See `sql/README.md` — run **001 → 017**, then:
+See `sql/README.md` — run **001 → 018**, then:
 
 ```sql
 update public.profiles set is_admin = true where email = 'your@email.com';
@@ -28,5 +28,7 @@ Founder checklist: `founder-checklist.html`
 1. Set Edge secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, service role)
 2. Deploy: `create-checkout-session`, `stripe-webhook`, `create-connect-account`, `release-to-builder`
 3. Set `window.ORVO_CHECKOUT_LIVE = true` in `supabase-config.js`
+
+Deploy guide: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`
 
 Docs: `docs/WINNING-PRODUCT.md`, `docs/payments/STRIPE-CONNECT-MVP.md`
