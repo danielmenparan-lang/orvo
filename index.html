@@ -13,6 +13,7 @@
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="ORVO — Custom AI agents, vetted builders"/>
 <meta name="twitter:description" content="Hire vetted builders for WhatsApp, voice, CRM, and automation agents worldwide."/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B1220'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='18' font-weight='700' fill='%23FF6B35'%3EO%3C/text%3E%3C/svg%3E"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -35,6 +36,14 @@
   --shadow-hair:0 1px 0 rgba(11,18,32,.04);
 }
 html{scroll-behavior:smooth}
+:focus-visible{outline:2px solid var(--o);outline-offset:3px}
+:focus:not(:focus-visible){outline:none}
+.skip-link{
+  position:absolute;left:12px;top:-48px;z-index:1000;
+  background:var(--o);color:#fff;padding:10px 14px;border-radius:8px;font-weight:600;font-size:13px;
+  transition:top .2s var(--ease);
+}
+.skip-link:focus{top:12px;color:#fff}
 body{
   font-family:var(--font-sans);color:var(--black);line-height:1.6;-webkit-font-smoothing:antialiased;
   background-color:var(--bg);
@@ -412,6 +421,7 @@ footer{
 </head>
 <body>
 
+<a class="skip-link" href="#how">Skip to content</a>
 <div id="boot-error" class="hidden"></div>
 <div id="toast"></div>
 
@@ -712,9 +722,9 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=22"></script>
-<script src="js/events.js?v=22"></script>
-<script src="supabase-config.js?v=22"></script>
-<script src="app.js?v=22"></script>
+<script src="js/chat-policy.js?v=23"></script>
+<script src="js/events.js?v=23"></script>
+<script src="supabase-config.js?v=23"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>

@@ -12,6 +12,7 @@ Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops
 - [ ] `sql/006_connect.sql` (optional until Connect)
 - [ ] `sql/007_status_guards.sql` (`awaiting_payment` + payment unique + quote ≥ $50)
 - [ ] `sql/008_quote_eta.sql` (`quotes.delivery_days`)
+- [ ] `sql/009_loop_hygiene.sql` (quote status + indexes)
 
 ## Privilege
 

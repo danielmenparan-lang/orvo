@@ -568,15 +568,19 @@
   }
 
   // ── DASHBOARD ──
-  function openDash() {
+  function homeViewForRole() {
+    if (isAdmin()) return 'admin';
+    if (isBuilder()) return 'invites'; // concierge-first: invited before browse
+    if (isPending()) return 'status';
+    return 'requests';
+  }
+
+  function openDash(preferredView) {
     if (!user) { openAuth('login'); return; }
     $('dashboard').classList.add('open');
     document.body.style.overflow = 'hidden';
     renderSidebar();
-    if (isAdmin()) go('admin');
-    else if (isBuilder()) go('jobs');
-    else if (isPending()) go('status');
-    else go('requests');
+    go(preferredView || homeViewForRole());
   }
 
   function closeDash() {
@@ -700,15 +704,43 @@
       return;
     }
     body.innerHTML = data.map(r => `
-      <div class="card" data-click="${r.id}">
+      <div class="card">
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
         <p>${esc(r.description.slice(0, 120))}</p>
         <span class="badge">${esc(statusLabel(r.status))} · ${ago(r.created_at)}</span>
+        <div class="row">
+          <button class="btn btn-primary btn-open-req" data-rid="${r.id}">Open</button>
+          ${r.status === 'open' ? `<button class="btn btn-ghost btn-cancel-req" data-rid="${r.id}">Cancel</button>` : ''}
+        </div>
       </div>`).join('');
-    body.querySelectorAll('[data-click]').forEach(el => {
-      el.addEventListener('click', () => go('chat', el.dataset.click));
+    body.querySelectorAll('.btn-open-req').forEach(el => {
+      el.addEventListener('click', () => go('chat', el.dataset.rid));
     });
+    body.querySelectorAll('.btn-cancel-req').forEach(el => {
+      el.addEventListener('click', () => cancelRequest(el.dataset.rid));
+    });
+  }
+
+  async function cancelRequest(rid) {
+    const ans = await askConfirm({
+      title: 'Cancel this request?',
+      sub: 'Only open requests with no accepted builder can be cancelled. Quotes will stay declined.',
+      okLabel: 'Cancel request',
+    });
+    if (!ans.ok) return;
+    try {
+      const { data: req, error } = await needDb().from('requests').select('status,user_id').eq('id', rid).single();
+      if (error) throw error;
+      if (req.user_id !== user.id && !isAdmin()) throw new Error('Not your request');
+      if (req.status !== 'open') throw new Error('Only open requests can be cancelled');
+      const { error: e2 } = await needDb().from('requests').update({ status: 'cancelled' }).eq('id', rid);
+      if (e2) throw e2;
+      await needDb().from('quotes').update({ status: 'withdrawn' }).eq('request_id', rid).eq('status', 'pending');
+      track('request_cancelled', { request_id: rid });
+      toast('Request cancelled', true);
+      loadRequests();
+    } catch (e) { toast(userFacingErr(e.message), false); }
   }
 
   // ── BUILDER ──
@@ -730,19 +762,22 @@
         <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
       return;
     }
-    const { data: myQuotes } = await needDb().from('quotes').select('request_id').eq('builder_id', user.id);
+    const { data: myQuotes } = await needDb().from('quotes').select('request_id,status').eq('builder_id', user.id);
     const quotedIds = new Set((myQuotes || []).map(q => q.request_id));
+    const pendingIds = new Set((myQuotes || []).filter(q => q.status === 'pending').map(q => q.request_id));
     body.innerHTML = data.map(r => {
       const canMsg = isAdmin() || quotedIds.has(r.id) || r.assigned_builder_id === user.id;
+      const already = pendingIds.has(r.id);
       return `
       <div class="card">
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
         <p>${esc(r.description)}</p>
-        <p>Budget: ${esc(r.budget || 'Not specified')}</p>
+        <p>Budget: ${esc(r.budget || 'Not specified')}${r.location ? ' · ' + esc(r.location) : ''}</p>
         <div class="row">
-          <button class="btn btn-primary btn-quote" data-rid="${r.id}">Send quote</button>
-          ${canMsg ? `<button class="btn btn-ghost btn-chat" data-rid="${r.id}">Message</button>` : ''}
+          ${already
+            ? `<span class="badge">Quote pending</span><button class="btn btn-ghost btn-chat" data-rid="${r.id}">Message</button>`
+            : `<button class="btn btn-primary btn-quote" data-rid="${r.id}">Send quote</button>${canMsg ? `<button class="btn btn-ghost btn-chat" data-rid="${r.id}">Message</button>` : ''}`}
         </div>
       </div>`;
     }).join('');
@@ -797,14 +832,41 @@
       return;
     }
     body.innerHTML = data.map(q => `
-      <div class="card" data-click="${q.request_id}">
+      <div class="card">
         <h3>${esc(q.requests?.title || 'Project')}</h3>
         <p>${esc(q.message)}</p>
-        <span class="badge">${money(q.amount_cents)} · ${esc(statusLabel(q.status))}</span>
+        <span class="badge">${money(q.amount_cents)} · ${esc(statusLabel(q.status))}${q.delivery_days ? ' · ' + q.delivery_days + 'd' : ''}</span>
+        <div class="row">
+          <button class="btn btn-primary btn-open-quote" data-rid="${q.request_id}">Open</button>
+          ${q.status === 'pending' ? `<button class="btn btn-ghost btn-withdraw-quote" data-qid="${q.id}">Withdraw</button>` : ''}
+        </div>
       </div>`).join('');
-    body.querySelectorAll('[data-click]').forEach(el => {
-      el.addEventListener('click', () => go('chat', el.dataset.click));
+    body.querySelectorAll('.btn-open-quote').forEach(el => {
+      el.addEventListener('click', () => go('chat', el.dataset.rid));
     });
+    body.querySelectorAll('.btn-withdraw-quote').forEach(el => {
+      el.addEventListener('click', () => withdrawQuote(el.dataset.qid));
+    });
+  }
+
+  async function withdrawQuote(qid) {
+    const ans = await askConfirm({
+      title: 'Withdraw this quote?',
+      sub: 'The client will no longer see it as pending. You can quote again later if the job is still open.',
+      okLabel: 'Withdraw quote',
+    });
+    if (!ans.ok) return;
+    try {
+      const { data: q, error } = await needDb().from('quotes').select('id,builder_id,status').eq('id', qid).single();
+      if (error) throw error;
+      if (q.builder_id !== user.id) throw new Error('Not your quote');
+      if (q.status !== 'pending') throw new Error('Only pending quotes can be withdrawn');
+      const { error: e2 } = await needDb().from('quotes').update({ status: 'withdrawn' }).eq('id', qid);
+      if (e2) throw e2;
+      track('quote_withdrawn', { quote_id: qid });
+      toast('Quote withdrawn', true);
+      loadQuotes();
+    } catch (e) { toast(userFacingErr(e.message), false); }
   }
 
   async function loadApply() {

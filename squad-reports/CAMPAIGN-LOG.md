@@ -140,3 +140,10 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Checkout return `?checkout=success|cancel` handler
 - `sql/008_quote_eta.sql` + `delivery_days` on quotes (fallback message prefix)
 - Client quote-received realtime toast + `js/events.js` track stub
+
+## 2026-08-23T04:30Z — pulse
+- Builder dashboard home → **Invited jobs** (concierge-first)
+- Client **Cancel** open request; builder **Withdraw** pending quote
+- Browse jobs: show Quote pending instead of duplicate Send quote
+- a11y: skip link + `:focus-visible`; SVG favicon; Netlify `_headers`
+- `sql/009_loop_hygiene.sql` quote status check + indexes
