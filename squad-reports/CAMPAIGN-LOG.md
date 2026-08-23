@@ -69,3 +69,11 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Mobile: hero stack, modal bottom-sheets + safe-area, dashboard sidebar → horizontal tabs
 - Anti-slop: no purple/glow/pill-close/multi-shadow; preview = atmospheric panel
 - Files: `index.html` CSS, `app.js` `ui-ready` hook; Done: `squad-reports/WAVE2E-DESIGN-DONE.md`
+
+## 2026-08-23T01:50Z — Global GTM + Country field + builders SEO
+- Founder clarify: customers **GLOBAL**; product = hire vetted builders for custom AI agents worldwide
+- Marketing: `docs/marketing/LAUNCH-KIT.md`, `seo/for-builders-en.md`, `seo/whatsapp-bot-restaurants-he.md` (HE = optional regional)
+- GTM: `squad-reports/08-gtm.md` rewritten global-first / EN-primary
+- Post modal: optional **Country** → `requests.location` (`sql/004_global.sql`); fallback `Country: X\n\n` in description if column missing
+- Live SEO: `/for-builders.html` → `index.html`; footer link on homepage
+- Hero already global (`Need a custom AI agent? Hire a vetted builder.`)

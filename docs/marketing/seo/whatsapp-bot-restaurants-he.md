@@ -1,10 +1,12 @@
 # SEO draft — סוכן / בוט וואטסאפ למסעדה (עברית)
 
+> **Product note (2026-08-23):** ORVO is a **global** marketplace (English-first). This HE page is an **optional regional acquisition channel**, not a geography lock on the product. Homepage + EN builders page stay global.
+
 **Slug (static SPA):** `/whatsapp-restaurants.html`  
 **Canonical intent:** commercial — בעל/ת מסעדה או קפה שרוצים סוכן AI לוואטסאפ (הזמנות / תפריט / מטבח).  
 **Primary CTA:** פרסמו בקשה → `index.html?utm_source=seo&utm_medium=landing&utm_campaign=wa_restaurant`  
 **Secondary CTA:** רשימת מייסדים / הרשמה  
-**Source outlines:** `squad-reports/09-content.md` § A1 · `08-gtm.md` · `16-israel.md`  
+**Source outlines:** `squad-reports/09-content.md` § A1 · `08-gtm.md` (global-first)  
 **Live HTML:** `whatsapp-restaurants.html` (שורש האתר — ראו `pages/README.md`)
 
 ---

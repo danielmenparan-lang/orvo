@@ -4,7 +4,8 @@ Actionable pack for the founder. Everything here is ready to ship; **nothing was
 
 **Live site:** https://fantastic-eclair-0b2c66.netlify.app/  
 **Full plans:** `squad-reports/08-gtm.md` · `09-content.md` · `10-social.md`  
-**SEO drafts:** `docs/marketing/seo/` · live HE landing: `/whatsapp-restaurants.html`
+**SEO drafts:** `docs/marketing/seo/` · live EN builders: `/for-builders.html` · optional HE: `/whatsapp-restaurants.html`  
+**Product:** Global marketplace (English-first). Regional HE channels optional.
 
 ---
 
@@ -16,14 +17,14 @@ Do these in order. One primary CTA for the whole day (clients **or** builders �
 - [ ] **1.** Pick today’s primary link (signup **or** waitlist) → paste into LinkedIn / X / IG bios
 - [ ] **2.** Open metrics Sheet: `Date | Channel | Asset # | Clicks/DMs | Signups`
 - [ ] **3.** Decide CTA lane: **Clients** (Mon/Wed/Fri) or **Builders** (Tue/Thu)
-- [ ] **4.** 08:30 LinkedIn — Post **7** (waitlist) Hebrew → `10-social.md`
-- [ ] **5.** 08:35 X — short cut of Post **7**
-- [ ] **6.** 08:40 IG Story — waitlist sticker + one line from Post **7**
-- [ ] **7.** 09:00 WhatsApp Status — one line from Post **2** + link (`?utm_source=whatsapp&utm_medium=dm&utm_campaign=launch_d0`)
-- [ ] **8.** Optional SEO: confirm `/whatsapp-restaurants.html` loads on Netlify; soft-share only if client day
-- [ ] **9.** 12:00 LinkedIn comment / X — Post **4** (how it works)
-- [ ] **10.** 18:00 IG Feed or LinkedIn — Post **2** (pain) or **6** (example job)
-- [ ] **11.** Evening — 10 SMB WhatsApp intros + 10 builder intros (scripts §3)
+- [ ] **4.** 08:30 LinkedIn — EN waitlist / brand post (prefer EN; HE only if IL outreach day) → `10-social.md`
+- [ ] **5.** 08:35 X — short cut English
+- [ ] **6.** 08:40 IG Story — waitlist sticker + one EN line
+- [ ] **7.** 09:00 Status / DM — one line + link (`?utm_source=whatsapp&utm_medium=dm&utm_campaign=launch_d0`)
+- [ ] **8.** SEO: confirm `/for-builders.html` loads; optional `/whatsapp-restaurants.html` if regional day
+- [ ] **9.** 12:00 LinkedIn comment / X — how it works
+- [ ] **10.** 18:00 Feed — client pain or example job
+- [ ] **11.** Evening — 10 client intros + 10 builder intros (scripts §3, EN default)
 - [ ] **12.** Night — tick §8 asset checklist; skim `08-gtm.md` Week 1 only
 
 **Do not:** auto-post from agents · claim live Stripe escrow · advertise “browse all jobs” before ≥5–8 approved builders.
@@ -58,27 +59,36 @@ Day-3: Post **1** (brand) if you haven’t used it as pin.
 
 ## 2. Bio / profile blurbs (copy-paste)
 
-**LinkedIn / X (EN):**  
-`ORVO — AI agent marketplace. Post what you need. Vetted builders quote. Chat & pay on-platform.`
+**LinkedIn / X (EN — default):**  
+`ORVO — Hire vetted builders for custom AI agents. Post what you need. Quote. Chat & pay on-platform. Worldwide.`
 
-**LinkedIn / IG (HE):**  
-`ORVO — מרקטפלייס לסוכני AI. מפרסמים מה שצריך. בונים מאומתים שולחים הצעות. צ'אט ותשלום בפלטפורמה.`
+**LinkedIn / IG (HE — optional regional):**  
+`ORVO — מרקטפלייס גלובלי לסוכני AI מותאמים. מפרסמים מה שצריך. בונים מאומתים שולחים הצעות. צ'אט ותשלום בפלטפורמה.`
 
-**WhatsApp status / short:**  
-`צריכים סוכן AI לוואטסאפ? ORVO — [link]`
+**WhatsApp status / short (EN):**  
+`Need a custom AI agent? ORVO — [link]`
 
 ---
 
-## 3. DM scripts (Israel beachhead)
+## 3. DM scripts (global-first; regional optional)
 
-### SMB / client (WhatsApp)
-> היי [שם], אני משיק את ORVO — פלטפורמה שבה מפרסמים בקשה לסוכן AI (בעיקר וואטסאפ/תפעול), מקבלים הצעות מבונים מאומתים, ומשלמים בבטחה.  
-> אם זה רלוונטי למסעדה/עסק שלך, אשמח לשים אותך ברשימת המייסדים או לעזור לנסח בקשה קצרה: [link]
+### Client (EN — default)
+> Hi [name] — launching ORVO, a marketplace where you post a custom AI agent brief, get quotes from vetted builders, and hire/pay on-platform.  
+> If you’re drowning in WhatsApp/ops/CRM work, happy to put you on the founding list or help draft a short request: [link]
 
-### Builder
+### Builder (EN — default)
+> Hi [name] — saw you ship bots/agents.  
+> ORVO is opening a founding vetted-builder cohort — clients worldwide post work; no feed spam.  
+> Portfolio or Loom → apply (manual review, ~48h): [link]
+
+### Optional regional — client (HE WhatsApp)
+> היי [שם], אני משיק את ORVO — פלטפורמה שבה מפרסמים בקשה לסוכן AI מותאם, מקבלים הצעות מבונים מאומתים, ומשלמים בבטחה.  
+> אם זה רלוונטי לעסק שלך, אשמח לשים אותך ברשימת המייסדים: [link]
+
+### Optional regional — builder (HE)
 > היי [שם], ראיתי שאת/ה בונה בוטים/סוכנים.  
-> ORVO פתוח לקוהורט ראשון של בונים מאומתים — לקוחות מפרסמים עבודה, בלי ספאם בפיד.  
-> אם יש לינק לתיק או Loom, הגישו כאן (אימות ידני, ~48 שעות): [link]
+> ORVO פתוח לקוהורט ראשון של בונים מאומתים — לקוחות מכל העולם מפרסמים עבודה, בלי ספאם בפיד.  
+> תיק או Loom → [link]
 
 ---
 
@@ -111,14 +121,16 @@ Details: `08-gtm.md` § Offers.
 
 | Asset | Status | Path |
 |-------|--------|------|
-| HE restaurant landing | **Live HTML** | `/whatsapp-restaurants.html` |
+| EN builders landing | **Live HTML** | `/for-builders.html` |
+| EN builders draft | Ready | `docs/marketing/seo/for-builders-en.md` |
+| HE restaurant landing (optional regional) | **Live HTML** | `/whatsapp-restaurants.html` |
 | HE page draft / outline | Ready | `docs/marketing/seo/whatsapp-bot-restaurants-he.md` |
-| EN builders page draft | Ready | `docs/marketing/seo/for-builders-en.md` |
 | SPA routing note | Ready | `pages/README.md` |
-| Homepage title/description | Still TODO | `09-content.md` § On-page template |
+| Homepage title/description | Global live | `index.html` |
 
 UTM for social: `?utm_source=linkedin&utm_medium=social&utm_campaign=launch_d0` (swap source).  
-SEO landing UTM: `?utm_source=seo&utm_medium=landing&utm_campaign=wa_restaurant`.
+SEO builders UTM: `?utm_source=seo&utm_medium=landing&utm_campaign=builders`.  
+Optional HE restaurant UTM: `?utm_source=seo&utm_medium=landing&utm_campaign=wa_restaurant`.
 
 ---
 
@@ -151,9 +163,9 @@ SEO landing UTM: `?utm_source=seo&utm_medium=landing&utm_campaign=wa_restaurant`
 
 ## 9. One-liner for any intro call
 
-**EN:** “ORVO is where you post the AI agent you need, get quotes from vetted builders, and pay safely on-platform — starting with WhatsApp agents for Israeli SMBs.”  
+**EN:** “ORVO is where you post the custom AI agent you need, get quotes from vetted builders worldwide, and hire/pay safely on-platform.”  
 
-**HE:** “ORVO זה המקום שבו מפרסמים איזה סוכן AI צריך, מקבלים הצעות מבונים מאומתים, ומשלמים בבטחה — מתחילים מסוכני וואטסאפ לעסקים בישראל.”
+**HE (optional regional):** “ORVO זה המקום שבו מפרסמים איזה סוכן AI מותאם צריך, מקבלים הצעות מבונים מאומתים, ומשלמים בבטחה — לקוחות מכל העולם.”
 
 ---
 
@@ -192,10 +204,10 @@ Full bilingual drafts live in `squad-reports/10-social.md` (Posts **1–15**). B
 > ORVO הוא לא עוד כלי DIY — זה מרקטפלייס לגייס בונה מאומת לסוכן וואטסאפ.  
 > אם עברתם את שלב התבניות — פרסמו בקשה.
 
-### Post 13 — Pricing honesty (HE, ready)
+### Post 13 — Pricing honesty (optional regional HE)
 
-> כמה עולה בוט וואטסאפ מותאם בישראל?  
-> בשוק רואים לרוב ₪3,500 לבסיס, ~₪6,500 עם חיבורים, ₪12,000+ לסוכן AI מלא.  
+> כמה עולה בוט וואטסאפ מותאם?  
+> בשוק רואים לרוב ₪3,500 לבסיס, ~₪6,500 עם חיבורים, ₪12,000+ לסוכן AI מלא — או הצעות ב־USD ב־ORVO ללקוחות גלובליים.  
 > ב־ORVO לא ממציאים מחיר קסם — מפרסמים תקציב, מקבלים הצעות מבונים מאומתים, וסוגרים בפלטפורמה.
 
 ### Post 14 — Pay-safe (HE, Status-length)
@@ -291,4 +303,4 @@ Use as 5 slides; caption = Hebrew body from Post 2.
 - [ ] Waitlist digest template loaded in mail tool  
 - [ ] 3 concierge brief templates saved  
 - [ ] 3 agency/accountant DMs (Post 15)  
-- [ ] Niche language check: every public post says WhatsApp + Israel/SMB, not “AI marketplace for everyone”  
+- [ ] Language check: every public post says **global marketplace / custom AI agents / vetted builders** — not Israel-only; WhatsApp OK as a vertical example  

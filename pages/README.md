@@ -6,8 +6,9 @@ ORVO ships as a **static SPA** (`index.html` + `app.js`). There is no Next/Astro
 
 | Intent | File | Notes |
 |--------|------|--------|
-| HE restaurant WhatsApp agent | `/whatsapp-restaurants.html` | Hebrew-first; links back to `index.html` |
-| EN builders (draft) | `docs/marketing/seo/for-builders-en.md` | HTML optional; homepage `#builders` for now |
+| EN builders (global) | `/for-builders.html` | English SEO; links → `index.html` |
+| HE restaurant WhatsApp (optional regional) | `/whatsapp-restaurants.html` | Hebrew acquisition channel — not product geography lock |
+| Drafts | `docs/marketing/seo/` | Markdown outlines for the HTML landings |
 
 Do **not** put crawlable marketing HTML only under `/pages/` unless the host rewrites those paths — crawlers and social previews need a direct URL.
 
