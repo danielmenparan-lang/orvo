@@ -332,3 +332,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Checkout webhook poll** — navigates to chat view when funds held
 - **Founder checklist** — copy founder-setup / deploy / verify buttons in Stripe section
 - Stripe founder banner Copy setup steps; backlog Wave 3 sync
+
+## 2026-08-23T21:00Z — pulse (post-finale)
+- **Connect return post-login** — sign-in prompt when anonymous; resume Profile after login
+- Connect return toasts webhook-aware (no stale “when Connect is live”)
+- `founder-setup.sh` + smoke test: `payment_intent.succeeded` webhook event listed
+- auth.ts + EDGE-FUNCTIONS + STATUS.md wording sync

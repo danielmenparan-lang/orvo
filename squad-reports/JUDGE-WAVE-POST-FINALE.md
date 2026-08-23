@@ -1,9 +1,9 @@
-# JUDGE — Post-finale pulses (~11:42→20:30 UTC)
+# JUDGE — Post-finale pulses (~11:42→21:00 UTC)
 
 ## Verdict
 **Integrity PASS · Stripe IMPLEMENTED (founder deploy pending)**
 
-Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pulses (12:00→19:00) added founder onboarding, full Stripe Edge handlers, client polish, admin KPI filters, and ops scripts — without reopening strategy locks.
+Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pulses (12:00→21:00) added founder onboarding, full Stripe Edge handlers, client polish, admin KPI filters, and ops scripts — without reopening strategy locks.
 
 ## Gates (updated)
 
@@ -28,6 +28,8 @@ Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pu
 | Founder setup copy UX | PASS | boot banner + Profile + database phase |
 | Jobs Connect CTA | PASS | direct onboarding from jobs nudge |
 | Checkout poll → chat | PASS | webhook confirm navigates to project |
+| Connect return post-login | PASS | auth prompt + Profile resume |
+| Connect toast copy | PASS | webhook-aware (not “when live”) |
 
 ## Founder execution (only remaining)
 

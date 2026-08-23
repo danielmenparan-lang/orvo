@@ -523,25 +523,29 @@
       u.searchParams.delete('connect');
       window.history.replaceState({}, '', u.pathname + u.search + u.hash);
     };
+    const openProfileAfterConnect = () => {
+      ensureDashOpen();
+      go('profile');
+      refreshUser().then(() => {
+        if (view === 'profile') loadProfileView();
+      });
+    };
     if (connect === 'success' || connect === 'refresh') {
       track('connect_return', { status: connect });
       toast(connect === 'success'
-        ? 'Payout onboarding returned — ORVO syncs Connect status when webhooks are live.'
-        : 'Continue payout setup from Profile when Connect is live.', true);
+        ? 'Payout onboarding returned — Connect status syncs via webhook (account.updated).'
+        : 'Continue payout setup from Profile — Connect onboarding may need another step.', true);
+      try { sessionStorage.setItem('orvo_connect_return', '1'); } catch { /* private mode */ }
       clean();
-      if (user) {
-        ensureDashOpen();
-        go('profile');
-        refreshUser().then(() => {
-          if (view === 'profile') loadProfileView();
-        });
-      }
+      if (user) openProfileAfterConnect();
+      else openAuth('login');
       return;
     }
     if (connect === 'cancel') {
       track('connect_return_cancel', {});
-      toast('Payout setup cancelled — you can retry from Profile.', false);
+      toast('Payout setup cancelled — you can retry from Profile or the payout banner.', false);
       clean();
+      if (!user) openAuth('login');
     }
   }
 
@@ -596,6 +600,11 @@
           ensureDashOpen();
           go('chat', pollRid);
           pollPaymentAfterCheckout(pollRid);
+        } else if (sessionStorage.getItem('orvo_connect_return')) {
+          sessionStorage.removeItem('orvo_connect_return');
+          ensureDashOpen();
+          go('profile');
+          if (view === 'profile') loadProfileView();
         }
       } catch { /* storage blocked */ }
     } else {
@@ -2731,7 +2740,7 @@
           if (e2) throw e2;
           toast('Payment marked released (admin)', true);
         } else {
-          toast('Delivery accepted — ORVO will settle payout when Connect is live', true);
+          toast('Delivery accepted — payout settles when release-to-builder + Connect are deployed', true);
         }
         track('payment_release_pending', { request_id: rid, reason: released.reason });
         loadChat();

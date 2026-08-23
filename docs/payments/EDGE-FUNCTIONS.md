@@ -67,7 +67,7 @@ When implemented:
 **Requires:** payment `held` + builder Connect account  
 **Output:** `{ ok: true, transfer_id }`  
 
-Client: `releasePayment` → `tryReleaseToBuilder`. On 501: mark request `completed` and toast that payout settles when Connect is live (no fake `released` for non-admin).
+Client: `releasePayment` → `tryReleaseToBuilder`. On 501: mark request `completed` and toast that payout settles when Edge + Connect are deployed (no fake `released` for non-admin).
 
 ## create-connect-account
 

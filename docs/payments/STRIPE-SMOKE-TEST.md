@@ -6,7 +6,7 @@ Run after SQL + admin + Edge secrets + `bash scripts/deploy-stripe.sh`.
 
 - [ ] Profile → Setup health → **Re-check**: Schema 10/10, Edge 4/4 deployed
 - [ ] Stripe webhook endpoint: `https://<project>.supabase.co/functions/v1/stripe-webhook`
-- [ ] Events: `checkout.session.completed`, `account.updated` (minimum)
+- [ ] Events: `checkout.session.completed`, `payment_intent.succeeded`, `account.updated`, `charge.dispute.created`
 
 ## Test accounts
 

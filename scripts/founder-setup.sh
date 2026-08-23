@@ -34,7 +34,8 @@ cat <<EOF
 
 6. STRIPE DASHBOARD
    • Webhook → https://<project>.supabase.co/functions/v1/stripe-webhook
-   • Events: checkout.session.completed, account.updated, charge.dispute.created
+   • Events: checkout.session.completed, payment_intent.succeeded,
+             account.updated, charge.dispute.created
 
 7. SMOKE TEST (test mode)
    See: docs/payments/STRIPE-SMOKE-TEST.md

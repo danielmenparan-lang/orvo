@@ -162,7 +162,7 @@ Timers from `STATUS.md`: wave1 @30m · wave2 @90m · wave3 @3h. Commit + push `c
 6. Gate chat (**P1-1**)  
 7. Fix edit-application (**P1-3**)  
 8. Niche landing lock (**P1-7**)  
-9. Checkout/webhook scaffold (**P1-5**)  
+9. Checkout/webhook (**P1-5** IMPLEMENTED)  
 10. Release only from `held` (**P1-6**)  
 
 ---
