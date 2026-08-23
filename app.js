@@ -369,6 +369,7 @@
     quoteRequestId = reqId;
     hideMsg('quote-msg');
     $('quote-price').value = '';
+    if ($('quote-eta')) $('quote-eta').value = '';
     $('quote-text').value = '';
     $('quote-modal').classList.add('open');
   }
@@ -476,6 +477,22 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Create account';
+    }
+  }
+
+  async function doForgotPassword() {
+    const email = ($('login-email').value || '').trim();
+    if (!email) {
+      showMsg('login-msg', 'Enter your email above, then click Forgot password', false);
+      return;
+    }
+    try {
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error } = await needDb().auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      showMsg('login-msg', 'Password reset email sent — check your inbox', true);
+    } catch (e) {
+      showMsg('login-msg', e.message, false);
     }
   }
 
@@ -698,9 +715,12 @@
     btn.disabled = true;
     try {
       const cents = parseMoney($('quote-price').value);
-      const msg = $('quote-text').value.trim();
-      if (cents < 100) throw new Error('Enter valid price (min $1)');
+      const eta = parseInt(($('quote-eta')?.value || '').trim(), 10);
+      let msg = $('quote-text').value.trim();
+      if (cents < 5000) throw new Error('Minimum quote is $50 USD');
       if (!msg) throw new Error('Add a message');
+      if (!eta || eta < 1) throw new Error('Add delivery estimate in days');
+      msg = `ETA: ${eta} day${eta === 1 ? '' : 's'}\n\n` + msg;
       const { error } = await needDb().from('quotes').insert({
         request_id: quoteRequestId,
         builder_id: user.id,
@@ -1097,24 +1117,29 @@
   }
 
   async function releasePayment(rid) {
-    if (!confirm('Confirm delivery accepted? This completes the project. Payout settles when Stripe Connect is live (admin/webhook).')) return;
+    if (!confirm('Confirm delivery accepted? This completes the project once funds were held.')) return;
     try {
       const { data: pay, error: pe } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
       if (pe) throw pe;
-      if (!pay || !['held', 'paid', 'pending'].includes(pay.status)) {
-        throw new Error('Nothing to release yet.');
+      if (!pay) throw new Error('No payment record for this project.');
+      if (pay.status === 'pending') {
+        throw new Error('Project is not funded yet — checkout must complete before release.');
       }
-      // Client may complete the request; payment settlement is admin/webhook-only (see sql/002)
+      if (pay.status !== 'held' && !isAdmin()) {
+        throw new Error('Release requires held funds (Stripe Checkout).');
+      }
       const { error: e1 } = await needDb().from('requests').update({ status: 'completed' }).eq('id', rid);
       if (e1) throw e1;
-      if (isAdmin()) {
+      if (isAdmin() && pay.status === 'held') {
         const { error: e2 } = await needDb().from('payments')
           .update({ status: 'released', released_at: new Date().toISOString() })
           .eq('request_id', rid);
         if (e2) throw e2;
         toast('Payment released to builder', true);
+      } else if (pay.status === 'held') {
+        toast('Delivery accepted — ORVO will settle payout to the builder', true);
       } else {
-        toast('Project completed — payout will settle via ORVO', true);
+        toast('Project completed', true);
       }
       loadChat();
     } catch (e) { toast(e.message, false); }

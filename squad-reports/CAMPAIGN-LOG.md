@@ -77,3 +77,11 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Post modal: optional **Country** → `requests.location` (`sql/004_global.sql`); fallback `Country: X\n\n` in description if column missing
 - Live SEO: `/for-builders.html` → `index.html`; footer link on homepage
 - Hero already global (`Need a custom AI agent? Hire a vetted builder.`)
+
+## 2026-08-23T01:59Z — pulse 15m
+- P1-6: release requires `held` (blocks pending/unfunded)
+- P2-3: quote min $50 + ETA days
+- P2-6/11: terms.html + privacy.html + footer links
+- P2-8: forgot password via Supabase reset email
+- P1-5: Edge Function scaffolds + EDGE-FUNCTIONS.md
+- Confirmed prior P1 (login/chat/pay sheet/global landing) already shipped

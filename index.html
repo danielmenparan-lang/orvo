@@ -453,6 +453,8 @@ footer{
     <div class="footer-links">
       <a href="#how">How it works</a>
       <a href="for-builders.html">For builders</a>
+      <a href="terms.html">Terms</a>
+      <a href="privacy.html">Privacy</a>
       <a href="#" data-action="login">Sign in</a>
       <a href="#" data-action="builder-start">Become a builder</a>
     </div>
@@ -473,6 +475,7 @@ footer{
       <div id="login-msg" class="msg hidden"></div>
       <div class="field"><label>Email</label><input id="login-email" type="email" autocomplete="email"/></div>
       <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password"/></div>
+      <p style="margin:-8px 0 16px;text-align:right"><button type="button" class="hero-secondary" id="forgot-btn" style="font-size:12px;color:var(--gray)">Forgot password?</button></p>
       <button class="btn-black" id="login-btn">Sign in</button>
     </div>
     <div id="panel-signup" class="hidden">
@@ -519,8 +522,9 @@ footer{
     <div class="field">
       <label>Price (USD)</label>
       <input id="quote-price" placeholder="e.g. 1500"/>
-      <p class="hint" style="margin-top:8px;font-size:12px;color:var(--gray)">Global marketplace — quote in USD for now</p>
+      <p class="field-hint">Minimum $50 · Global marketplace — quote in USD for now</p>
     </div>
+    <div class="field"><label>Delivery estimate (days)</label><input id="quote-eta" type="number" min="1" max="180" placeholder="e.g. 14"/></div>
     <div class="field"><label>Message</label><textarea id="quote-text" placeholder="Why you're the right builder..."></textarea></div>
     <button class="btn-black" id="quote-btn">Send quote</button>
   </div>
@@ -568,7 +572,7 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase-config.js?v=15"></script>
-<script src="app.js?v=15"></script>
+<script src="supabase-config.js?v=16"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
