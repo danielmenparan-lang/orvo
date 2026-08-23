@@ -113,3 +113,11 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Dispute modal replaces `prompt()`; Edge create-checkout CORS + secret gate
 - Backlog lock → GLOBAL; P0/P1 marked DONE in `20-ops-backlog.md`
 - Note: `squad-reports/PULSE-0231-DONE.md`
+
+## 2026-08-23T03:00Z — pulse (P2 polish)
+- Kill remaining `prompt`/`confirm`: review stars sheet, deliver/release confirm sheet, admin resolve note
+- Post **channel chips** (WhatsApp default) + chip active states
+- Invite empty-state SQL leak fixed for non-admins
+- `ORVO_DISPLAY_CURRENCY` + `docs/i18n-RTL-PREP.md` (P2-7 prep)
+- stripe-webhook scaffold: secret gate + contract comments
+- P2 backlog marked DONE / PREP in `20-ops-backlog.md`

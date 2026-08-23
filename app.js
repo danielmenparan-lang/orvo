@@ -57,7 +57,7 @@
   }
 
   function money(c) {
-    return formatMoney(c, 'USD');
+    return formatMoney(c, window.ORVO_DISPLAY_CURRENCY || 'USD');
   }
 
   function statusLabel(s) {
@@ -962,7 +962,7 @@
       .order('created_at', { ascending: false });
     if (error) {
       body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>
-        <p class="empty" style="font-size:12px;padding-top:8px">Run sql/005_invites.sql in Supabase if invites are not set up yet.</p>`;
+        <p class="empty" style="font-size:12px;padding-top:8px">${isAdmin() ? 'Run sql/005_invites.sql in Supabase if invites are not set up yet.' : 'Invites are not available yet — browse open jobs instead.'}</p>`;
       return;
     }
     if (!data?.length) {
@@ -1074,20 +1074,25 @@
   }
 
   async function resolveDispute(disputeId, requestId, how) {
-    const note = prompt('Admin note (optional)') || '';
+    const ans = await askConfirm({
+      title: how === 'resolved_client' ? 'Resolve for client?' : 'Resolve for builder?',
+      sub: 'Request returns to Delivered so the parties can continue.',
+      okLabel: 'Resolve dispute',
+      withNote: true,
+    });
+    if (!ans.ok) return;
     try {
       const { error } = await needDb().from('disputes').update({
         status: how,
-        admin_note: note || null,
+        admin_note: ans.note || null,
         resolved_by: user.id,
         resolved_at: new Date().toISOString(),
       }).eq('id', disputeId);
       if (error) throw error;
-      // Return request to delivered so client can release or continue
       await needDb().from('requests').update({ status: 'delivered' }).eq('id', requestId);
       toast('Dispute resolved', true);
       loadDisputes();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) { toast(userFacingErr(e.message), false); }
   }
 
   // ── CHAT ──
@@ -1281,36 +1286,93 @@
 
   async function leaveReview(rid, builderId) {
     if (!builderId) { toast('No builder on this project', false); return; }
-    const raw = prompt('Rating 1–5 stars');
-    if (raw == null) return;
-    const rating = parseInt(raw, 10);
+    openReviewSheet(rid, builderId);
+  }
+
+  let pendingReview = null; // { rid, builderId, rating }
+  function openReviewSheet(rid, builderId) {
+    pendingReview = { rid, builderId, rating: 0 };
+    hideMsg('review-msg');
+    if ($('review-body')) $('review-body').value = '';
+    document.querySelectorAll('.star-btn').forEach((b) => b.classList.remove('on'));
+    $('review-modal')?.classList.add('open');
+  }
+  function closeReview() {
+    $('review-modal')?.classList.remove('open');
+    pendingReview = null;
+  }
+  function setReviewRating(n) {
+    if (!pendingReview) return;
+    pendingReview.rating = n;
+    document.querySelectorAll('.star-btn').forEach((b) => {
+      const r = parseInt(b.dataset.rating, 10);
+      b.classList.toggle('on', r <= n);
+    });
+  }
+  async function submitReview() {
+    if (!pendingReview) return;
+    const { rid, builderId, rating } = pendingReview;
     if (!(rating >= 1 && rating <= 5)) {
-      toast('Enter a number from 1 to 5', false);
+      showMsg('review-msg', 'Choose a rating from 1 to 5 stars', false);
       return;
     }
-    const body = prompt('Optional short review (20+ chars, or leave blank)') || '';
+    const body = ($('review-body')?.value || '').trim();
+    const btn = $('review-confirm-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
     try {
       const row = {
         request_id: rid,
         client_id: user.id,
         builder_id: builderId,
         rating,
-        body: body.trim().length >= 20 ? body.trim() : null,
+        body: body.length >= 20 ? body : null,
       };
       const { error } = await needDb().from('reviews').insert(row);
       if (error) throw error;
+      closeReview();
       toast('Thanks for the review!', true);
       loadChat();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) {
+      showMsg('review-msg', userFacingErr(e.message), false);
+      toast(userFacingErr(e.message), false);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit review'; }
+    }
+  }
+
+  let confirmResolver = null;
+  function askConfirm({ title, sub, okLabel, withNote }) {
+    return new Promise((resolve) => {
+      confirmResolver = resolve;
+      hideMsg('confirm-msg');
+      if ($('confirm-title')) $('confirm-title').textContent = title || 'Confirm';
+      if ($('confirm-sub')) $('confirm-sub').textContent = sub || '';
+      if ($('confirm-ok-btn')) $('confirm-ok-btn').textContent = okLabel || 'Confirm';
+      const wrap = $('confirm-note-wrap');
+      if (wrap) wrap.classList.toggle('hidden', !withNote);
+      if ($('confirm-note')) $('confirm-note').value = '';
+      $('confirm-modal')?.classList.add('open');
+    });
+  }
+  function closeConfirm(ok) {
+    const note = ($('confirm-note')?.value || '').trim();
+    $('confirm-modal')?.classList.remove('open');
+    const r = confirmResolver;
+    confirmResolver = null;
+    if (r) r(ok ? { ok: true, note } : { ok: false });
   }
 
   async function markDelivered(rid) {
     const url = ($('deliver-url')?.value || '').trim();
-    if (!confirm('Mark this project as delivered for client review?')) return;
+    const ans = await askConfirm({
+      title: 'Mark as delivered?',
+      sub: 'The client will review your delivery and can release payment when funds are held.',
+      okLabel: 'Mark delivered',
+    });
+    if (!ans.ok) return;
     try {
       const { error } = await needDb().from('requests').update({ status: 'delivered' }).eq('id', rid);
       if (error) throw error;
-      // Best-effort delivery row (sql/003); ignore if table missing
       try {
         await needDb().from('deliveries').insert({
           request_id: rid,
@@ -1328,7 +1390,7 @@
       }
       toast('Marked delivered — waiting for client release', true);
       loadChat();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) { toast(userFacingErr(e.message), false); }
   }
 
   let pendingDisputeRid = null;
@@ -1389,7 +1451,12 @@
   }
 
   async function releasePayment(rid) {
-    if (!confirm('Confirm delivery accepted? This completes the project once funds were held.')) return;
+    const ans = await askConfirm({
+      title: 'Accept delivery & complete?',
+      sub: 'This completes the project once funds were held. Pending/unfunded jobs cannot release.',
+      okLabel: 'Complete project',
+    });
+    if (!ans.ok) return;
     try {
       const { data: req } = await needDb().from('requests').select('status').eq('id', rid).single();
       if (req?.status === 'disputed') throw new Error('Dispute open — release is frozen');
@@ -1416,7 +1483,7 @@
         toast('Project completed', true);
       }
       loadChat();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) { toast(userFacingErr(e.message), false); }
   }
 
   async function acceptQuote(qid, rid) {
@@ -1541,7 +1608,7 @@
     else if (a === 'tab-signup') setAuthTab('signup');
     else if (a === 'home') {
       e.preventDefault();
-      closeDash(); closeAuth(); closePost(); closeQuote(); closePay(); closeDispute();
+      closeDash(); closeAuth(); closePost(); closeQuote(); closePay(); closeDispute(); closeReview(); closeConfirm(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     else if (a === 'dashboard') {
@@ -1577,6 +1644,8 @@
     else if (a === 'close-post') closePost();
     else if (a === 'close-pay') closePay();
     else if (a === 'close-dispute') closeDispute();
+    else if (a === 'close-review') closeReview();
+    else if (a === 'close-confirm') closeConfirm(false);
   });
 
   $('login-btn').addEventListener('click', doLogin);
@@ -1586,11 +1655,17 @@
   $('post-btn').addEventListener('click', doPost);
   $('pay-confirm-btn').addEventListener('click', confirmAcceptPay);
   $('dispute-confirm-btn')?.addEventListener('click', submitDispute);
+  $('review-confirm-btn')?.addEventListener('click', submitReview);
+  $('confirm-ok-btn')?.addEventListener('click', () => closeConfirm(true));
+  document.querySelectorAll('.star-btn').forEach((b) => {
+    b.addEventListener('click', () => setReviewRating(parseInt(b.dataset.rating, 10)));
+  });
 
   document.querySelectorAll('.budget-chip').forEach((btn) => {
     btn.addEventListener('click', () => {
       const budget = btn.getAttribute('data-budget') || '';
       if ($('post-budget')) $('post-budget').value = budget === 'Custom / TBD' ? '' : budget;
+      document.querySelectorAll('.budget-chip').forEach((x) => x.classList.toggle('on', x === btn));
     });
   });
   document.querySelectorAll('.goal-chip').forEach((btn) => {
@@ -1601,12 +1676,25 @@
       const cur = ta.value.trim();
       ta.value = cur ? (cur.endsWith(goal) ? cur : cur + '\n\nGoal: ' + goal) : ('Goal: ' + goal + '\n\n');
       ta.focus();
+      document.querySelectorAll('.goal-chip').forEach((x) => x.classList.toggle('on', x === btn));
     });
   });
+  document.querySelectorAll('.channel-chip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const ch = btn.getAttribute('data-channel') || '';
+      if ($('post-cat') && ch) $('post-cat').value = ch;
+      document.querySelectorAll('.channel-chip').forEach((x) => x.classList.toggle('on', x === btn));
+    });
+  });
+  // Default channel highlight
+  document.querySelector('.channel-chip[data-channel="WhatsApp / Chat"]')?.classList.add('on');
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if ($('pay-modal').classList.contains('open')) closePay();
+    if ($('confirm-modal')?.classList.contains('open')) closeConfirm(false);
+    else if ($('review-modal')?.classList.contains('open')) closeReview();
+    else if ($('dispute-modal')?.classList.contains('open')) closeDispute();
+    else if ($('pay-modal').classList.contains('open')) closePay();
     else if ($('quote-modal').classList.contains('open')) closeQuote();
     else if ($('post-modal').classList.contains('open')) closePost();
     else if ($('auth-modal').classList.contains('open')) closeAuth();

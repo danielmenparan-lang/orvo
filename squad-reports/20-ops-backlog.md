@@ -72,18 +72,20 @@
 
 | ID | Change | Files | Acceptance criteria |
 |----|--------|-------|---------------------|
-| **P2-1** | Concierge invite object | schema + admin UI | Admin invites 1–3 builders; builder home = Invited jobs. |
-| **P2-2** | Structured brief fields | post modal | WhatsApp-default channel; goal chips; budget ₪3.5k / 6.5k / 12k / custom. |
-| **P2-3** | Quote min + ETA | `doQuote` | Min ≥ $50 or ₪ eq; delivery days. |
-| **P2-4** | Thin dispute flag | schema + chat | Dispute freezes release; admin resolve notes. |
-| **P2-5** | Reviews after complete | schema + prompt | 1–5 stars post-release; one per request. |
-| **P2-6** | Legal links | `index.html` footer | Terms, Privacy, fee disclosure stubs. |
-| **P2-7** | ILS + RTL prep | `money()`, `index.html` | `he-IL` / ₪ behind flag; RTL shell plan (16). |
-| **P2-8** | Password reset UX | auth modal | Supabase reset email. |
-| **P2-9** | Extract chat-policy module | `js/chat-policy.js` (19) | Pure helpers; app imports. |
-| **P2-10** | SEO pages A1/A2 | per `09-content.md` | HE restaurant WA + EN builders stubs. |
-| **P2-11** | Footer year + ToS | `index.html` | © 2026; legal stubs. |
-| **P2-12** | Metrics sheet | founder ops | LAUNCH-KIT §0; north stars: quote coverage, pay conversion. |
+| **P2-1** | ~~Concierge invite~~ | sql/005 + UI | **DONE** |
+| **P2-2** | ~~Structured brief~~ | post modal | **DONE** — channel chips (WA default), goal chips, USD budget bands |
+| **P2-3** | ~~Quote min + ETA~~ | `doQuote` | **DONE** |
+| **P2-4** | ~~Dispute flag~~ | schema + UI | **DONE** — client sheet + admin resolve sheet |
+| **P2-5** | ~~Reviews~~ | schema + UI | **DONE** — star review modal (no prompt) |
+| **P2-6** | ~~Legal links~~ | footer | **DONE** |
+| **P2-7** | ILS + RTL prep | `money()`, docs | **PREP DONE** — `ORVO_DISPLAY_CURRENCY` + `docs/i18n-RTL-PREP.md` (no full RTL flip) |
+| **P2-8** | ~~Password reset~~ | auth | **DONE** |
+| **P2-9** | ~~chat-policy module~~ | `js/chat-policy.js` | **DONE** |
+| **P2-10** | ~~SEO pages~~ | html + docs | **DONE** |
+| **P2-11** | ~~Footer year + ToS~~ | `index.html` | **DONE** |
+| **P2-12** | ~~Metrics sheet~~ | METRICS.md | **DONE** in docs |
+
+**Next code polish:** request-detail spine, builder public snippet, Connect onboarding when Stripe live.
 
 ---
 

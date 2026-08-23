@@ -5,6 +5,10 @@ window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 // Founding fee display (Accept & pay sheet). Authoritative fee lives in Edge env when Checkout ships.
 window.ORVO_FEE_PERCENT = 0;
 
+// Display currency for money() — settlement stays USD until multi-currency Checkout.
+// Set to 'ILS' only for local he-IL formatting experiments (see docs/i18n-RTL-PREP.md).
+window.ORVO_DISPLAY_CURRENCY = 'USD';
+
 // Deprecated — ignore. Use Checkout Session (docs/payments/STRIPE-CONNECT-MVP.md), not Payment Links.
 window.STRIPE_PAYMENT_LINK = '';
 
