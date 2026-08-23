@@ -29,7 +29,7 @@ ORVO = **מרקטפלייס גלובלי** להעסקת בנאים מאושרי�
 | **יושרה** | אין fake funded/paid; release רק מ-`held`; אין self-admin |
 | **לולאה** | post → quote → chat → accept → deliver → release/dispute/review |
 | **התראות** | inbox + badge + Realtime + sql/014–016 triggers |
-| **Stripe** | 4 Edge Functions (scaffold 501) + checklist + UUID validation |
+| **Stripe** | 4 Edge Functions **implemented** (checkout, webhook, connect, release) + checklists |
 | **UX** | status spine, skeletons, counters, search, offline banner |
 | **Conversion** | hero → signup → Post modal; Complete payment / pay resume |
 | **Admin** | KPI tiles, disputes badge+Realtime, status filters, invites |
@@ -102,7 +102,7 @@ node tests/edge-auth.test.js
 4. Edge secrets + `bash scripts/deploy-stripe.sh`
 5. Webhook endpoint ב-Stripe Dashboard
 6. Smoke: Checkout test card → webhook → `held` + `funded`
-7. Release scaffold (501 עד Transfer ממומש)
+7. Release Transfer (implemented — needs Connect onboarding on builder)
 8. Connect Express onboarding לבונה אחד
 9. Flip `ORVO_CHECKOUT_LIVE=true` + redeploy Netlify
 

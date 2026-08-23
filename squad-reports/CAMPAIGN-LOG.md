@@ -305,3 +305,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Webhook **payment_intent.succeeded** backup + shared `markPaymentHeld`
 - Pay sheet honest copy (try checkout when Edge configured)
 - `scripts/verify-edge.sh`; LAUNCH-KIT founder prereq; backlog P1-5 → IMPLEMENTED
+
+## 2026-08-23T18:30Z — pulse (post-finale)
+- Admin KPI tiles **filter All requests** by status (open / awaiting / funded / completed)
+- Status chips: delivered + completed; Connect toast + Copy verify-edge
+- Netlify JS `must-revalidate`; CAMPAIGN-FINALE-HE Stripe/Transfer sync

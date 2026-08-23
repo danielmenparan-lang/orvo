@@ -1092,7 +1092,12 @@
 
   function bindKpiCards() {
     $('view-body')?.querySelectorAll('.kpi-card[data-goto]').forEach((el) => {
-      el.addEventListener('click', () => go(el.dataset.goto));
+      el.addEventListener('click', () => {
+        if (el.dataset.status !== undefined) {
+          window.__orvoAllReqsStatus = el.dataset.status || '';
+        }
+        go(el.dataset.goto);
+      });
     });
   }
 
@@ -1710,10 +1715,10 @@
       kpiHtml = `
         <div class="row" style="margin-bottom:20px">
           <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin"><p style="font-size:12px;color:var(--gray)">Pending builders</p><h3>${pendingBuilders}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Open requests</p><h3>${openReqs}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Awaiting pay</p><h3>${awaitingPay}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Funded</p><h3>${funded}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Completed</p><h3>${completed}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="open"><p style="font-size:12px;color:var(--gray)">Open requests</p><h3>${openReqs}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="awaiting_payment"><p style="font-size:12px;color:var(--gray)">Awaiting pay</p><h3>${awaitingPay}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="funded"><p style="font-size:12px;color:var(--gray)">Funded</p><h3>${funded}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="completed"><p style="font-size:12px;color:var(--gray)">Completed</p><h3>${completed}</h3></div>
           <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="disputes"><p style="font-size:12px;color:var(--gray)">Disputes</p><h3>${openDisputes}</h3></div>
           <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin"><p style="font-size:12px;color:var(--gray)">Approved builders</p><h3>${approvedBuilders}</h3></div>
         </div>
@@ -1873,6 +1878,8 @@
       { key: 'open', label: 'Open' },
       { key: 'awaiting_payment', label: 'Awaiting pay' },
       { key: 'funded', label: 'Funded' },
+      { key: 'delivered', label: 'Delivered' },
+      { key: 'completed', label: 'Completed' },
       { key: 'disputed', label: 'Disputed' },
     ];
     const chipHtml = `<div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">${
@@ -2774,10 +2781,14 @@
       });
       const body = await res.json().catch(() => ({}));
       if (res.status === 501 || body.error === 'not_configured') {
-        return { ok: false, reason: 'not_configured' };
+        return { ok: false, reason: 'not_configured', message: body.message };
       }
       if (!res.ok || !body.url) {
-        return { ok: false, reason: body.message || body.error || 'connect_failed' };
+        return {
+          ok: false,
+          reason: body.error || 'connect_failed',
+          message: edgeErrMessage(body, 'Connect onboarding failed'),
+        };
       }
       return { ok: true, url: body.url };
     } catch {
@@ -3006,6 +3017,7 @@
         <div>${adminLine}</div>
         <div>${stripeLine}</div>
         <div style="margin-top:10px">
+          <button type="button" class="btn btn-ghost" id="btn-copy-verify-cmd" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy verify-edge</button>
           <button type="button" class="btn btn-ghost" id="btn-copy-deploy-cmd" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy deploy cmd</button>
           <button type="button" class="btn btn-primary" id="btn-copy-apply-all" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy APPLY-ALL SQL</button>
           <button type="button" class="btn btn-ghost" id="btn-copy-admin-sql" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy is_admin SQL</button>
@@ -3063,6 +3075,14 @@
     $('logout-btn').addEventListener('click', doLogout);
     $('btn-recheck-health')?.addEventListener('click', () => loadProfileView());
     $('btn-copy-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
+    $('btn-copy-verify-cmd')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText('bash scripts/verify-edge.sh');
+        toast('Copied: bash scripts/verify-edge.sh', true);
+      } catch {
+        toast('bash scripts/verify-edge.sh', true);
+      }
+    });
     $('btn-copy-apply-all')?.addEventListener('click', () => copyApplyAllSql());
     $('btn-copy-admin-sql')?.addEventListener('click', async () => {
       const safeEmail = logged.replace(/'/g, "''");
@@ -3086,8 +3106,8 @@
       btn.disabled = false;
       btn.textContent = connectId ? 'Update payout onboarding' : 'Set up payouts';
       toast(r.reason === 'not_configured'
-        ? 'Payout onboarding not live yet — Stripe Connect coming next'
-        : 'Could not start Connect onboarding', false);
+        ? 'Payout onboarding not configured — set Stripe secrets + deploy create-connect-account'
+        : (r.message || 'Could not start Connect onboarding'), false);
     });
     if (showHealth) refreshFounderSetupBanner();
     refreshBuilderPayoutBanner();
