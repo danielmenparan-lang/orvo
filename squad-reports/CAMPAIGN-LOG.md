@@ -48,3 +48,7 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Crawlable HE landing: `/whatsapp-restaurants.html` (RTL, links → `index.html` + UTM)
 - SPA note: `pages/README.md` (niche HTML at site root, not `/pages/`)
 - Done note: `squad-reports/WAVE2G-GTM-DONE.md`
+
+## 2026-08-23T01:48Z — global pivot (forced)
+- Landing + WINNING-PRODUCT: worldwide clients
+- Israel lock removed from hero
