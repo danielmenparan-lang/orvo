@@ -7,7 +7,9 @@ Run in Supabase SQL Editor, **in order**:
 3. `003_chat_and_trust.sql` — server-side chat filters + thin deliveries / reviews / disputes  
 4. `004_global.sql` — `requests.location` text (optional country for global clients)
 5. `005_invites.sql` — concierge `request_invites` (admin → builder)  
+6. `006_connect.sql` — optional `profiles.stripe_connect_*` for Express payouts  
 
+Founder smoke checklist: `docs/FOUNDER-SQL-SMOKE.md`.  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md`.
 
 Also aliased: `sql-FINAL-FIX.sql` / `sql-RUN-NOW.sql` ≈ latest full bootstrap (prefer numbered migrations).
@@ -17,4 +19,4 @@ After first admin signup:
 update public.profiles set is_admin = true where email = 'danielmen.paran@gmail.com';
 ```
 
-**Prod apply status:** *not confirmed by agents — founder must run 001→005 in Supabase SQL Editor and note the date here.*
+**Prod apply status:** *not confirmed by agents — founder must run 001→006 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*

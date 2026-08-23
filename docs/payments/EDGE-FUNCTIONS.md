@@ -36,4 +36,13 @@ Only the webhook writes `held`/`funded`.
 **Requires:** payment `held`  
 Creates Transfer to builder Connect account; sets `released`.
 
+## create-connect-account
+
+**Input:** `{}` (JWT user must be approved builder)  
+**Output:** `{ url }` Stripe Account Link  
+
+Client: Profile → **Set up payouts** → `tryCreateConnectAccount` (501 → toast until secrets).
+
+Schema: `sql/006_connect.sql` (`stripe_connect_account_id`).
+
 Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL`, `ORVO_APP_URL`

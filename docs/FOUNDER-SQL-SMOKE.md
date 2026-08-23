@@ -1,0 +1,46 @@
+# Founder SQL smoke checklist
+
+Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops notes.
+
+## Apply order
+
+- [ ] `sql/001_mvp_schema.sql`
+- [ ] `sql/002_payments_lockdown.sql`
+- [ ] `sql/003_chat_and_trust.sql`
+- [ ] `sql/004_global.sql`
+- [ ] `sql/005_invites.sql`
+- [ ] `sql/006_connect.sql` (optional until Stripe Connect)
+
+## Privilege
+
+```sql
+update public.profiles set is_admin = true where email = 'danielmen.paran@gmail.com';
+```
+
+- [ ] Founder can open **Review builders**
+- [ ] Second account **cannot** set `is_admin` via client (Profile shows Client)
+
+## Money honesty
+
+- [ ] Accept quote → request `awaiting_payment`, payment `pending` only
+- [ ] No `funded` without webhook
+- [ ] Release blocked while payment `pending`
+- [ ] Dispute freezes release
+
+## Chat
+
+- [ ] Message with email/phone rejected (client + SQL 003)
+- [ ] Cold Message gone — only after quote / invite / assign
+
+## Invites
+
+- [ ] Admin All requests → Invite builder
+- [ ] Builder sees **Invited jobs**
+
+## Stripe (when secrets ready)
+
+- [ ] Edge secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, service role
+- [ ] Deploy `create-checkout-session`, `stripe-webhook`, `create-connect-account`
+- [ ] Test Checkout → payment `held`, request `funded`
+
+**Applied on (date):** ________________

@@ -85,7 +85,9 @@
 | **P2-11** | ~~Footer year + ToS~~ | `index.html` | **DONE** |
 | **P2-12** | ~~Metrics sheet~~ | METRICS.md | **DONE** in docs |
 
-**Next code polish:** request-detail spine, builder public snippet, Connect onboarding when Stripe live.
+**Next code polish:** ~~request-detail spine~~ · ~~Connect onboard stub~~ · ~~founder SQL smoke~~ — remaining: live Stripe secrets, Connect Account Link implementation.
+
+**Founder checklist:** `docs/FOUNDER-SQL-SMOKE.md` (also linked from admin Profile).
 
 ---
 

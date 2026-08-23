@@ -1105,6 +1105,32 @@
     chatRequestStatus = 'open';
   }
 
+  function requestSpineSteps(status) {
+    const order = ['open', 'awaiting_payment', 'funded', 'delivered', 'completed'];
+    const labels = {
+      open: 'Open',
+      awaiting_payment: 'Awaiting pay',
+      funded: 'Funded',
+      delivered: 'Delivered',
+      completed: 'Done',
+    };
+    let s = status || 'open';
+    if (s === 'in_progress') s = 'funded';
+    if (s === 'disputed') {
+      return order.map((k) => ({
+        key: k,
+        label: labels[k],
+        cls: k === 'delivered' ? 'now' : (order.indexOf(k) < order.indexOf('delivered') ? 'done' : ''),
+      })).concat([{ key: 'disputed', label: 'Disputed', cls: 'now' }]);
+    }
+    const idx = Math.max(0, order.indexOf(s));
+    return order.map((k, i) => ({
+      key: k,
+      label: labels[k],
+      cls: i < idx ? 'done' : (i === idx ? 'now' : ''),
+    }));
+  }
+
   async function loadChat() {
     if (!chatRequestId) { go('messages'); return; }
     const rid = chatRequestId;
@@ -1121,8 +1147,22 @@
       return;
     }
     chatRequestStatus = req?.status || 'open';
-    let quotesHtml = '';
 
+    const { data: payRow } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
+
+    let builderSnip = '';
+    if (req?.assigned_builder_id) {
+      const { data: bp } = await needDb().from('profiles')
+        .select('id,full_name,bio,skills').eq('id', req.assigned_builder_id).maybeSingle();
+      const { data: app } = await needDb().from('builder_applications')
+        .select('portfolio_url,bio,skills').eq('user_id', req.assigned_builder_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const name = bp?.full_name || 'Assigned builder';
+      const skills = (bp?.skills || app?.skills || '').toString().slice(0, 120);
+      const port = app?.portfolio_url || '';
+      builderSnip = `<p class="builder-snip"><strong>${esc(name)}</strong>${skills ? ' · ' + esc(skills) : ''}${port ? ` · <a href="${esc(port)}" target="_blank" rel="noopener">Portfolio</a>` : ''}</p>`;
+    }
+
+    let quotesHtml = '';
     if (req?.user_id === user.id) {
       const { data: quotes } = await needDb().from('quotes').select('*').eq('request_id', rid);
       const ids = [...new Set((quotes || []).map(q => q.builder_id))];
@@ -1144,9 +1184,13 @@
       const isClient = req.user_id === user.id;
       const isAssigned = req.assigned_builder_id === user.id;
       if (isClient && req.status === 'awaiting_payment') {
+        const payBadge = payRow ? statusLabel(payRow.status) : 'No payment row';
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Payment</b>
-          <p>Quote accepted. Card checkout is coming soon — ORVO will hold funds until you approve delivery.</p>
-          <span class="badge">${esc(statusLabel(req.status))}</span></div>`;
+          <p>Quote accepted. Checkout holds funds until you approve delivery — not funded until Checkout completes.</p>
+          <p style="font-size:12px;color:var(--muted);margin:8px 0">Payment: <span class="badge">${esc(payBadge)}</span>
+            ${payRow ? ' · ' + money(payRow.amount_cents) : ''}</p>
+          <button class="btn btn-primary" id="btn-retry-checkout" data-rid="${rid}" data-qid="${payRow?.quote_id || ''}">Try checkout again</button>
+          </div>`;
       }
       if (isAssigned && req.status === 'funded') {
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Delivery</b>
@@ -1166,8 +1210,23 @@
         <button class="btn btn-primary" id="btn-leave-review" data-rid="${rid}" data-builder="${req.assigned_builder_id || ''}">Leave review</button></div>`;
     }
 
+    const steps = requestSpineSteps(req?.status);
+    const rail = steps.map((s) => `<span class="step-dot ${s.cls}">${esc(s.label)}</span>`).join('');
+    const metaBits = [
+      req?.category ? `<span><b>Channel</b> ${esc(req.category)}</span>` : '',
+      req?.location ? `<span><b>Country</b> ${esc(req.location)}</span>` : '',
+      req?.budget ? `<span><b>Budget</b> ${esc(req.budget)}</span>` : '',
+      payRow ? `<span><b>Pay</b> ${esc(statusLabel(payRow.status))}</span>` : '',
+    ].filter(Boolean).join('');
+
     $('view-body').innerHTML = `
-      <h3 style="margin-bottom:12px">${esc(req?.title || 'Chat')}</h3>
+      <div class="req-spine">
+        <h3>${esc(req?.title || 'Request')}</h3>
+        <div class="status-rail">${rail}</div>
+        <div class="req-meta">${metaBits}</div>
+        ${builderSnip}
+        ${req?.description ? `<p style="font-size:13px;color:var(--gray);line-height:1.55;margin:0">${esc(req.description.slice(0, 280))}${req.description.length > 280 ? '…' : ''}</p>` : ''}
+      </div>
       ${req?.user_id === user.id ? `<div style="margin-bottom:16px"><b>Quotes</b>${quotesHtml}</div>` : ''}
       ${escrowHtml}
       <p class="chat-hint">No emails or phone numbers. Off-platform contact links blocked. Agent/demo links (GitHub, Vercel, n8n…) are OK.</p>
@@ -1187,6 +1246,23 @@
     $('btn-open-dispute')?.addEventListener('click', () => openDispute(rid));
     $('btn-leave-review')?.addEventListener('click', () => {
       leaveReview(rid, $('btn-leave-review').dataset.builder);
+    });
+    $('btn-retry-checkout')?.addEventListener('click', async () => {
+      const qid = $('btn-retry-checkout').dataset.qid;
+      if (!qid) { toast('No quote linked to payment yet', false); return; }
+      const btn = $('btn-retry-checkout');
+      btn.disabled = true;
+      btn.textContent = 'Starting…';
+      const checkout = await tryCreateCheckoutSession({ requestId: rid, quoteId: qid });
+      if (checkout.ok && checkout.url) {
+        window.location.href = checkout.url;
+        return;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Try checkout again';
+      toast(checkout.reason === 'not_configured'
+        ? 'Checkout not live yet — no card charged'
+        : 'Checkout unavailable — still awaiting payment', false);
     });
     $('chat-form').addEventListener('submit', sendMsg);
     await renderMsgs();
@@ -1554,27 +1630,84 @@
     }
   }
 
+  async function tryCreateConnectAccount() {
+    const base = window.SUPABASE_URL;
+    if (!base || !db) return { ok: false, reason: 'not_configured' };
+    try {
+      const { data: { session } } = await needDb().auth.getSession();
+      if (!session?.access_token) return { ok: false, reason: 'auth' };
+      const res = await fetch(`${base}/functions/v1/create-connect-account`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: window.SUPABASE_ANON_KEY || '',
+        },
+        body: '{}',
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 501 || body.error === 'not_configured') {
+        return { ok: false, reason: 'not_configured' };
+      }
+      if (!res.ok || !body.url) {
+        return { ok: false, reason: body.message || body.error || 'connect_failed' };
+      }
+      return { ok: true, url: body.url };
+    } catch {
+      return { ok: false, reason: 'network' };
+    }
+  }
+
   async function loadProfileView() {
     const logged = (user?.email || '').toLowerCase().trim();
     const adminOk = isAdmin();
     const bs = profile?.builder_status || 'none';
     const role = adminOk ? 'ORVO Admin' : isBuilder() ? 'Approved builder' : isPending() ? 'Application pending' : 'Client';
+    const connectId = profile?.stripe_connect_account_id || '';
     const debugBlock = adminOk ? `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8">
         <b>Admin status</b><br>
         Logged in: <code>${esc(logged)}</code><br>
         Builder status: <b>${esc(bs)}</b><br>
-        DB is_admin: <b>yes</b>
+        DB is_admin: <b>yes</b><br>
+        <a href="founder-checklist.html" target="_blank" rel="noopener" style="color:var(--o)">Founder SQL smoke checklist →</a>
+      </div>` : '';
+    const connectBlock = isBuilder() ? `
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
+        <b>Payouts (Stripe Connect)</b><br>
+        ${connectId
+          ? `Connected account on file (<code>${esc(connectId.slice(0, 12))}…</code>).`
+          : 'Connect Express is required before ORVO can transfer held funds to you.'}
+        <button class="btn btn-primary" id="btn-connect-payouts" style="width:100%;margin-top:12px;padding:12px">
+          ${connectId ? 'Update payout onboarding' : 'Set up payouts'}
+        </button>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px">Scaffolded — live onboarding needs Stripe secrets.</p>
       </div>` : '';
     $('view-body').innerHTML = `
       <p><b>${esc(profile?.full_name)}</b></p>
       <p style="color:var(--gray);margin:4px 0 16px">${esc(logged)} · ${role}</p>
       ${debugBlock}
+      ${connectBlock}
       ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="admin">Review builder applications</button>' : ''}
       ${isBuilder() ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="jobs">Browse jobs</button>' : ''}
       ${!isBuilder() && !isPending() && !adminOk ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="apply">Apply as a builder</button>' : ''}
       <button class="btn btn-ghost" id="logout-btn" style="width:100%;padding:12px">Sign out</button>`;
     $('logout-btn').addEventListener('click', doLogout);
+    $('btn-connect-payouts')?.addEventListener('click', async () => {
+      const btn = $('btn-connect-payouts');
+      btn.disabled = true;
+      btn.textContent = 'Opening…';
+      const r = await tryCreateConnectAccount();
+      if (r.ok && r.url) {
+        window.location.href = r.url;
+        return;
+      }
+      btn.disabled = false;
+      btn.textContent = connectId ? 'Update payout onboarding' : 'Set up payouts';
+      toast(r.reason === 'not_configured'
+        ? 'Payout onboarding not live yet — Stripe Connect coming next'
+        : 'Could not start Connect onboarding', false);
+    });
   }
 
   function ensureDashOpen() {

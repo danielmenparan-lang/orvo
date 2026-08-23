@@ -251,6 +251,19 @@ footer{
 .card p{font-size:13px;color:var(--gray);margin-bottom:4px}
 .tag{display:inline-block;font-size:11px;font-weight:600;background:var(--o-dim);color:var(--o);padding:3px 8px;border-radius:4px;margin-bottom:8px}
 .badge{font-size:12px;font-weight:600;color:var(--o)}
+.req-spine{margin:0 0 20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.req-spine h3{font-family:var(--font-serif);font-size:22px;font-weight:500;margin:0 0 8px;letter-spacing:-.02em}
+.req-meta{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:var(--gray);margin:0 0 14px}
+.req-meta b{color:var(--black);font-weight:600}
+.status-rail{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px}
+.status-rail .step-dot{
+  font-size:11px;font-weight:600;letter-spacing:.02em;padding:5px 10px;
+  border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--bg);
+}
+.status-rail .step-dot.done{color:var(--green);border-color:rgba(21,128,61,.35);background:#F0FDF4}
+.status-rail .step-dot.now{color:var(--o);border-color:rgba(255,107,53,.45);background:#FFF4EF}
+.builder-snip{font-size:13px;line-height:1.5;color:var(--gray);margin:0 0 8px}
+.builder-snip strong{color:var(--black)}
 .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 
 .modal-bg{
@@ -675,8 +688,8 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=19"></script>
-<script src="supabase-config.js?v=19"></script>
-<script src="app.js?v=19"></script>
+<script src="js/chat-policy.js?v=20"></script>
+<script src="supabase-config.js?v=20"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>

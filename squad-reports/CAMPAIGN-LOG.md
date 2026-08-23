@@ -121,3 +121,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - `ORVO_DISPLAY_CURRENCY` + `docs/i18n-RTL-PREP.md` (P2-7 prep)
 - stripe-webhook scaffold: secret gate + contract comments
 - P2 backlog marked DONE / PREP in `20-ops-backlog.md`
+
+## 2026-08-23T03:30Z — pulse (request spine + Connect)
+- Request-detail spine: status rail, meta, builder snippet, brief excerpt
+- Client **Try checkout again** on awaiting_payment
+- Stripe Connect: `sql/006_connect.sql` + `create-connect-account` Edge + Profile payouts CTA
+- Founder smoke: `docs/FOUNDER-SQL-SMOKE.md` + `founder-checklist.html` (admin Profile link)
