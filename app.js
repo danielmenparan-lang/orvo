@@ -1042,6 +1042,7 @@
     document.body.style.overflow = 'hidden';
     renderSidebar();
     refreshFounderSetupBanner();
+    refreshBuilderPayoutBanner();
     go(preferredView || homeViewForRole());
   }
 
@@ -1404,6 +1405,12 @@
       return;
     }
     const searchBar = `<input class="admin-search" id="jobs-search" type="search" placeholder="Search jobs by title, category…" value="${esc(window.__orvoJobsQuery || '')}" autocomplete="off"/>`;
+    const payoutNudge = !profile?.stripe_connect_account_id
+      ? `<div class="card" style="border-color:var(--o);background:#FFF8F4;margin-bottom:16px;cursor:default">
+        <b>Payout setup</b>
+        <p style="font-size:13px;margin:8px 0 12px">Complete Stripe Connect in Profile before accepting funded jobs — release transfers need a connected account.</p>
+        <button type="button" class="btn btn-primary" data-goto="profile">Set up payouts</button>
+      </div>` : '';
     const activeHtml = (activeJobs || []).length ? `
       <h3 style="font-size:15px;margin:0 0 12px">Your active jobs</h3>
       ${(activeJobs || []).map((r) => `
@@ -1430,7 +1437,7 @@
       });
     };
     if (!data?.length) {
-      body.innerHTML = searchBar + activeHtml + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
+      body.innerHTML = searchBar + payoutNudge + activeHtml + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
       bindJobsSearch();
       bindActiveBtns();
@@ -1439,7 +1446,7 @@
     const { data: myQuotes } = await needDb().from('quotes').select('request_id,status').eq('builder_id', user.id);
     const quotedIds = new Set((myQuotes || []).map(q => q.request_id));
     const pendingIds = new Set((myQuotes || []).filter(q => q.status === 'pending').map(q => q.request_id));
-    body.innerHTML = searchBar + activeHtml + data.map(r => {
+    body.innerHTML = searchBar + payoutNudge + activeHtml + data.map(r => {
       const canMsg = isAdmin() || quotedIds.has(r.id) || r.assigned_builder_id === user.id;
       const already = pendingIds.has(r.id);
       return `
@@ -2922,6 +2929,31 @@
     $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
   }
 
+  function refreshBuilderPayoutBanner() {
+    const el = $('builder-payout-banner');
+    if (!el || !user || !isBuilder()) {
+      el?.classList.add('hidden');
+      return;
+    }
+    const connectId = profile?.stripe_connect_account_id || '';
+    if (connectId) {
+      el.classList.add('hidden');
+      return;
+    }
+    el.classList.remove('hidden');
+    el.innerHTML = `
+      <div class="founder-banner-inner">
+        <div>
+          <b>Payout setup</b>
+          <span class="founder-banner-steps">Connect Express required before ORVO can transfer held funds to you</span>
+        </div>
+        <div class="founder-banner-actions">
+          <button type="button" class="btn btn-primary" id="btn-builder-payout-profile">Set up payouts</button>
+        </div>
+      </div>`;
+    $('btn-builder-payout-profile')?.addEventListener('click', () => go('profile'));
+  }
+
   function renderHealthPanel(schemaChecks, edgeChecks, { adminOk, configuredFounder }) {
     const schemaOkN = (schemaChecks || []).filter((c) => c.ok).length;
     const schemaTotal = (schemaChecks || []).length;
@@ -2950,6 +2982,12 @@
     const edgeFixBlock = allSchemaOk && edgeMissing
       ? `<p style="color:var(--o);font-size:12px;margin:8px 0 0">Edge not deployed? Run <code>scripts/deploy-stripe.sh</code> · <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe checklist →</a></p>`
       : '';
+    const infraReady = allSchemaOk && !edgeMissing && adminOk;
+    const readyBlock = infraReady && !window.ORVO_CHECKOUT_LIVE
+      ? `<p style="color:var(--green);font-size:12px;margin:8px 0 0">Infra ready — run <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-SMOKE-TEST.md" target="_blank" rel="noopener" style="color:var(--green)">smoke test</a> then flip ORVO_CHECKOUT_LIVE</p>`
+      : (infraReady && window.ORVO_CHECKOUT_LIVE
+        ? '<p style="color:var(--green);font-size:12px;margin:8px 0 0">All green — checkout live</p>'
+        : '');
     return `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
@@ -2962,6 +3000,7 @@
         ${edgeRows}
         ${fixBlock}
         ${edgeFixBlock}
+        ${readyBlock}
         <hr style="border:none;border-top:1px solid var(--border);margin:10px 0"/>
         <div>${adminLine}</div>
         <div>${stripeLine}</div>
@@ -2989,9 +3028,9 @@
       ]);
       healthHtml = renderHealthPanel(schemaChecks, edgeChecks, { adminOk, configuredFounder });
     }
+    const connectId = profile?.stripe_connect_account_id || '';
     const bs = profile?.builder_status || 'none';
     const role = adminOk ? 'ORVO Admin' : isBuilder() ? 'Approved builder' : isPending() ? 'Application pending' : 'Client';
-    const connectId = profile?.stripe_connect_account_id || '';
     const opsBlock = showHealth ? `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8">
         <b>${adminOk ? 'Admin' : 'Founder'} ops</b><br>
@@ -3050,6 +3089,7 @@
         : 'Could not start Connect onboarding', false);
     });
     if (showHealth) refreshFounderSetupBanner();
+    refreshBuilderPayoutBanner();
   }
 
   function ensureDashOpen() {

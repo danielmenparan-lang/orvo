@@ -290,3 +290,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Webhook **charge.dispute.created** → request disputed + admin dispute row
 - `scripts/founder-setup.sh` ordered setup steps
 - Landing trust strip honesty (`ORVO_CHECKOUT_LIVE`); health panel smoke test link
+
+## 2026-08-23T17:00Z — pulse (post-finale)
+- **Builder payout banner** in dashboard + jobs nudge when Connect missing
+- Setup health **Infra ready / All green** states
+- `JUDGE-WAVE-POST-FINALE.md` post-finale verdict update
