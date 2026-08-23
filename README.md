@@ -26,8 +26,9 @@ Founder checklist: `founder-checklist.html`
 ## Stripe (when ready)
 
 1. Set Edge secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, service role)
-2. Deploy: `create-checkout-session`, `stripe-webhook`, `create-connect-account`, `release-to-builder`
-3. Set `window.ORVO_CHECKOUT_LIVE = true` in `supabase-config.js`
+2. Deploy: `bash scripts/deploy-stripe.sh` (or deploy each function individually)
+3. Profile → Setup health → Re-check (Edge rows should show deployed)
+4. Set `window.ORVO_CHECKOUT_LIVE = true` in `supabase-config.js` after smoke test
 
 Deploy guide: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`
 
