@@ -4,7 +4,7 @@ When secrets are ready, follow this order. Until then the app stays honest: **aw
 
 ## 1. Supabase SQL
 
-Run `sql/README.md` **001 → 017** (includes `017_stripe_webhook_events.sql` for webhook dedupe).
+Run `sql/README.md` **001 → 020** (includes `017_stripe_webhook_events.sql` for webhook dedupe).
 
 Set admin:
 

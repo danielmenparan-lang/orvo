@@ -14,9 +14,11 @@
   let chatRequestStatus = 'open';
   let quoteRequestId = null;
   let pendingPay = null; // { qid, rid, amountCents, fee, builderNet }
+  let awaitingPayContext = null; // { rid, qid, checkoutOpen }
   let chatSub = null;
   let chatPoll = null;
   let postSignupIntent = 'client';
+  let pendingClientPost = false;
   let adminChannel = null;
   let quotesChannel = null;
   let notifChannel = null;
@@ -168,6 +170,22 @@
   function isBuilder() { return profile?.builder_status === 'approved'; }
   function isPending() { return profile?.builder_status === 'pending'; }
   function adminEmail() { return cfgAdminEmail(); }
+
+  async function refreshDisputesBadge() {
+    if (!isAdmin() || !db) return;
+    try {
+      const { count } = await needDb().from('disputes')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['open', 'under_review']);
+      const n = count || 0;
+      const side = $('sidebar')?.querySelector('[data-view="disputes"]');
+      if (side) {
+        side.innerHTML = n
+          ? `Disputes<span class="badge-dot">${n > 9 ? '9+' : n}</span>`
+          : 'Disputes';
+      }
+    } catch { /* disputes table optional */ }
+  }
 
   async function refreshAdminBadge() {
     if (!isAdmin() || !db) return;
@@ -541,6 +559,12 @@
     hideMsg('login-msg'); hideMsg('signup-msg');
     $('auth-modal').classList.add('open');
     setAuthTab(tab || 'login');
+    const sub = $('auth-sub');
+    if (sub) {
+      sub.textContent = pendingClientPost
+        ? 'Sign in or create an account to post your agent brief.'
+        : 'Sign in or create your account';
+    }
   }
   function closeAuth() { $('auth-modal').classList.remove('open'); }
   function setAuthTab(t) {
@@ -568,6 +592,7 @@
     hideMsg('post-msg');
     wireFieldCounter('post-desc', 'post-count', 4000);
     wireFieldCounter('post-title', 'post-title-count', 80);
+    track('post_modal_open', {});
     $('post-modal').classList.add('open');
   }
   function closePost() { $('post-modal').classList.remove('open'); }
@@ -631,20 +656,67 @@
   function closePay() {
     $('pay-modal').classList.remove('open');
     pendingPay = null;
+    awaitingPayContext = null;
     const sheet = $('pay-sheet');
     if (sheet) sheet.classList.remove('done');
+    $('pay-resume-btn')?.classList.add('hidden');
   }
 
-  function showPayAwaitingState(extraNote) {
+  function showPayAwaitingState(opts) {
+    const extraNote = typeof opts === 'string' ? opts : opts?.extraNote;
+    const rid = typeof opts === 'object' ? opts?.rid : null;
+    const qid = typeof opts === 'object' ? opts?.qid : null;
+    const checkoutOpen = typeof opts === 'object' ? !!opts?.checkoutOpen : false;
+    awaitingPayContext = rid && qid ? { rid, qid, checkoutOpen } : null;
+
+    const checkoutLive = !!window.ORVO_CHECKOUT_LIVE;
     const sheet = $('pay-sheet');
     sheet.classList.add('done');
     $('pay-title').textContent = 'Awaiting payment';
-    $('pay-sub').textContent = 'Builder locked — checkout coming soon';
-    $('pay-note').innerHTML =
-      'Quote accepted. Status is <strong>awaiting payment</strong>, not funded. ' +
-      'When Stripe Checkout goes live, you will pay here and funds will be held until you release.';
-    showMsg('pay-msg', extraNote || 'Checkout coming — no card charged yet', true);
+    $('pay-sub').textContent = checkoutOpen
+      ? 'Checkout started — finish payment to hold funds'
+      : (checkoutLive ? 'Complete checkout to hold funds' : 'Builder locked — awaiting payment');
+    if (checkoutLive) {
+      $('pay-note').innerHTML = checkoutOpen
+        ? 'You started Stripe Checkout. Complete payment to hold funds until delivery — not funded until the webhook confirms.'
+        : 'Continue to Stripe Checkout. Funds are <strong>held by ORVO</strong> until you approve delivery.';
+    } else {
+      $('pay-note').innerHTML =
+        'Quote accepted. Status is <strong>awaiting payment</strong>, not funded. ' +
+        'When Stripe Checkout goes live, you will pay here and funds will be held until you release.';
+    }
+    showMsg('pay-msg', extraNote || (checkoutLive ? 'Complete checkout to hold funds' : 'Checkout coming — no card charged yet'), true);
     $('pay-cancel-btn').textContent = 'Close';
+    const resumeBtn = $('pay-resume-btn');
+    if (resumeBtn) {
+      if (awaitingPayContext) {
+        resumeBtn.classList.remove('hidden');
+        resumeBtn.textContent = checkoutOpen
+          ? (checkoutLive ? 'Continue to Stripe Checkout' : 'Resume checkout')
+          : (checkoutLive ? 'Pay with Stripe Checkout' : 'Try checkout again');
+      } else {
+        resumeBtn.classList.add('hidden');
+      }
+    }
+  }
+
+  async function resumeCheckoutFromSheet() {
+    const ctx = awaitingPayContext;
+    if (!ctx?.rid || !ctx?.qid) return;
+    const btn = $('pay-resume-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
+    const checkout = await tryCreateCheckoutSession({ requestId: ctx.rid, quoteId: ctx.qid });
+    if (checkout.ok && checkout.url) {
+      window.location.href = checkout.url;
+      return;
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = ctx.checkoutOpen ? 'Resume checkout' : 'Try checkout again';
+    }
+    toast(checkout.reason === 'not_configured'
+      ? 'Checkout not live yet — no card charged'
+      : 'Checkout unavailable — still awaiting payment', false);
   }
 
   /** Call Edge Function; 501/not_configured → caller shows awaiting state. */
@@ -676,16 +748,30 @@
     }
   }
 
+  function maybeOpenClientPost() {
+    if (!pendingClientPost) return;
+    pendingClientPost = false;
+    if (isAdmin() || isBuilder() || isPending()) return;
+    setTimeout(() => openPost(), 150);
+  }
+
   /** Signup only: honor intent. Login always uses role via openDash(). */
   function routeAfterSignup(intent) {
-    openDash();
+    if (intent !== 'client') pendingClientPost = false;
+    openDash(intent === 'client' ? 'requests' : undefined);
     if (intent === 'builder' && !isBuilder() && !isPending()) go('apply');
+    else if (intent === 'client') {
+      go('requests');
+      maybeOpenClientPost();
+    }
   }
 
   /** Login / session restore: role home — never signup intent. */
   function routeAfterLogin() {
+    const wantPost = pendingClientPost;
     postSignupIntent = 'client';
-    openDash(homeViewForRole());
+    openDash(wantPost && !isAdmin() && !isBuilder() && !isPending() ? 'requests' : homeViewForRole());
+    if (wantPost) maybeOpenClientPost();
   }
 
   /** True if user owns the request, quoted it, is assigned, invited, or is admin. */
@@ -847,7 +933,16 @@
       el.addEventListener('click', () => go(el.dataset.view));
     });
     if (isBuilder()) refreshInviteBadge();
+    if (isAdmin()) {
+      refreshDisputesBadge();
+    }
     refreshNotifBadge();
+  }
+
+  function bindKpiCards() {
+    $('view-body')?.querySelectorAll('.kpi-card[data-goto]').forEach((el) => {
+      el.addEventListener('click', () => go(el.dataset.goto));
+    });
   }
 
   function go(v, id) {
@@ -931,6 +1026,7 @@
       if (error) throw error;
       if ($('post-country')) $('post-country').value = '';
       closePost();
+      track('post_success', { category: row.category });
       openDash();
       go('requests');
       toast('Request posted!', true);
@@ -1009,6 +1105,15 @@
         quoteCounts[q.request_id] = (quoteCounts[q.request_id] || 0) + 1;
       });
     }
+    const awaitingIds = rows.filter((r) => r.status === 'awaiting_payment').map((r) => r.id);
+    const payByReq = {};
+    if (awaitingIds.length) {
+      try {
+        const { data: pays } = await needDb().from('payments')
+          .select('request_id,quote_id,status').in('request_id', awaitingIds);
+        (pays || []).forEach((p) => { payByReq[p.request_id] = p; });
+      } catch { /* payments optional */ }
+    }
     if (!rows.length) {
       body.innerHTML = `<input class="admin-search" id="requests-search" type="search" placeholder="Search your requests…" value="${esc(qText)}" autocomplete="off"/>
         <p class="empty">${qText ? 'No requests match that search.' : 'No requests yet.'}</p>
@@ -1043,6 +1148,7 @@
         <span class="badge">${esc(statusLabel(r.status))}${quoteBadge} · ${ago(r.created_at)}</span>
         <div class="row">
           <button class="btn btn-primary btn-open-req" data-rid="${r.id}">Open</button>
+          ${r.status === 'awaiting_payment' ? `<button class="btn btn-primary btn-pay-req" data-rid="${r.id}" data-qid="${esc(payByReq[r.id]?.quote_id || '')}">Complete payment</button>` : ''}
           ${r.status === 'open' ? `<button class="btn btn-ghost btn-cancel-req" data-rid="${r.id}">Cancel</button>` : ''}
           <button class="btn btn-ghost btn-share-req" data-rid="${r.id}">Copy link</button>
         </div>
@@ -1065,6 +1171,26 @@
     });
     body.querySelectorAll('.btn-share-req').forEach(el => {
       el.addEventListener('click', () => copyRequestLink(el.dataset.rid));
+    });
+    body.querySelectorAll('.btn-pay-req').forEach(el => {
+      el.addEventListener('click', async () => {
+        const rid = el.dataset.rid;
+        const qid = el.dataset.qid;
+        if (!qid) { go('chat', rid); return; }
+        el.disabled = true;
+        el.textContent = 'Starting…';
+        const checkout = await tryCreateCheckoutSession({ requestId: rid, quoteId: qid });
+        if (checkout.ok && checkout.url) {
+          window.location.href = checkout.url;
+          return;
+        }
+        el.disabled = false;
+        el.textContent = 'Complete payment';
+        toast(checkout.reason === 'not_configured'
+          ? 'Checkout not live yet — open request to retry'
+          : 'Checkout unavailable — open request for details', false);
+        go('chat', rid);
+      });
     });
   }
 
@@ -1399,13 +1525,13 @@
       ]);
       kpiHtml = `
         <div class="row" style="margin-bottom:20px">
-          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Pending builders</p><h3>${pendingBuilders}</h3></div>
-          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Open requests</p><h3>${openReqs}</h3></div>
-          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Awaiting pay</p><h3>${awaitingPay}</h3></div>
-          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Funded</p><h3>${funded}</h3></div>
-          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Completed</p><h3>${completed}</h3></div>
-          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Disputes</p><h3>${openDisputes}</h3></div>
-          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Approved builders</p><h3>${approvedBuilders}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin"><p style="font-size:12px;color:var(--gray)">Pending builders</p><h3>${pendingBuilders}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Open requests</p><h3>${openReqs}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Awaiting pay</p><h3>${awaitingPay}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Funded</p><h3>${funded}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests"><p style="font-size:12px;color:var(--gray)">Completed</p><h3>${completed}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="disputes"><p style="font-size:12px;color:var(--gray)">Disputes</p><h3>${openDisputes}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin"><p style="font-size:12px;color:var(--gray)">Approved builders</p><h3>${approvedBuilders}</h3></div>
         </div>
         <h3 style="margin:8px 0 12px;font-size:16px">Pending builder applications</h3>`;
     } catch (_) {
@@ -1416,6 +1542,7 @@
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
       $('view-body').innerHTML = kpiHtml + `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
+      bindKpiCards();
       return;
     }
     if (!data?.length) {
@@ -1423,6 +1550,7 @@
         <p class="empty" style="padding-top:12px;font-size:13px;color:var(--gray)">
           Builders submit via Apply (bio 50+ chars). Use <b>All requests</b> to invite approved builders.
         </p>`;
+      bindKpiCards();
       return;
     }
     const searchHtml = `<input class="admin-search" id="admin-app-search" type="search" placeholder="Filter by name, email, or skills…" autocomplete="off"/>`;
@@ -1438,6 +1566,7 @@
         </div>
       </div>`).join('');
     $('view-body').innerHTML = kpiHtml + searchHtml + `<div id="admin-app-list">${renderApps(data)}</div>`;
+    bindKpiCards();
     const bindApprove = () => {
       $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid)));
       $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid)));
@@ -1600,7 +1729,11 @@
       return;
     }
     if (!data?.length) {
-      $('view-body').innerHTML = '<p class="empty">No open disputes</p>';
+      $('view-body').innerHTML = `<p class="empty">No open disputes</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">When clients open disputes, they appear here for review.</p>
+        <button class="btn btn-ghost" data-goto="all-requests" style="margin-top:12px">View all requests</button>`;
+      $('view-body').querySelector('[data-goto="all-requests"]')?.addEventListener('click', () => go('all-requests'));
+      refreshDisputesBadge();
       return;
     }
     $('view-body').innerHTML = data.map(d => `
@@ -1618,6 +1751,7 @@
     $('view-body').querySelectorAll('.btn-resolve').forEach(b => {
       b.addEventListener('click', () => resolveDispute(b.dataset.id, b.dataset.rid, b.dataset.how));
     });
+    refreshDisputesBadge();
   }
 
   async function resolveDispute(disputeId, requestId, how) {
@@ -2334,7 +2468,7 @@
       const note = checkout.reason === 'not_configured' || checkout.reason === 'network'
         ? 'Checkout not live yet — no card charged'
         : `Checkout unavailable (${checkout.reason}) — job is awaiting payment`;
-      showPayAwaitingState(note);
+      showPayAwaitingState({ extraNote: note, rid, qid, checkoutOpen: false });
       toast('Quote accepted — awaiting payment (not funded yet)', true);
       track('quote_accepted', { request_id: rid, quote_id: qid, checkout: checkout.reason || 'redirect' });
       pendingPay = null;
@@ -2475,6 +2609,7 @@
       if (user) openPost();
       else {
         postSignupIntent = 'client';
+        pendingClientPost = true;
         openAuth('signup'); setAuthTab('signup');
         if ($('signup-intent')) $('signup-intent').value = 'client';
       }
@@ -2507,6 +2642,7 @@
   $('quote-btn').addEventListener('click', doQuote);
   $('post-btn').addEventListener('click', doPost);
   $('pay-confirm-btn').addEventListener('click', confirmAcceptPay);
+  $('pay-resume-btn')?.addEventListener('click', resumeCheckoutFromSheet);
   $('dispute-confirm-btn')?.addEventListener('click', submitDispute);
   $('review-confirm-btn')?.addEventListener('click', submitReview);
   $('confirm-ok-btn')?.addEventListener('click', () => closeConfirm(true));

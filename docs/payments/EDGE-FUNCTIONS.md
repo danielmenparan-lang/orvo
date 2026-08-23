@@ -2,7 +2,17 @@
 
 Deploy under Supabase Edge Functions when secrets are ready. See `docs/payments/STRIPE-CONNECT-MVP.md`.
 
-Shared helpers: `supabase/functions/_shared/auth.ts` (Bearer + JSON body validation), `stripe-env.ts` (secret/site/fee helpers).
+Shared helpers: `supabase/functions/_shared/auth.ts` (Bearer + JSON body + UUID validation), `stripe-env.ts` (secret/site/fee helpers).
+
+**Validation matrix (pre-Stripe):**
+
+| Condition | Status | error |
+|-----------|--------|-------|
+| Missing Bearer | 401 | `unauthorized` |
+| Invalid JSON body | 400 | `invalid_json` |
+| Missing `request_id` / `quote_id` | 400 | `validation_error` |
+| Non-UUID field value | 400 | `validation_error` |
+| Secrets not set | 501 | `not_configured` |
 
 ## create-checkout-session
 

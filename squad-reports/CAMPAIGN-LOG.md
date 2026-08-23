@@ -218,3 +218,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Dispute + apply bio counters committed; review modal counter (500)
 - `checkout_open` resume/continue checkout UX in chat escrow card
 - Footer HE line; `JUDGE-WAVE-8h.md` (integrity PASS, Stripe blocked)
+
+## 2026-08-23T10:30Z — pulse
+- Client post funnel: signup/login from hero → Post modal opens
+- Pay sheet resume button + ORVO_CHECKOUT_LIVE-aware awaiting copy
+- My requests **Complete payment** on awaiting_payment cards
+- Admin disputes badge + clickable KPI tiles; Edge UUID validation + test

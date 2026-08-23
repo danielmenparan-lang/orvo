@@ -32,3 +32,12 @@ Founder checklist: `founder-checklist.html`
 Deploy guide: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`
 
 Docs: `docs/WINNING-PRODUCT.md`, `docs/payments/STRIPE-CONNECT-MVP.md`
+
+## Tests
+
+```bash
+node tests/chat-policy.test.js
+node tests/events.test.js
+node tests/status-spine.test.js
+node tests/edge-auth.test.js
+```
