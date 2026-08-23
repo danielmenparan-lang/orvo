@@ -177,3 +177,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - `sql/014_quote_notify.sql` (quote insert → client notification; invite → builder)
 - Chat timestamps; loading skeletons; toast aria-live
 - `js/status-spine.js` + cancelled rail; `site.webmanifest`; mark-all-read
+
+## 2026-08-23T07:00Z — pulse
+- Notifications Realtime toast + badge refresh
+- `sql/015_status_notify.sql` (request status → client/builder inbox)
+- Post/quote char counters; admin Copy events (localStorage buffer)
+- Checkout Edge validates body/JWT before 501; badge pop motion
