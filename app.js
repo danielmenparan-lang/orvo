@@ -704,7 +704,7 @@
   // ── ADMIN ──
   async function loadAdmin() {
     if (!isAdmin()) {
-      $('view-body').innerHTML = `<p class="empty">Admin: sign in as <b>${esc(adminEmail())}</b><br>Then run <b>sql-RUN-NOW.sql</b> in Supabase</p>`;
+      $('view-body').innerHTML = `<p class="empty">Admin access required.</p>`;
       return;
     }
     refreshAdminBadge();
@@ -713,7 +713,7 @@
     const { data, error } = await needDb().from('builder_applications')
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}<br><br>Run <b>sql-RUN-NOW.sql</b> in Supabase SQL Editor</p>`;
+      $('view-body').innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
       return;
     }
     if (!data?.length) {
