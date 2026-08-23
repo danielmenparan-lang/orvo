@@ -23,15 +23,25 @@ See `docs/payments/STRIPE-CONNECT-MVP.md` for money path.
 
 ## Campaign shipped (~10h, 2026-08-23)
 
-Branch `cursor/orvo-local-site-3bd5` · PR #2 · Demo on Netlify.
+**Start** ~01:41 UTC · **Finale** ~11:42 UTC  
+Branch `cursor/orvo-local-site-3bd5` · [PR #2](https://github.com/danielmenparan-lang/orvo/pull/2) · [Demo](https://fantastic-eclair-0b2c66.netlify.app/)
 
 | Area | Shipped |
 |------|---------|
-| Integrity | No fake pay; chat gate; sibling quote decline; payments RLS in repo |
-| Loop | Login routing; apply edit; accept & pay sheet; release from `held` only |
-| Notifications | Inbox + unread badge + Realtime toasts (sql/012–019) |
-| Stripe | Edge scaffolds (checkout, webhook, connect, release) + deploy checklist |
-| Polish | Form counters, thread unread, search filters, status spine, offline banner |
-| SEO | hire / for-builders pages + redirects |
+| Integrity | No fake pay; chat gate; sibling quote decline; payments RLS (sql/002) |
+| Loop | Role routing; apply edit; accept & pay sheet; deliver/release/dispute/review |
+| SQL | Migrations **001→020** in repo (notifications, invites, guards, webhook dedupe) |
+| Notifications | Inbox + unread badge + Realtime toasts (012–019) |
+| Stripe | Edge scaffolds (checkout, webhook, connect, release) + deploy checklist + UUID auth |
+| UX | Status spine, skeletons, form counters, search, offline banner, post funnel |
+| Payments UX | Pay resume, Complete payment CTAs, checkout `rid` deep link, `checkout_open` |
+| Admin | KPI drill-down, disputes badge + Realtime, status filter chips |
+| Builder | Invited jobs, active jobs strip, withdraw quote |
+| SEO | hire / for-builders pages, sitemap, OG meta |
+| Tests | chat-policy, events, status-spine, edge-auth |
 
-**Founder unblock:** Apply sql/001→020 · Stripe secrets · flip `ORVO_CHECKOUT_LIVE` after smoke test.
+**Judge:** `squad-reports/JUDGE-WAVE-10h.md` — integrity **PASS**, Stripe **BLOCKED** (secrets).
+
+**Founder brief (HE):** `squad-reports/CAMPAIGN-FINALE-HE.md`
+
+**Founder unblock:** Apply sql/001→020 · set `is_admin` · Stripe secrets + Edge deploy · flip `ORVO_CHECKOUT_LIVE` after smoke test.
