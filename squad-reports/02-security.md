@@ -1,200 +1,170 @@
 # ORVO Role 02 — Security Auditor
 
-**Scope:** `/workspace/index.html`, `app.js`, `supabase-config.js` (project `lbfysqtnarhkoqcnaivg`).  
-**Method:** Static review of client authz, data writes, XSS escaping, payment stubs, PII exposure. **No live exploitation** beyond noting the public anon URL/key already shipped in the repo.  
-**Assumption:** Referenced SQL files (`sql-RUN-NOW.sql`, etc.) are **not in this repo**. Production safety depends entirely on Supabase RLS that we cannot verify from code. Treat “RLS unknown / missing” as the default risk.
+**Scope:** `/workspace/index.html`, `app.js`, `supabase-config.js`, and shipped `sql/001_mvp_schema.sql` (project URL `https://lbfysqtnarhkoqcnaivg.supabase.co`).  
+**Method:** Static review of client authz, RLS SQL, XSS escaping, payment stubs, PII. **No live exploitation** of production beyond noting the public anon URL/key already in-repo.  
+**Note:** Whether `001_mvp_schema.sql` is fully applied in prod is unverified (Supabase MCP not authenticated). Findings treat the shipped SQL + client as the intended security model.
 
 ---
 
 ## Executive verdict
 
-The UI implements roles (`isAdmin`, `isBuilder`) and chat filters **only in the browser**. Every sensitive write (`is_admin`, `builder_status`, quote/payment/request status) goes through the **anon key + user JWT**. If RLS does not hard-block privilege columns and admin mutations, a signed-in user can self-approve as builder, self-elevate to admin, mark deals funded without Stripe, and read other users’ requests/applications. XSS hygiene is generally good (`esc()` on rendered fields). Payment is a **manual confirm stub**, not escrow.
+**Critical privilege escalation is designed into the current RLS + client combo.** `profiles` updates allow any user to set `is_admin` / `builder_status`; helpers `is_orvo_admin()` / `is_approved_builder()` trust those columns; therefore self-approve and self-admin unlock quotes, open jobs, applications, and admin policies. Payments can be inserted as `paid` from the browser. XSS escaping is generally solid. Treat tonight’s priority as **locking privilege columns + killing client-side “paid” writes**.
 
 ---
 
 ## Critical
 
-### C1 — Privilege columns are client-writable (admin + builder bypass)
+### C1 — Self-admin / self-approve via `profiles` (RLS + client)
 
-**Where:** `loadProfile` sets `is_admin` via client `profiles.update` / `insert`; `doApply` / `approveBuilder` / `rejectBuilder` update `profiles.builder_status` and `builder_applications.status` from the browser; `isAdmin()` / `isBuilder()` trust `profile.is_admin` / `builder_status`.
+**SQL (`001_mvp_schema.sql`):**
 
-**Risk:** With typical “users can update own profile” RLS (no column restrictions), any authenticated user can:
-
-```js
-// Illustrative — do not run against prod; shows the client attack surface
-supabase.from('profiles').update({ is_admin: true, builder_status: 'approved' }).eq('id', myId)
-supabase.from('builder_applications').update({ status: 'approved' }).eq('user_id', myId)
+```181:183:sql/001_mvp_schema.sql
+create policy profiles_update_own on public.profiles for update to authenticated
+  using (id = auth.uid() or public.is_orvo_admin())
+  with check (id = auth.uid() or public.is_orvo_admin());
 ```
 
-UI gates (`loadAdmin`, `loadJobs`) are cosmetic. `approveBuilder(uid)` does **not** re-check `isAdmin()` before writing — RLS is the only real gate.
+No column restriction. Insert policy only checks `id = auth.uid()`.
 
-**Recommend:** Move elevation to server-only paths (Edge Function + `service_role`, or SECURITY DEFINER RPC callable only by admins). Strip client ability to set `is_admin` / `builder_status` / application `status`. Store admin in `auth.users.raw_app_meta_data` (not `user_metadata`).
+**Helpers trust the same mutable flags:**
 
-### C2 — Assumed / unverified RLS (entire marketplace)
+```127:137:sql/001_mvp_schema.sql
+create or replace function public.is_orvo_admin()
+...
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.is_admin = true
+  );
+```
 
-**Where:** App expects tables `profiles`, `requests`, `quotes`, `messages`, `builder_applications`, `payments` + Realtime on `messages` / `builder_applications`. No migrations in repo.
+**Client reinforces the pattern:** `loadProfile` writes `is_admin: true` when email matches public `ORVO_ADMIN_EMAIL`; `isAdmin()` trusts `profile?.is_admin`; `approveBuilder` updates another user’s `builder_status` with no server role check beyond RLS.
 
-**Risk:** Open or permissive policies leak all open (and possibly all) requests, applications (emails/bios), messages, quotes, and payment rows to `anon`/`authenticated`. Realtime subscriptions amplify leakage.
+**Impact if this SQL is live:** Any authenticated user can set `is_admin` / `builder_status = 'approved'` on their row → `is_orvo_admin()` / `is_approved_builder()` become true → admin read/update policies and builder quote/job access unlock. Circular trust: admin flag grants broader `profiles` updates for others.
 
-**Recommend:** Enable RLS on every public table tonight; apply policies in “Assumed RLS” below; run Supabase Advisors; revoke broad `SELECT` for `anon`.
+**Recommend:** Privilege changes only via `service_role` / SECURITY DEFINER RPC; BEFORE UPDATE trigger freezing `is_admin` and blocking self-set `approved`/`rejected`; prefer `auth.jwt() → app_metadata.role = 'admin'` for `is_orvo_admin()`.
 
-### C3 — Payment stub marks deals `paid` / `funded` without money movement
+### C2 — Builder application status self-approval
 
-**Where:** `acceptQuote` — `confirm()` → update quote/request → `payments.insert` with `status: 'paid'` when `STRIPE_PAYMENT_LINK` is empty; otherwise opens a **generic** Payment Link (not quote-bound) and leaves `pending` without webhook verification.
+**SQL:** `apps_update` allows `user_id = auth.uid() OR is_orvo_admin()` with no `WITH CHECK` on `status`. `apps_insert` does not force `status = 'pending'`.
 
-**Risk:** Fake “funded” state unlocks post-pay chat rules; builders/clients may deliver under false payment; fee/`amount_cents` are client-influenced; no idempotency, no Stripe signature check, no escrow hold/release.
+**Client:** `doApply` upserts application; `approveBuilder` sets `status: 'approved'` + `profiles.builder_status`.
 
-**Recommend:** Never write `paid`/`funded` from the browser. Checkout Session (or PaymentIntent) created by Edge Function; webhook (`checkout.session.completed`) is the sole writer of payment/request status. Disable manual confirm path in production.
+**Impact:** Applicant can set own application to `approved` (and, with C1, profile to match). Manual vetting is bypassable at the API layer.
+
+**Recommend:** Applicants: insert/update only while `status = 'pending'` and cannot change `status` away from `pending`. Approve/reject RPC for admins only (updates application + profile atomically).
+
+### C3 — Client-written “paid” / “funded” without Stripe
+
+**Client `acceptQuote`:** `confirm()` → updates quote/request → `payments.insert` with `status: 'paid'` when `STRIPE_PAYMENT_LINK` is empty; generic Payment Link (not amount/quote-bound) when set; no webhook.
+
+**SQL:** `payments_insert` / `payments_update` allow the paying user to insert/update their rows with arbitrary `status` / amounts. `quotes_update` / `requests_update` allow request owner (and assigned builder on requests) to flip statuses.
+
+**Impact:** Fake funding; post-pay chat rules unlock; no escrow integrity; fee computed from `window.ORVO_FEE_PERCENT` (client-overridable).
+
+**Recommend:** Revoke authenticated insert/update on `payments`; webhook/Edge Function only. Status transitions `accepted` → `paid` / `funded` only from that path. Disable manual confirm in production builds.
+
+### C4 — `profiles` readable by every authenticated user
+
+```173:174:sql/001_mvp_schema.sql
+create policy profiles_select on public.profiles for select to authenticated
+  using (true);
+```
+
+**Impact:** Full PII/recon dump: emails, names, `is_admin`, `builder_status` for all users. Helps target the admin account and map who is approved.
+
+**Recommend:** Select self + limited public fields for chat counterparts (id, full_name) via view or narrow policy; admins get broader select.
 
 ---
 
 ## High
 
-### H1 — Admin identity is public client config
+### H1 — Admin email is a public client constant
 
-**Where:** `supabase-config.js` `ORVO_ADMIN_EMAIL`; duplicate hardcode `ADMIN_EMAIL` in `app.js`; non-admin `loadAdmin` / Profile view reveal the admin address.
+**Where:** `supabase-config.js` `ORVO_ADMIN_EMAIL`; hardcode in `app.js`; Profile / non-admin Admin view disclose it.
 
-**Risk:** Targeted phishing / account takeover of the sole admin; anyone who registers that mailbox (if unowned) becomes admin via `makeAdmin` email match.
+**Impact:** Phishing / takeover target; signup as that address (if free) becomes admin via `makeAdmin`.
 
-**Recommend:** Remove email from public UI and from hardcodes; use `app_metadata.role = 'admin'` set only in Dashboard/service role; rotate if this address was exposed as a soft secret.
+**Recommend:** Remove from frontend; set admin only in Auth `app_metadata` or one-time service-role SQL (comment at bottom of schema is fine for bootstrap, not for shipping email in JS).
 
-### H2 — Chat / contact filters are client-only (and skipped for admins)
+### H2 — Chat filters are browser-only (admins skip)
 
-**Where:** `validateChatMessage` before `messages.insert`; `if (!isAdmin()) { … }`.
+**Where:** `validateChatMessage` before insert; skipped when `isAdmin()`.
 
-**Risk:** Direct REST/Realtime inserts bypass email/phone/off-platform URL filters. Admin bypass is intentional UX but widens abuse if admin JWT leaks. Filter regexes are incomplete (obfuscation, Unicode, `bit.ly`, SMS gateways, etc.).
+**SQL:** `messages_insert` only checks `sender_id` + `can_access_request` — no body validation.
 
-**Recommend:** Postgres `BEFORE INSERT` trigger or Edge Function enforcing the same rules; never trust the client. Log violations.
+**Impact:** Direct REST inserts bypass email/phone/off-platform rules. Open-request access for “approved” builders (C1) widens who can spam/phish in threads.
 
-### H3 — Sensitive actions lack server-side role checks
+**Recommend:** BEFORE INSERT trigger / Edge Function with the same rules; keep admin override auditable if needed.
 
-**Where:** `doQuote` (no `isBuilder()`), `loadAllRequests` (no `isAdmin()`), `acceptQuote` (no ownership check in JS), `go('admin'|'all-requests')` reachable without sidebar.
+### H3 — UI role checks are not enforcement
 
-**Risk:** Attackers call the same Supabase writes the UI uses. Without RLS matching intent, unapproved users quote, anyone lists all requests, anyone accepts/pays any quote.
+**Where:** `doQuote` does not call `isBuilder()` (RLS does via `is_approved_builder` — but see C1); `loadAllRequests` has no `isAdmin()` guard; `approveBuilder` / `acceptQuote` assume honest UI; `go('admin')` reachable without sidebar.
 
-**Recommend:** RLS + RPC that asserts: quote only if `builder_status = 'approved'`; accept only if `requests.user_id = auth.uid()` and quote belongs to request; admin list only if `is_admin` from trusted claim.
+**Impact:** Defense in depth missing; any RLS mistake is immediately exploitable from DevTools.
 
-### H4 — Auth hardening gaps encouraged by the app
+**Recommend:** Keep UI checks for UX; enforce in RLS/RPC. Add ownership checks in payment accept RPC (`requests.user_id = auth.uid()`).
 
-**Where:** Login path tells ops to turn **off** “Confirm email”; client password minimum is **6** characters; session relies on standard Supabase JWT in local storage (XSS → session theft).
+### H4 — Auth posture weakened by product copy
 
-**Risk:** Unverified emails, weak passwords, stolen sessions = account takeover of clients/builders/admin.
+**Where:** Login error suggests turning **off** email confirmation; password min **6** chars.
 
-**Recommend:** Keep email confirmation **on** (or magic link); raise password policy in Supabase Auth; short JWT expiry; consider MFA for admin; CSP to reduce XSS→token risk.
+**Impact:** Unverified accounts, weak passwords, easier takeover of high-value admin/builder identities.
+
+**Recommend:** Keep confirmation on; strengthen Auth password settings; MFA for admin.
+
+### H5 — Assigned builder can update requests
+
+**SQL:** `requests_update` `using (user_id = auth.uid() or is_orvo_admin() or assigned_builder_id = auth.uid())` with no status transition rules.
+
+**Impact:** Assigned builder may alter status/assignment fields depending on column grants — dispute/funding integrity risk.
+
+**Recommend:** Narrow builder updates (e.g. delivery markers only) via RPC; freeze payment-related statuses.
 
 ---
 
 ## Medium
 
-### M1 — XSS: mostly mitigated; a few attribute / process gaps
+### M1 — XSS: mostly good; attribute edge cases
 
-**Good:** User-controlled text in lists/chat/admin cards generally runs through `esc()` before `innerHTML`. Toasts/auth messages use `textContent`.
+**Good:** Request/quote/app/chat text uses `esc()`; toasts/auth use `textContent`.
 
-**Gaps:**
+**Gaps:** `data-uid` / `data-rid` / `data-qid` / `data-click` unescaped (OK while UUIDs); don’t linkify chat without strict allowlists; pin future HTML changes to `esc` or DOM APIs.
 
-- `data-uid`, `data-rid`, `data-qid`, `data-click` interpolate IDs without `esc()` (UUID-safe today; break if IDs ever become attacker-controlled strings).
-- `r.description.slice(0, 120)` assumes `description` is a string (DoS/error, not XSS).
-- Future “linkify” of chat URLs would reintroduce XSS/`javascript:` risks — keep rendering as escaped text or use strict allowlists + `rel="noopener noreferrer"`.
+### M2 — Application PII + LinkedIn/portfolio
 
-**Recommend:** Escape all attribute interpolations; prefer `textContent` / DOM APIs over template `innerHTML` for new UI.
+Stored on `builder_applications`; select limited to own/admin in SQL (good) **if** policies applied. Client still uploads email copies. Profile-wide select (C4) remains the larger PII leak.
 
-### M2 — PII in client-readable tables
+### M3 — Fee / Stripe globals
 
-**Where:** `builder_applications` stores `email`, LinkedIn, portfolio; profiles expose `email` / `full_name`; Profile debug panel shows emails; admin UI lists applicant emails.
+`ORVO_FEE_PERCENT`, `STRIPE_PAYMENT_LINK` on `window` — overrideable; Payment Link not bound to quote amount.
 
-**Risk:** Broad `SELECT` policies expose applicant PII to other authenticated users; marketing/scraping; GDPR-style retention issues.
+### M4 — CDN `supabase-js` without SRI
 
-**Recommend:** Applicants read own row only; admins via privileged policy/RPC; minimize email copies (join `auth.users` server-side); drop debug admin-email panel from production builds.
+`index.html` jsDelivr UMD `@2` — supply-chain risk. Pin version + integrity or self-host.
 
-### M3 — Fee and Stripe link are attacker-influenced globals
+### M5 — Realtime on `messages`
 
-**Where:** `window.ORVO_FEE_PERCENT`, `window.STRIPE_PAYMENT_LINK`.
-
-**Risk:** Console override → wrong fee lines / phishing Payment Link domain if UI ever trusts a mutable link without allowlisting.
-
-**Recommend:** Fee and checkout URL only from server; pin Payment Link host to `buy.stripe.com` / your domain if kept temporarily.
-
-### M4 — CDN Supabase UMD without SRI
-
-**Where:** `index.html` loads `@supabase/supabase-js@2` from jsDelivr without integrity hash / pinned version lock in HTML beyond major.
-
-**Risk:** Supply-chain compromise of CDN build → full account takeover via malicious client.
-
-**Recommend:** Pin exact version + SRI, or self-host the bundle.
-
-### M5 — Open redirect / tab abuse on payment
-
-**Where:** `window.open(stripeLink, '_blank')` with config-controlled URL.
-
-**Risk:** Low while config is yours; high if config is ever user-influenced or compromised deploy.
+Publication added; access follows `can_access_request`. After C1 fix, re-validate Realtime does not broaden beyond SELECT policies.
 
 ---
 
-## Assumed Supabase RLS policies needed
+## Assumed / replacement RLS snippets (tonight)
 
-Apply only after reviewing existing policies (drop conflicting permissive ones). Use **app_metadata** or a locked `profiles.is_admin` that clients **cannot** update.
+Ship as a follow-up migration; drop conflicting policies from `001_mvp_schema.sql` first. Goal: break C1–C3.
 
 ```sql
--- 0) Lockdown helpers (recommended)
-create or replace function public.is_admin()
+-- Admin from JWT app_metadata (set only via Dashboard / service_role)
+create or replace function public.is_orvo_admin()
 returns boolean
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select coalesce(
-    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin',
-    false
-  );
+  select coalesce((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin', false);
 $$;
 
-create or replace function public.is_approved_builder()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.builder_status = 'approved'
-  );
-$$;
-
-revoke all on function public.is_admin() from public;
-revoke all on function public.is_approved_builder() from public;
-grant execute on function public.is_admin() to authenticated;
-grant execute on function public.is_approved_builder() to authenticated;
-
--- 1) profiles
-alter table public.profiles enable row level security;
-
--- read: self; builders’ public names for chats they join can be narrowed later
-create policy profiles_select_self on public.profiles
-  for select to authenticated
-  using (id = auth.uid() or public.is_admin());
-
--- insert: own row only; force non-admin defaults (trigger preferred)
-create policy profiles_insert_self on public.profiles
-  for insert to authenticated
-  with check (
-    id = auth.uid()
-    and coalesce(is_admin, false) = false
-    and builder_status is null
-  );
-
--- update: own row but NEVER privilege columns (column-level via trigger below)
-create policy profiles_update_self on public.profiles
-  for update to authenticated
-  using (id = auth.uid())
-  with check (id = auth.uid());
-
-create policy profiles_admin_all on public.profiles
-  for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
-
+-- Freeze privilege columns for non-admins
 create or replace function public.protect_profile_privileges()
 returns trigger
 language plpgsql
@@ -202,17 +172,12 @@ security definer
 set search_path = public
 as $$
 begin
-  if not public.is_admin() then
+  if not public.is_orvo_admin() then
     new.is_admin := old.is_admin;
-    -- users may set pending via apply RPC only; block self-approve/reject
-    if new.builder_status is distinct from old.builder_status then
-      if new.builder_status in ('approved', 'rejected') then
-        raise exception 'builder_status change not allowed';
-      end if;
-      if new.builder_status = 'pending' and old.builder_status is not null
-         and old.builder_status not in ('pending') then
-        raise exception 'invalid builder_status transition';
-      end if;
+    if tg_op = 'UPDATE'
+       and new.builder_status is distinct from old.builder_status
+       and new.builder_status in ('approved', 'rejected') then
+      raise exception 'builder_status elevation not allowed';
     end if;
   end if;
   return new;
@@ -221,191 +186,134 @@ $$;
 
 drop trigger if exists trg_protect_profile_privileges on public.profiles;
 create trigger trg_protect_profile_privileges
-  before update on public.profiles
+  before insert or update on public.profiles
   for each row execute function public.protect_profile_privileges();
 
--- 2) builder_applications
-alter table public.builder_applications enable row level security;
+-- On INSERT, force non-admin defaults when not admin
+create or replace function public.profiles_insert_defaults()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_orvo_admin() then
+    new.is_admin := false;
+    if new.builder_status is null or new.builder_status in ('approved', 'rejected') then
+      new.builder_status := 'none';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+-- (merge into protect trigger for INSERT if preferred)
 
-create policy apps_select_own_or_admin on public.builder_applications
-  for select to authenticated
-  using (user_id = auth.uid() or public.is_admin());
+drop policy if exists profiles_select on public.profiles;
+create policy profiles_select on public.profiles for select to authenticated
+  using (id = auth.uid() or public.is_orvo_admin());
 
-create policy apps_insert_own on public.builder_applications
-  for insert to authenticated
+-- Optional: public name map for chat (id, full_name only) via security_invoker view
+
+drop policy if exists apps_insert on public.builder_applications;
+create policy apps_insert on public.builder_applications for insert to authenticated
   with check (user_id = auth.uid() and status = 'pending');
 
-create policy apps_update_own_pending on public.builder_applications
-  for update to authenticated
+drop policy if exists apps_update on public.builder_applications;
+create policy apps_update_own_content on public.builder_applications for update to authenticated
   using (user_id = auth.uid() and status = 'pending')
   with check (user_id = auth.uid() and status = 'pending');
 
-create policy apps_admin_review on public.builder_applications
-  for update to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+create policy apps_update_admin on public.builder_applications for update to authenticated
+  using (public.is_orvo_admin()) with check (public.is_orvo_admin());
 
--- Prefer: approve/reject only via RPC that also sets profiles.builder_status
-
--- 3) requests
-alter table public.requests enable row level security;
-
-create policy requests_select on public.requests
-  for select to authenticated
-  using (
-    user_id = auth.uid()
-    or public.is_admin()
-    or (status = 'open' and public.is_approved_builder())
-    or assigned_builder_id = auth.uid()
-    or exists (
-      select 1 from public.quotes q
-      where q.request_id = requests.id and q.builder_id = auth.uid()
-    )
-  );
-
-create policy requests_insert_own on public.requests
-  for insert to authenticated
-  with check (user_id = auth.uid() and status = 'open');
-
-create policy requests_update_owner on public.requests
-  for update to authenticated
-  using (user_id = auth.uid() or public.is_admin())
-  with check (user_id = auth.uid() or public.is_admin());
-
--- Block clients from setting funded/in_progress without payment webhook (trigger/RPC)
-
--- 4) quotes
-alter table public.quotes enable row level security;
-
-create policy quotes_select on public.quotes
-  for select to authenticated
-  using (
-    builder_id = auth.uid()
-    or public.is_admin()
-    or exists (
-      select 1 from public.requests r
-      where r.id = quotes.request_id and r.user_id = auth.uid()
-    )
-  );
-
-create policy quotes_insert_builder on public.quotes
-  for insert to authenticated
-  with check (
-    builder_id = auth.uid()
-    and public.is_approved_builder()
-    and status = 'pending'
-  );
-
-create policy quotes_update_parties on public.quotes
-  for update to authenticated
-  using (
-    builder_id = auth.uid()
-    or public.is_admin()
-    or exists (
-      select 1 from public.requests r
-      where r.id = quotes.request_id and r.user_id = auth.uid()
-    )
-  )
-  with check (true); -- tighten with trigger: only pending→accepted by owner; paid only via webhook
-
--- 5) messages
-alter table public.messages enable row level security;
-
-create policy messages_select_participants on public.messages
-  for select to authenticated
-  using (
-    public.is_admin()
-    or exists (
-      select 1 from public.requests r
-      where r.id = messages.request_id
-        and (
-          r.user_id = auth.uid()
-          or r.assigned_builder_id = auth.uid()
-          or exists (
-            select 1 from public.quotes q
-            where q.request_id = r.id and q.builder_id = auth.uid()
-          )
-        )
-    )
-  );
-
-create policy messages_insert_participants on public.messages
-  for insert to authenticated
-  with check (
-    sender_id = auth.uid()
-    and exists (
-      select 1 from public.requests r
-      where r.id = messages.request_id
-        and (
-          r.user_id = auth.uid()
-          or r.assigned_builder_id = auth.uid()
-          or exists (
-            select 1 from public.quotes q
-            where q.request_id = r.id and q.builder_id = auth.uid()
-          )
-        )
-    )
-  );
-
--- Add BEFORE INSERT validate_chat_message(body, request_id) trigger (server-side filter)
-
--- 6) payments — clients insert forbidden in prod; webhook/service_role only
-alter table public.payments enable row level security;
-
-create policy payments_select_own on public.payments
-  for select to authenticated
-  using (user_id = auth.uid() or public.is_admin());
-
--- no insert/update/delete for authenticated in production
+-- Payments: no client writes in production
+drop policy if exists payments_insert on public.payments;
+drop policy if exists payments_update on public.payments;
 revoke insert, update, delete on public.payments from authenticated, anon;
 
--- 7) Realtime: only tables/policies above; ensure replication respects RLS
+-- Chat body filter (sketch)
+create or replace function public.messages_enforce_chat_rules()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.body ~* '([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})' then
+    raise exception 'email not allowed in chat';
+  end if;
+  -- extend: phone + off-platform URL denylist matching app.js
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_messages_chat_rules on public.messages;
+create trigger trg_messages_chat_rules
+  before insert on public.messages
+  for each row execute function public.messages_enforce_chat_rules();
 ```
 
-**Admin bootstrap (Dashboard / service role — not client):**
+**Approve builder RPC (admin only):**
 
 ```sql
--- Example: set admin claim (Auth Admin API preferred)
--- update auth.users set raw_app_meta_data =
---   coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
--- where email = 'ADMIN_EMAIL_HERE';
+create or replace function public.admin_set_builder_status(target uuid, new_status text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_orvo_admin() then
+    raise exception 'not admin';
+  end if;
+  if new_status not in ('approved', 'rejected', 'pending') then
+    raise exception 'bad status';
+  end if;
+  update public.builder_applications
+    set status = new_status, reviewed_at = now()
+    where user_id = target;
+  update public.profiles
+    set builder_status = new_status
+    where id = target;
+end;
+$$;
+
+revoke all on function public.admin_set_builder_status(uuid, text) from public;
+grant execute on function public.admin_set_builder_status(uuid, text) to authenticated;
 ```
 
 ---
 
 ## Hardening checklist for tonight
 
-1. **Verify RLS** on `profiles`, `requests`, `quotes`, `messages`, `builder_applications`, `payments` — all enabled; no `USING (true)` for authenticated.
-2. **Block self-elevation:** trigger or column grants so clients cannot set `is_admin` or `builder_status ∈ {approved,rejected}`.
-3. **Approve builders only via admin RPC / Edge Function** (service role); remove client `approveBuilder` direct table updates or keep UI but fail closed without policy.
-4. **Set admin via `app_metadata`**, remove `ORVO_ADMIN_EMAIL` / hardcode from public JS and Profile debug UI.
-5. **Disable manual “record payment as paid”** path; leave Stripe unset ⇒ show “payments coming soon”, do not write `funded`/`paid`.
-6. **Add chat filter trigger** (email/phone/off-platform); stop skipping enforcement for privilege roles at the DB layer.
-7. **Re-enable email confirmation** (ignore in-app advice to turn it off); raise Auth password minimum.
-8. **Confirm anon key only** in frontend (no `service_role` anywhere in Netlify/static host).
-9. **Pin supabase-js + SRI** (or self-host); deploy CSP (`default-src 'self'`, allow Supabase origins).
-10. **Smoke-test as a second throwaway user** (read-only checks): attempt select all applications/requests/messages; attempt update own `is_admin` / `builder_status`; attempt insert payment `paid` — all must fail. Do not automate destructive probes against production beyond these authz negatives if data is live.
+1. Confirm in Supabase Dashboard whether `001_mvp_schema.sql` (or older `sql-*.sql`) is applied; dump current policies.
+2. **Patch C1:** trigger + stop client `profiles` writes of `is_admin` / approved status; move admin to `app_metadata`.
+3. **Patch C2:** application update policies cannot change `status` except admin RPC.
+4. **Patch C3:** revoke client payment writes; disable manual `paid`/`funded` in `acceptQuote` for prod.
+5. Replace `profiles_select using (true)` with self/admin (or safe name view).
+6. Remove admin email from `supabase-config.js` / UI debug panels.
+7. Add DB chat filter trigger; keep email confirmation **on**; raise password minimum.
+8. Pin `supabase-js` + SRI; ensure no `service_role` in Netlify/static assets.
+9. Negative tests as a second throwaway user (read-only authz checks only): update own `is_admin`, set `builder_status=approved`, select others’ applications, insert `payments` with `paid` — all must fail.
+10. After fixes, re-check Realtime + `can_access_request` with a non-approved account.
 
 ---
 
-## XSS `esc()` summary
+## XSS `esc()` scorecard
 
-| Surface | Escaped? |
-|--------|----------|
-| Request/quote/application text fields | Yes (`esc`) |
-| Chat message bodies / names | Yes |
-| Auth/toast/boot errors | `textContent` (good) |
-| Sidebar chrome | Static HTML (ok) |
-| `data-*` IDs | Not escaped (UUID-assumed) |
-| Money / `ago()` | Numeric/derived (ok) |
+| Surface | Status |
+|--------|--------|
+| Titles, bios, skills, chat bodies | `esc()` |
+| Auth / toast / boot | `textContent` |
+| Sidebar labels | Static |
+| `data-*` ids | Unescaped UUIDs |
+| Money / relative time | Derived safe |
 
 ---
 
-## Out of scope / not done
+## Out of scope
 
-- No authenticated probing of project `lbfysqtnarhkoqcnaivg` APIs.
-- Supabase MCP unavailable (`needsAuth`); live policy dump not retrieved.
-- No Stripe webhook or Edge Function code present to review.
+- No authenticated API probing of the live project.
+- Supabase MCP `needsAuth` — live advisors/policies not pulled.
+- Stripe webhook / Edge Functions not present in repo.
 
 ---
 
