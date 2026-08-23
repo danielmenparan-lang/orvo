@@ -160,10 +160,7 @@
 
   // ── ROLES ──
   function isAdmin() {
-    if (profile?.is_admin) return true;
-    const a = cfgAdminEmail();
-    const e = myEmail();
-    return a && e && a === e;
+    return !!profile?.is_admin;
   }
   function isBuilder() { return profile?.builder_status === 'approved'; }
   function isPending() { return profile?.builder_status === 'pending'; }
