@@ -79,10 +79,10 @@ node tests/edge-auth.test.js
 
 | # | חסם | פעולה |
 |---|-----|--------|
-| 1 | SQL לא בפרוד | הרץ `sql/001`→`020` · `founder-checklist.html` |
-| 2 | אין admin | `update profiles set is_admin=true where email='…'` |
+| 1 | SQL לא בפרוד | **הדבקה אחת:** `sql/APPLY-ALL-001-020.sql` · Profile → Copy APPLY-ALL SQL · `founder-checklist.html` |
+| 2 | אין admin | Profile → **Copy is_admin SQL** (אחרי signup) |
 | 3 | Stripe secrets | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, service role |
-| 4 | Edge deploy | 4 functions לפי checklist |
+| 4 | Edge deploy | `bash scripts/deploy-stripe.sh` · Profile → Setup health → Re-check |
 | 5 | `ORVO_CHECKOUT_LIVE` | `false` — flip רק **אחרי** smoke test |
 
 מדריך: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`
@@ -93,13 +93,13 @@ node tests/edge-auth.test.js
 
 ### בוקר — תשתית (2–3 שעות)
 
-1. **Supabase SQL** — 001→020, סמן תאריך ב-`docs/FOUNDER-SQL-SMOKE.md`
+1. **Supabase SQL** — הדבקה אחת: `APPLY-ALL-001-020.sql` (או 001→020), סמן תאריך ב-`docs/FOUNDER-SQL-SMOKE.md`
 2. **Admin** — וודא Review builders + All requests + Disputes
 3. **Smoke ידני** — post → quote → accept → וודא `awaiting_payment` (לא funded)
 
 ### צהריים — Stripe test mode (אם מוכן)
 
-4. Edge secrets + deploy 4 functions
+4. Edge secrets + `bash scripts/deploy-stripe.sh`
 5. Webhook endpoint ב-Stripe Dashboard
 6. Smoke: Checkout test card → webhook → `held` + `funded`
 7. Release scaffold (501 עד Transfer ממומש)

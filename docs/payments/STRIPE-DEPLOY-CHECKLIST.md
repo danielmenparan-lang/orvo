@@ -30,6 +30,12 @@ update public.profiles set is_admin = true where email = 'your@email.com';
 From repo root (Supabase CLI linked to project):
 
 ```bash
+bash scripts/deploy-stripe.sh
+```
+
+Or deploy individually:
+
+```bash
 supabase functions deploy create-checkout-session
 supabase functions deploy stripe-webhook --no-verify-jwt
 supabase functions deploy create-connect-account
@@ -57,6 +63,7 @@ Redeploy Netlify from branch `cursor/orvo-local-site-3bd5`.
 
 ## 6. Smoke test (test mode)
 
+0. Profile → **Setup health** → **Re-check** — all schema rows ✓; Edge rows show **deployed** (501 = secrets pending is OK).
 1. Client posts → builder quotes → client accepts → **Try checkout** redirects to Stripe.
 2. Pay with test card `4242…` → webhook sets payment **held** + request **funded**.
 3. Builder marks delivered → client **Release** → Transfer (when release fn implemented).

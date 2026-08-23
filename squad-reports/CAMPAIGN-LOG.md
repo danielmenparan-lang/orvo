@@ -262,3 +262,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Founder **setup banner** in dashboard when schema/admin incomplete
 - Health probes expanded (requests, quotes, payments, messages, builder apps)
 - Checklist checkboxes persist in localStorage; footer Founder setup link
+
+## 2026-08-23T14:30Z — pulse (post-finale)
+- Setup health **Edge function probes** (checkout, webhook, connect, release)
+- **Re-check** button; deploy hint → `scripts/deploy-stripe.sh`
+- Added `scripts/deploy-stripe.sh` one-shot Stripe Edge deploy

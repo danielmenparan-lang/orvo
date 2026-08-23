@@ -2743,6 +2743,56 @@
     return checks;
   }
 
+  async function probeEdgeHealth() {
+    const base = window.SUPABASE_URL;
+    const key = window.SUPABASE_ANON_KEY || '';
+    const checks = [];
+    const ping = async (label, fnPath, body = '{}') => {
+      if (!base) {
+        checks.push({ label, ok: false, hint: 'no supabase url' });
+        return;
+      }
+      try {
+        const res = await fetch(`${base}/functions/v1/${fnPath}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', apikey: key },
+          body,
+        });
+        if (res.status === 404) {
+          checks.push({ label, ok: false, hint: 'not deployed' });
+          return;
+        }
+        if ([401, 400, 501, 405].includes(res.status)) {
+          const hint = res.status === 501 ? 'deployed · secrets pending' : 'deployed';
+          checks.push({ label, ok: true, hint });
+          return;
+        }
+        checks.push({ label, ok: true, hint: `HTTP ${res.status}` });
+      } catch {
+        checks.push({ label, ok: false, hint: 'unreachable' });
+      }
+    };
+    await ping('Edge checkout', 'create-checkout-session');
+    await ping('Edge webhook', 'stripe-webhook');
+    await ping('Edge connect', 'create-connect-account');
+    await ping('Edge release', 'release-to-builder');
+    return checks;
+  }
+
+  function renderHealthCheckRows(checks) {
+    return (checks || []).map((c) => {
+      const status = c.ok
+        ? (c.hint
+          ? `<span style="color:var(--green);font-size:11px">${esc(c.hint)}</span>`
+          : '<span style="color:var(--green)">OK</span>')
+        : `<span style="color:var(--red);font-size:11px">${esc((c.hint || '').slice(0, 48))}</span>`;
+      return `<div style="display:flex;justify-content:space-between;gap:8px;margin:4px 0">
+        <span>${c.ok ? '✓' : '✗'} ${esc(c.label)}</span>
+        ${status}
+      </div>`;
+    }).join('');
+  }
+
   async function refreshFounderSetupBanner() {
     const el = $('founder-setup-banner');
     if (!el || !user) {
@@ -2787,13 +2837,13 @@
     $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
   }
 
-  function renderHealthPanel(checks, { adminOk, configuredFounder }) {
-    const rows = (checks || []).map((c) =>
-      `<div style="display:flex;justify-content:space-between;gap:8px;margin:4px 0">
-        <span>${c.ok ? '✓' : '✗'} ${esc(c.label)}</span>
-        ${c.ok ? '<span style="color:var(--green)">OK</span>' : `<span style="color:var(--red);font-size:11px">${esc((c.hint || '').slice(0, 48))}</span>`}
-      </div>`
-    ).join('');
+  function renderHealthPanel(schemaChecks, edgeChecks, { adminOk, configuredFounder }) {
+    const rows = renderHealthCheckRows(schemaChecks);
+    const edgeRows = (edgeChecks || []).length
+      ? `<hr style="border:none;border-top:1px solid var(--border);margin:10px 0"/>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Edge functions (401/501 = deployed)</div>
+        ${renderHealthCheckRows(edgeChecks)}`
+      : '';
     const stripeLine = window.ORVO_CHECKOUT_LIVE
       ? '<span style="color:var(--green)">ORVO_CHECKOUT_LIVE = true</span>'
       : '<span style="color:var(--muted)">Checkout off (flip after Stripe smoke test)</span>';
@@ -2802,13 +2852,25 @@
       : (configuredFounder
         ? '<span style="color:var(--o)">Founder email — set is_admin in Supabase SQL</span>'
         : '<span style="color:var(--muted)">Not admin</span>');
-    const allOk = (checks || []).every((c) => c.ok);
-    const fixBlock = !allOk ? `<p style="color:var(--o);font-size:12px;margin:8px 0 0">Missing tables? Supabase SQL Editor → paste <a href="https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql" target="_blank" rel="noopener" style="color:var(--o)">APPLY-ALL-001-020.sql</a> → Run once.</p>` : '';
+    const allSchemaOk = (schemaChecks || []).every((c) => c.ok);
+    const edgeMissing = (edgeChecks || []).some((c) => !c.ok);
+    const fixBlock = !allSchemaOk
+      ? `<p style="color:var(--o);font-size:12px;margin:8px 0 0">Missing tables? Supabase SQL Editor → paste <a href="${APPLY_ALL_SQL_URL}" target="_blank" rel="noopener" style="color:var(--o)">APPLY-ALL-001-020.sql</a> → Run once.</p>`
+      : '';
+    const edgeFixBlock = allSchemaOk && edgeMissing
+      ? `<p style="color:var(--o);font-size:12px;margin:8px 0 0">Edge not deployed? Run <code>scripts/deploy-stripe.sh</code> · <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe checklist →</a></p>`
+      : '';
     return `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
-        <b>Setup health</b> <span style="font-size:11px;color:var(--muted)">(live probes)</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
+          <b>Setup health</b>
+          <button type="button" class="btn btn-ghost" id="btn-recheck-health" style="padding:4px 10px;font-size:11px">Re-check</button>
+        </div>
+        <span style="font-size:11px;color:var(--muted)">(live probes)</span>
         ${rows}
+        ${edgeRows}
         ${fixBlock}
+        ${edgeFixBlock}
         <hr style="border:none;border-top:1px solid var(--border);margin:10px 0"/>
         <div>${adminLine}</div>
         <div>${stripeLine}</div>
@@ -2828,19 +2890,21 @@
     const showHealth = adminOk || configuredFounder;
     let healthHtml = '';
     if (showHealth) {
-      const checks = await probeSchemaHealth();
-      healthHtml = renderHealthPanel(checks, { adminOk, configuredFounder });
+      const [schemaChecks, edgeChecks] = await Promise.all([
+        probeSchemaHealth(),
+        probeEdgeHealth(),
+      ]);
+      healthHtml = renderHealthPanel(schemaChecks, edgeChecks, { adminOk, configuredFounder });
     }
     const bs = profile?.builder_status || 'none';
     const role = adminOk ? 'ORVO Admin' : isBuilder() ? 'Approved builder' : isPending() ? 'Application pending' : 'Client';
     const connectId = profile?.stripe_connect_account_id || '';
-    const debugBlock = adminOk ? `
+    const opsBlock = showHealth ? `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8">
-        <b>Admin status</b><br>
-        Logged in: <code>${esc(logged)}</code><br>
-        Builder status: <b>${esc(bs)}</b><br>
-        DB is_admin: <b>yes</b><br>
-        <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe deploy checklist →</a>
+        <b>${adminOk ? 'Admin' : 'Founder'} ops</b><br>
+        ${adminOk ? `Logged in: <code>${esc(logged)}</code><br>Builder status: <b>${esc(bs)}</b><br>DB is_admin: <b>yes</b><br>` : `Signed in as founder · run is_admin SQL after signup<br>`}
+        <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe deploy checklist →</a><br>
+        <span style="font-size:12px;color:var(--muted)">CLI: <code>bash scripts/deploy-stripe.sh</code></span>
       </div>` : '';
     const connectBlock = isBuilder() ? `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
@@ -2857,13 +2921,14 @@
       <p><b>${esc(profile?.full_name)}</b></p>
       <p style="color:var(--gray);margin:4px 0 16px">${esc(logged)} · ${role}</p>
       ${healthHtml}
-      ${debugBlock}
+      ${opsBlock}
       ${connectBlock}
       ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="admin">Review builder applications</button>' : ''}
       ${isBuilder() ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="jobs">Browse jobs</button>' : ''}
       ${!isBuilder() && !isPending() && !adminOk ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="apply">Apply as a builder</button>' : ''}
       <button class="btn btn-ghost" id="logout-btn" style="width:100%;padding:12px">Sign out</button>`;
     $('logout-btn').addEventListener('click', doLogout);
+    $('btn-recheck-health')?.addEventListener('click', () => loadProfileView());
     $('btn-copy-apply-all')?.addEventListener('click', () => copyApplyAllSql());
     $('btn-copy-admin-sql')?.addEventListener('click', async () => {
       const safeEmail = logged.replace(/'/g, "''");
