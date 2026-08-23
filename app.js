@@ -109,6 +109,12 @@
     return sanitizePublicErr(msg);
   }
 
+  /** Surface Edge Function JSON errors in toasts (public-safe). */
+  function edgeErrMessage(body, fallback = 'Request failed') {
+    const msg = body?.message || body?.error || fallback;
+    return userFacingErr(typeof msg === 'string' ? msg : fallback);
+  }
+
   function parseMoney(s) {
     const m = String(s || '').replace(/,/g, '').match(/\d+(\.\d+)?/);
     return m ? Math.round(parseFloat(m[0]) * 100) : 0;
@@ -834,7 +840,7 @@
     }
     toast(checkout.reason === 'not_configured'
       ? 'Checkout not live yet — no card charged'
-      : 'Checkout unavailable — still awaiting payment', false);
+      : (checkout.message || 'Checkout unavailable — still awaiting payment'), false);
   }
 
   /** Call Edge Function; 501/not_configured → caller shows awaiting state. */
@@ -855,10 +861,14 @@
       });
       const body = await res.json().catch(() => ({}));
       if (res.status === 501 || body.error === 'not_configured') {
-        return { ok: false, reason: 'not_configured' };
+        return { ok: false, reason: 'not_configured', message: body.message };
       }
       if (!res.ok || !body.url) {
-        return { ok: false, reason: body.message || body.error || 'checkout_failed' };
+        return {
+          ok: false,
+          reason: body.error || 'checkout_failed',
+          message: edgeErrMessage(body, 'Checkout failed'),
+        };
       }
       return { ok: true, url: body.url };
     } catch {
@@ -1290,7 +1300,7 @@
         <span class="badge">${esc(statusLabel(r.status))}${quoteBadge}${payHint} · ${ago(r.created_at)}</span>
         <div class="row">
           <button class="btn btn-primary btn-open-req" data-rid="${r.id}">Open</button>
-          ${r.status === 'awaiting_payment' ? `<button class="btn btn-primary btn-pay-req" data-rid="${r.id}" data-qid="${esc(payByReq[r.id]?.quote_id || '')}">Complete payment</button>` : ''}
+          ${r.status === 'awaiting_payment' ? `<button class="btn btn-primary btn-pay-req" data-rid="${r.id}" data-qid="${esc(payByReq[r.id]?.quote_id || '')}" data-checkout-open="${payByReq[r.id]?.status === 'checkout_open' ? '1' : ''}">${payByReq[r.id]?.status === 'checkout_open' ? 'Continue checkout' : 'Complete payment'}</button>` : ''}
           ${r.status === 'open' ? `<button class="btn btn-ghost btn-cancel-req" data-rid="${r.id}">Cancel</button>` : ''}
           <button class="btn btn-ghost btn-share-req" data-rid="${r.id}">Copy link</button>
         </div>
@@ -1327,10 +1337,10 @@
           return;
         }
         el.disabled = false;
-        el.textContent = 'Complete payment';
+        el.textContent = el.dataset.checkoutOpen ? 'Continue checkout' : 'Complete payment';
         toast(checkout.reason === 'not_configured'
           ? 'Checkout not live yet — open request to retry'
-          : 'Checkout unavailable — open request for details', false);
+          : (checkout.message || 'Checkout unavailable — open request for details'), false);
         go('chat', rid);
       });
     });
@@ -2140,7 +2150,9 @@
           <button class="btn btn-primary" id="btn-mark-delivered" data-rid="${rid}">Mark delivered</button></div>`;
       }
       if (isClient && (req.status === 'funded' || req.status === 'delivered')) {
+        const builderNeedsConnect = payRow?.status === 'held' && !payRow?.connected_account_id;
         escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Release</b><p>Status: <span class="badge">${esc(statusLabel(req.status))}</span>. Release when you're satisfied.</p>
+          ${builderNeedsConnect ? '<p style="font-size:12px;color:var(--o);margin:8px 0 0">Builder payout onboarding pending — release may fail until they complete Connect setup in Profile.</p>' : ''}
           <div class="escrow-actions" style="margin-top:12px">
           <button class="btn btn-primary" id="btn-release-pay" data-rid="${rid}">Release payment to builder</button>
           <button class="btn btn-ghost" id="btn-open-dispute" data-rid="${rid}">Open dispute</button>
@@ -2207,7 +2219,7 @@
       btn.textContent = btn.dataset.label || 'Try checkout again';
       toast(checkout.reason === 'not_configured'
         ? 'Checkout not live yet — no card charged'
-        : 'Checkout unavailable — still awaiting payment', false);
+        : (checkout.message || 'Checkout unavailable — still awaiting payment'), false);
     });
     $('btn-copy-req-link')?.addEventListener('click', () => copyRequestLink(rid));
     $('chat-form').addEventListener('submit', sendMsg);
@@ -2574,10 +2586,15 @@
       });
       const body = await res.json().catch(() => ({}));
       if (res.status === 501 || body.error === 'not_configured') {
-        return { ok: false, reason: 'not_configured' };
+        return { ok: false, reason: 'not_configured', code: body.error, message: body.message };
       }
       if (!res.ok) {
-        return { ok: false, reason: body.message || body.error || 'release_failed' };
+        return {
+          ok: false,
+          reason: body.error || 'release_failed',
+          code: body.error,
+          message: edgeErrMessage(body, 'Release failed'),
+        };
       }
       return { ok: true, transferId: body.transfer_id || null };
     } catch {
@@ -2610,6 +2627,11 @@
         if (released.ok) {
           track('payment_released', { request_id: rid, via: 'edge' });
           toast('Payment released to builder', true);
+          loadChat();
+          return;
+        }
+        if (released.reason !== 'not_configured') {
+          toast(released.message || userFacingErr(released.reason), false);
           loadChat();
           return;
         }
@@ -2707,8 +2729,14 @@
       }
       const note = checkout.reason === 'not_configured' || checkout.reason === 'network'
         ? 'Checkout not live yet — no card charged'
-        : `Checkout unavailable (${checkout.reason}) — job is awaiting payment`;
-      showPayAwaitingState({ extraNote: note, rid, qid, checkoutOpen: false });
+        : (checkout.message || `Checkout unavailable — job is awaiting payment`);
+      const { data: payAfter } = await needDb().from('payments').select('status').eq('request_id', rid).maybeSingle();
+      showPayAwaitingState({
+        extraNote: note,
+        rid,
+        qid,
+        checkoutOpen: payAfter?.status === 'checkout_open',
+      });
       toast('Quote accepted — awaiting payment (not funded yet)', true);
       track('quote_accepted', { request_id: rid, quote_id: qid, checkout: checkout.reason || 'redirect' });
       pendingPay = null;

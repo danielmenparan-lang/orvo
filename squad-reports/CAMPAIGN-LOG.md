@@ -279,3 +279,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Shared `_shared/supabase.ts` + `_shared/stripe.ts`; `orvoFeePercent()` fix
 - Webhook: checkout.session.completed → held/funded; account.updated sync
 - Docs: EDGE-FUNCTIONS + STRIPE-DEPLOY-CHECKLIST updated (live after secrets)
+
+## 2026-08-23T16:00Z — pulse (post-finale)
+- Live Stripe **client polish**: Edge error messages in checkout/release toasts
+- Release stops on Connect/charge errors (no silent fallback except 501)
+- Builder Connect warning on release card; My requests **Continue checkout** label
+- `docs/payments/STRIPE-SMOKE-TEST.md` founder end-to-end guide

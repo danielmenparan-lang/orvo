@@ -71,6 +71,8 @@ Redeploy Netlify from branch `cursor/orvo-local-site-3bd5`.
 
 ## 6. Smoke test (test mode)
 
+See **`docs/payments/STRIPE-SMOKE-TEST.md`** for step-by-step flow.
+
 0. Profile → **Setup health** → **Re-check** — all schema rows ✓; Edge rows show **deployed** (501 = secrets pending is OK).
 1. Client posts → builder quotes → client accepts → **Try checkout** redirects to Stripe.
 2. Pay with test card `4242…` → webhook sets payment **held** + request **funded**.

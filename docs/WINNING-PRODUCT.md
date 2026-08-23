@@ -32,7 +32,7 @@ Branch `cursor/orvo-local-site-3bd5` · [PR #2](https://github.com/danielmenpara
 | Loop | Role routing; apply edit; accept & pay sheet; deliver/release/dispute/review |
 | SQL | Migrations **001→020** in repo (notifications, invites, guards, webhook dedupe) |
 | Notifications | Inbox + unread badge + Realtime toasts (012–019) |
-| Stripe | Edge scaffolds (checkout, webhook, connect, release) + deploy checklist + UUID auth |
+| Stripe | Edge functions implemented (checkout, webhook, connect, release) + deploy checklist + smoke test |
 | UX | Status spine, skeletons, form counters, search, offline banner, post funnel |
 | Payments UX | Pay resume, Complete payment CTAs, checkout `rid` deep link, `checkout_open` |
 | Admin | KPI drill-down, disputes badge + Realtime, status filter chips |
@@ -40,7 +40,9 @@ Branch `cursor/orvo-local-site-3bd5` · [PR #2](https://github.com/danielmenpara
 | SEO | hire / for-builders pages, sitemap, OG meta |
 | Tests | chat-policy, events, status-spine, edge-auth |
 
-**Judge:** `squad-reports/JUDGE-WAVE-10h.md` — integrity **PASS**, Stripe **BLOCKED** (secrets).
+**Judge:** `squad-reports/JUDGE-WAVE-10h.md` — integrity **PASS**, Stripe **BLOCKED** (secrets until founder deploy + smoke).
+
+**Smoke test:** `docs/payments/STRIPE-SMOKE-TEST.md`
 
 **Founder brief (HE):** `squad-reports/CAMPAIGN-FINALE-HE.md`
 
