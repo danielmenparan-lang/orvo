@@ -4,9 +4,21 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ORVO — Hire vetted builders for custom AI agents</title>
+<meta name="description" content="Post your AI agent brief. Vetted builders quote in USD. Chat, hire, and release payment through ORVO — worldwide."/>
+<link rel="canonical" href="https://fantastic-eclair-0b2c66.netlify.app/"/>
+<meta property="og:title" content="ORVO — Hire vetted builders for custom AI agents"/>
+<meta property="og:description" content="Post a brief. Get quotes from vetted builders. Hire and pay on-platform — global marketplace."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://fantastic-eclair-0b2c66.netlify.app/"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="ORVO — Custom AI agents, vetted builders"/>
+<meta name="twitter:description" content="Hire vetted builders for WhatsApp, voice, CRM, and automation agents worldwide."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"ORVO","url":"https://fantastic-eclair-0b2c66.netlify.app/","description":"Global marketplace to hire vetted builders for custom AI agents."}
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -365,7 +377,15 @@ footer{
   .side-item:hover{background:transparent}
   .side-item.active{box-shadow:none;background:transparent;border-bottom-color:var(--o);color:var(--black)}
   .panel{min-height:280px;padding:18px;border-radius:10px}
-  .chat{height:min(52vh,420px);min-height:280px}
+  .chat{height:min(48vh,380px);min-height:240px}
+  .chat-send{gap:8px}
+  .chat-send input{font-size:16px} /* iOS zoom prevent */
+  .req-spine h3{font-size:20px}
+  .status-rail .step-dot{font-size:10px;padding:4px 8px}
+  .req-meta{font-size:12px;gap:6px 10px}
+  .screen-head{padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top))}
+  .escrow-actions{display:flex;flex-direction:column;gap:8px}
+  .escrow-actions .btn{margin-left:0!important;width:100%}
 }
 @media(max-width:480px){
   .modal-bg{align-items:flex-end;padding:0;padding-top:10vh}
@@ -376,6 +396,8 @@ footer{
     max-height:88vh;
   }
   .pay-sheet{padding:28px 20px calc(28px + env(safe-area-inset-bottom))}
+  .nav-user{display:none}
+  .star-btn{width:40px;height:40px;font-size:20px}
 }
 
 @media(prefers-reduced-motion:reduce){
@@ -478,7 +500,9 @@ footer{
     </div>
     <div class="footer-links">
       <a href="#how">How it works</a>
+      <a href="hire-ai-agent-builders.html">Hire builders</a>
       <a href="for-builders.html">For builders</a>
+      <a href="whatsapp-restaurants.html">מסעדות</a>
       <a href="terms.html">Terms</a>
       <a href="privacy.html">Privacy</a>
       <a href="fees.html">Fees</a>
@@ -688,8 +712,8 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=20"></script>
-<script src="supabase-config.js?v=20"></script>
-<script src="app.js?v=20"></script>
+<script src="js/chat-policy.js?v=21"></script>
+<script src="supabase-config.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

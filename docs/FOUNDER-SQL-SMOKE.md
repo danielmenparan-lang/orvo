@@ -9,7 +9,8 @@ Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops
 - [ ] `sql/003_chat_and_trust.sql`
 - [ ] `sql/004_global.sql`
 - [ ] `sql/005_invites.sql`
-- [ ] `sql/006_connect.sql` (optional until Stripe Connect)
+- [ ] `sql/006_connect.sql` (optional until Connect)
+- [ ] `sql/007_status_guards.sql` (`awaiting_payment` + payment unique + quote ≥ $50)
 
 ## Privilege
 

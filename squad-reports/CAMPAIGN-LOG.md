@@ -127,3 +127,10 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Client **Try checkout again** on awaiting_payment
 - Stripe Connect: `sql/006_connect.sql` + `create-connect-account` Edge + Profile payouts CTA
 - Founder smoke: `docs/FOUNDER-SQL-SMOKE.md` + `founder-checklist.html` (admin Profile link)
+
+## 2026-08-23T03:44Z — pulse 2h (judge)
+- **BUG:** `sql/007_status_guards.sql` — awaiting_payment check, unique payment/request, quote min $50
+- Accept retry reuses payment row; mobile escrow actions stack
+- SEO: index meta/OG/JSON-LD + `hire-ai-agent-builders.html` + sitemap
+- Mobile chat polish; HE page Manrope; robots disallow founder-checklist
+- Judge: `JUDGE-WAVE-2h.md`

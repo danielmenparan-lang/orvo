@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /founder-checklist.html
 
 Sitemap: https://fantastic-eclair-0b2c66.netlify.app/sitemap.xml

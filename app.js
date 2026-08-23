@@ -1200,8 +1200,10 @@
       }
       if (isClient && (req.status === 'funded' || req.status === 'delivered')) {
         escrowHtml += `<div class="card" style="cursor:default;margin-bottom:16px"><b>Release</b><p>Status: <span class="badge">${esc(statusLabel(req.status))}</span>. Release when you're satisfied.</p>
+          <div class="escrow-actions" style="margin-top:12px">
           <button class="btn btn-primary" id="btn-release-pay" data-rid="${rid}">Release payment to builder</button>
-          <button class="btn btn-ghost" id="btn-open-dispute" data-rid="${rid}" style="margin-left:8px">Open dispute</button></div>`;
+          <button class="btn btn-ghost" id="btn-open-dispute" data-rid="${rid}">Open dispute</button>
+          </div></div>`;
       }
     }
     if (req?.status === 'completed' && req.user_id === user.id) {
@@ -1599,13 +1601,17 @@
       }).eq('id', rid);
       if (e2) throw e2;
       // Client may only insert pending — webhook/service role sets held/funded later
-      const { error: e3 } = await needDb().from('payments').insert({
-        user_id: user.id, request_id: rid, quote_id: qid,
-        amount_cents: amountCents, platform_fee_cents: fee,
-        builder_payout_cents: builderNet,
-        status: 'pending',
-      });
-      if (e3) throw e3;
+      // Reuse existing payment row if accept was retried
+      const { data: existingPay } = await needDb().from('payments').select('id,quote_id').eq('request_id', rid).maybeSingle();
+      if (!existingPay) {
+        const { error: e3 } = await needDb().from('payments').insert({
+          user_id: user.id, request_id: rid, quote_id: qid,
+          amount_cents: amountCents, platform_fee_cents: fee,
+          builder_payout_cents: builderNet,
+          status: 'pending',
+        });
+        if (e3) throw e3;
+      }
       // Ignore STRIPE_PAYMENT_LINK — try Checkout Edge Function; 501 → awaiting state
       btn.textContent = 'Starting checkout…';
       const checkout = await tryCreateCheckoutSession({ requestId: rid, quoteId: qid });
