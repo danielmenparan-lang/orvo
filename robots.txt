@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fantastic-eclair-0b2c66.netlify.app/sitemap.xml

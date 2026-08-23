@@ -503,7 +503,15 @@ footer{
     <p class="sub">Only approved builders will see this</p>
     <div id="post-msg" class="msg hidden"></div>
     <div class="field"><label>Title</label><input id="post-title" placeholder="e.g. WhatsApp order bot for my restaurant" maxlength="80"/></div>
-    <div class="field"><label>What do you need?</label><textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..."></textarea></div>
+    <div class="field"><label>What do you need?</label>
+      <div class="row" style="margin:0 0 8px">
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Take orders / bookings automatically">Orders</button>
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Answer FAQs 24/7 from my knowledge base">FAQ</button>
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Capture and qualify leads into my CRM">Leads</button>
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Automate internal ops workflows">Ops</button>
+      </div>
+      <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..."></textarea>
+    </div>
     <div class="field"><label>Category</label>
       <select id="post-cat"><option>WhatsApp / Chat</option><option>Voice / Phone</option><option>Automation</option><option>CRM / Email</option><option>Other</option></select>
     </div>

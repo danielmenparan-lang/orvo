@@ -98,3 +98,10 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - P2-5: client leave review on completed
 - fees.html disclosure + footer link
 - Invited builders can chat/quote via canChatOnRequest
+
+## 2026-08-23T02:31Z — pulse 30m #2
+- Admin KPI tiles (pending builders, open/awaiting/funded/completed, disputes, approved)
+- Goal chips on post brief (Orders/FAQ/Leads/Ops)
+- robots.txt + sitemap.xml
+- chat-policy node smoke tests
+- docs/marketing/METRICS.md

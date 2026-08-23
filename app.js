@@ -806,22 +806,62 @@
     refreshAdminBadge();
     $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button>';
     $('admin-refresh')?.addEventListener('click', loadAdmin);
+
+    const countOf = async (table, filter) => {
+      let q = needDb().from(table).select('*', { count: 'exact', head: true });
+      if (filter) q = filter(q);
+      const { count } = await q;
+      return count || 0;
+    };
+
+    let kpiHtml = '';
+    try {
+      const [
+        pendingBuilders,
+        openReqs,
+        awaitingPay,
+        funded,
+        completed,
+        openDisputes,
+        approvedBuilders,
+      ] = await Promise.all([
+        countOf('builder_applications', (q) => q.eq('status', 'pending')),
+        countOf('requests', (q) => q.eq('status', 'open')),
+        countOf('requests', (q) => q.eq('status', 'awaiting_payment')),
+        countOf('requests', (q) => q.eq('status', 'funded')),
+        countOf('requests', (q) => q.eq('status', 'completed')),
+        countOf('disputes', (q) => q.in('status', ['open', 'under_review'])),
+        countOf('profiles', (q) => q.eq('builder_status', 'approved')),
+      ]);
+      kpiHtml = `
+        <div class="row" style="margin-bottom:20px">
+          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Pending builders</p><h3>${pendingBuilders}</h3></div>
+          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Open requests</p><h3>${openReqs}</h3></div>
+          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Awaiting pay</p><h3>${awaitingPay}</h3></div>
+          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Funded</p><h3>${funded}</h3></div>
+          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Completed</p><h3>${completed}</h3></div>
+          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Disputes</p><h3>${openDisputes}</h3></div>
+          <div class="card" style="flex:1;min-width:120px;cursor:default"><p style="font-size:12px;color:var(--gray)">Approved builders</p><h3>${approvedBuilders}</h3></div>
+        </div>
+        <h3 style="margin:8px 0 12px;font-size:16px">Pending builder applications</h3>`;
+    } catch (_) {
+      kpiHtml = '';
+    }
+
     const { data, error } = await needDb().from('builder_applications')
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
+      $('view-body').innerHTML = kpiHtml + `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
       return;
     }
     if (!data?.length) {
-      $('view-body').innerHTML = `<p class="empty">No pending applications yet.</p>
+      $('view-body').innerHTML = kpiHtml + `<p class="empty">No pending applications yet.</p>
         <p class="empty" style="padding-top:12px;font-size:13px;color:var(--gray)">
-          Builder must click <b>Submit application</b> (bio 50+ chars).<br>
-          Check Supabase → Table Editor → builder_applications.<br>
-          Click <b>Refresh</b> above after a builder applies.
+          Builders submit via Apply (bio 50+ chars). Use <b>All requests</b> to invite approved builders.
         </p>`;
       return;
     }
-    $('view-body').innerHTML = data.map(a => `
+    $('view-body').innerHTML = kpiHtml + data.map(a => `
       <div class="card">
         <h3>${esc(a.full_name)}</h3>
         <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${esc(a.email || '')}</p>
@@ -840,10 +880,10 @@
     try {
       const { error: e1 } = await needDb().from('builder_applications')
         .update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
-      if (e1) throw new Error('Approve failed: ' + e1.message + ' — run sql-fix-jobs.sql');
+      if (e1) throw new Error('Approve failed: ' + e1.message);
       const { error: e2 } = await needDb().from('profiles')
         .update({ builder_status: 'approved' }).eq('id', uid);
-      if (e2) throw new Error('Profile update failed: ' + e2.message + ' — run sql-fix-jobs.sql');
+      if (e2) throw new Error('Profile update failed: ' + e2.message);
       if (uid === user.id) await refreshUser();
       toast('Builder approved!', true);
       loadAdmin();
@@ -1465,6 +1505,16 @@
     btn.addEventListener('click', () => {
       const budget = btn.getAttribute('data-budget') || '';
       if ($('post-budget')) $('post-budget').value = budget === 'Custom / TBD' ? '' : budget;
+    });
+  });
+  document.querySelectorAll('.goal-chip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const goal = btn.getAttribute('data-goal') || '';
+      const ta = $('post-desc');
+      if (!ta || !goal) return;
+      const cur = ta.value.trim();
+      ta.value = cur ? (cur.endsWith(goal) ? cur : cur + '\n\nGoal: ' + goal) : ('Goal: ' + goal + '\n\n');
+      ta.focus();
     });
   });
 
