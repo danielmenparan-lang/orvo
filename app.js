@@ -1295,8 +1295,12 @@
         .order('created_at', { ascending: false }).limit(40);
       if (error) throw error;
       if (!(data || []).length) {
-        body.innerHTML = `<p class="empty">No notifications yet.</p>
-          <p class="empty" style="padding-top:8px;font-size:13px">You’ll see quote alerts here after sql/012 + sql/014 are applied.</p>`;
+        const founderHint = (isAdmin() || isConfiguredFounder())
+          ? `<p class="empty" style="padding-top:8px;font-size:13px">Inbox needs APPLY-ALL SQL (notifications 012–019). <button type="button" class="btn btn-ghost" id="btn-notif-copy-sql" style="padding:6px 10px;font-size:12px;margin-left:4px">Copy APPLY-ALL SQL</button></p>
+             <p class="empty" style="padding-top:4px;font-size:12px"><button type="button" class="btn btn-ghost" data-goto="profile" style="padding:6px 10px;font-size:12px">Setup health →</button></p>`
+          : `<p class="empty" style="padding-top:8px;font-size:13px">You’ll see quote and message alerts here once the marketplace inbox is live.</p>`;
+        body.innerHTML = `<p class="empty">No notifications yet.</p>${founderHint}`;
+        $('btn-notif-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
         return;
       }
       body.innerHTML = data.map((n) => {
@@ -2255,7 +2259,10 @@
           <p>${payNote}</p>
           <p style="font-size:12px;color:var(--muted);margin:8px 0">Payment: <span class="badge">${esc(payBadge)}</span>
             ${payRow ? ' · ' + money(payRow.amount_cents) : ''}</p>
-          <button class="btn btn-primary" id="btn-retry-checkout" data-rid="${rid}" data-qid="${payRow?.quote_id || ''}" data-label="${esc(btnLabel)}">${esc(btnLabel)}</button>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:4px">
+            <button class="btn btn-primary" id="btn-retry-checkout" data-rid="${rid}" data-qid="${payRow?.quote_id || ''}" data-label="${esc(btnLabel)}">${esc(btnLabel)}</button>
+            <button type="button" class="btn btn-ghost" id="btn-refresh-pay" data-rid="${rid}">Refresh status</button>
+          </div>
           </div>`;
       }
       if (isAssigned && req.status === 'funded') {
@@ -2333,6 +2340,15 @@
       btn.disabled = false;
       btn.textContent = btn.dataset.label || 'Try checkout again';
       toast(checkoutUnavailableMessage(checkout), false);
+    });
+    $('btn-refresh-pay')?.addEventListener('click', () => {
+      const btn = $('btn-refresh-pay');
+      if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+      pollPaymentAfterCheckout(rid, 6);
+      loadChat().finally(() => {
+        const b = $('btn-refresh-pay');
+        if (b) { b.disabled = false; b.textContent = 'Refresh status'; }
+      });
     });
     $('btn-copy-req-link')?.addEventListener('click', () => copyRequestLink(rid));
     $('chat-form').addEventListener('submit', sendMsg);
@@ -3376,7 +3392,7 @@
     if (builderPaid) {
       builderPaid.textContent = live
         ? 'Client pays via Stripe Checkout; funds held until they release. Connect payouts in Profile. Founding fee 0%.'
-        : 'Client funds on ORVO when Checkout goes live. You mark delivered; they release. Founding fee 0%.';
+        : 'Client funds on ORVO when Checkout is configured. You mark delivered; they release. Founding fee 0%.';
     }
   }
 

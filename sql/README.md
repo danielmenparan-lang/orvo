@@ -32,6 +32,8 @@ Founder setup CLI: `bash scripts/founder-setup.sh`
 Edge probe: `bash scripts/verify-edge.sh`  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md` · deploy: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`.
 
+**Prod applied (founder):** _note date after running APPLY-ALL in Supabase_
+
 Also aliased: `sql-FINAL-FIX.sql` / `sql-RUN-NOW.sql` ≈ latest full bootstrap (prefer numbered migrations).
 
 After first admin signup:

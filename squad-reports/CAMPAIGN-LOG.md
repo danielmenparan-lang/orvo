@@ -344,3 +344,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Connect cancel → Profile** when signed in
 - **`copySecretsTemplateCmd`** — Stripe banner, Setup health, founder checklist
 - Landing how-it-works step 3 copy (configured vs live)
+
+## 2026-08-23T22:00Z — pulse (post-finale)
+- **Refresh status** on awaiting_payment chat card (re-poll webhook + reload)
+- Notifications empty: founder Copy APPLY-ALL + Setup health (not raw sql/012 hint)
+- Landing builder-paid copy honesty; sql/README prod-applied date placeholder
