@@ -49,7 +49,7 @@ node tests/edge-auth.test.js
 
 ## פסק דין (Judge)
 
-**Integrity PASS · Stripe BLOCKED**
+**Integrity PASS · Stripe IMPLEMENTED (founder deploy pending)**
 
 | שער | סטטוס |
 |-----|--------|
@@ -57,8 +57,8 @@ node tests/edge-auth.test.js
 | Chat relationship gate | ✅ |
 | Release requires held | ✅ |
 | Notifications spine | ✅ |
-| Edge scaffolds + validation | ✅ |
-| Live Stripe Checkout | ❌ secrets |
+| Edge handlers + validation | ✅ implemented |
+| Live Stripe Checkout | ❌ secrets + smoke |
 | SQL 001→020 בפרוד | ❓ founder |
 
 פירוט: `squad-reports/JUDGE-WAVE-10h.md`

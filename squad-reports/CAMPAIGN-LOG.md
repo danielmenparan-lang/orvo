@@ -315,3 +315,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Unified **`checkoutUnavailableMessage`** — honest Stripe-not-configured copy (no stale "not live yet")
 - `verify-edge.sh` curl robustness; founder checklist verify-edge CLI line
 - `JUDGE-WAVE-POST-FINALE.md` through 19:00; CAMPAIGN-FINALE-HE verdict sync
+
+## 2026-08-23T19:30Z — pulse (post-finale)
+- **Checkout return post-login** — sign-in prompt when anonymous; resume poll → chat deep link
+- **`connectUnavailableMessage`** + shared **`copyVerifyCmd`**; Stripe founder banner verify-edge button
+- CAMPAIGN-FINALE-HE judge table sync (Stripe IMPLEMENTED)

@@ -129,6 +129,20 @@
     return checkout?.message || fallback;
   }
 
+  /** Honest copy when Connect Edge returns not_configured / network / auth. */
+  function connectUnavailableMessage(result, fallback = 'Could not start payout onboarding') {
+    if (result?.reason === 'not_configured') {
+      return 'Payout onboarding not configured — set Stripe secrets + deploy create-connect-account';
+    }
+    if (result?.reason === 'network') {
+      return 'Could not reach Connect — try again from Profile.';
+    }
+    if (result?.reason === 'auth') {
+      return 'Sign in again to set up payouts.';
+    }
+    return result?.message || fallback;
+  }
+
   function parseMoney(s) {
     const m = String(s || '').replace(/,/g, '').match(/\d+(\.\d+)?/);
     return m ? Math.round(parseFloat(m[0]) * 100) : 0;
@@ -202,6 +216,15 @@
       toast('Copied: bash scripts/deploy-stripe.sh', true);
     } catch {
       toast('bash scripts/deploy-stripe.sh', true);
+    }
+  }
+
+  async function copyVerifyCmd() {
+    try {
+      await navigator.clipboard.writeText('bash scripts/verify-edge.sh');
+      toast('Copied: bash scripts/verify-edge.sh', true);
+    } catch {
+      toast('bash scripts/verify-edge.sh', true);
     }
   }
 
@@ -447,16 +470,23 @@
           go('chat', rid);
           pollPaymentAfterCheckout(rid);
         } else go('requests');
+      } else {
+        openAuth('login');
       }
       return;
     }
     if (checkout === 'cancel' || checkout === '0') {
       track('checkout_return_cancel', { request_id: rid || null });
       toast('Checkout cancelled — job stays awaiting payment until you try again.', false);
+      if (rid) {
+        try { sessionStorage.setItem('orvo_checkout_poll_rid', rid); } catch { /* private mode */ }
+      }
       clean();
       if (user && rid) {
         ensureDashOpen();
         go('chat', rid);
+      } else if (!user) {
+        openAuth('login');
       }
     }
   }
@@ -540,6 +570,8 @@
         const pollRid = sessionStorage.getItem('orvo_checkout_poll_rid');
         if (pollRid) {
           sessionStorage.removeItem('orvo_checkout_poll_rid');
+          ensureDashOpen();
+          go('chat', pollRid);
           pollPaymentAfterCheckout(pollRid);
         }
       } catch { /* storage blocked */ }
@@ -2938,12 +2970,14 @@
         </div>
         <div class="founder-banner-actions">
           <button type="button" class="btn btn-primary" id="btn-banner-deploy-cmd">Copy deploy command</button>
+          <button type="button" class="btn btn-ghost" id="btn-banner-verify-cmd">Copy verify-edge</button>
           <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
           <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" class="btn btn-ghost">Stripe checklist</a>
           <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-SMOKE-TEST.md" target="_blank" rel="noopener" class="btn btn-ghost">Smoke test</a>
         </div>
       </div>`;
     $('btn-banner-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
+    $('btn-banner-verify-cmd')?.addEventListener('click', () => copyVerifyCmd());
     $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
   }
 
@@ -3081,14 +3115,7 @@
     $('logout-btn').addEventListener('click', doLogout);
     $('btn-recheck-health')?.addEventListener('click', () => loadProfileView());
     $('btn-copy-deploy-cmd')?.addEventListener('click', () => copyDeployCmd());
-    $('btn-copy-verify-cmd')?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText('bash scripts/verify-edge.sh');
-        toast('Copied: bash scripts/verify-edge.sh', true);
-      } catch {
-        toast('bash scripts/verify-edge.sh', true);
-      }
-    });
+    $('btn-copy-verify-cmd')?.addEventListener('click', () => copyVerifyCmd());
     $('btn-copy-apply-all')?.addEventListener('click', () => copyApplyAllSql());
     $('btn-copy-admin-sql')?.addEventListener('click', async () => {
       const safeEmail = logged.replace(/'/g, "''");
@@ -3111,9 +3138,7 @@
       }
       btn.disabled = false;
       btn.textContent = connectId ? 'Update payout onboarding' : 'Set up payouts';
-      toast(r.reason === 'not_configured'
-        ? 'Payout onboarding not configured — set Stripe secrets + deploy create-connect-account'
-        : (r.message || 'Could not start Connect onboarding'), false);
+      toast(connectUnavailableMessage(r), false);
     });
     if (showHealth) refreshFounderSetupBanner();
     refreshBuilderPayoutBanner();
