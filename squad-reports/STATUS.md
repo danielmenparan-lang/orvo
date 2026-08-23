@@ -10,6 +10,7 @@
 - Marketing launch kit (HE): `docs/marketing/LAUNCH-KIT.md`
 - UX: post title field; deliver + release escrow controls in chat
 - Local site restored earlier on branch `cursor/orvo-local-site-3bd5`
+- Ops synthesizer: `squad-reports/20-ops-backlog.md` · `docs/WINNING-PRODUCT.md` · `squad-reports/MORNING-BRIEF-HE.md`
 
 ## Limits (honest)
 - Max ~10 async agents at once (not 20 simultaneous processes)
