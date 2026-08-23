@@ -32,9 +32,12 @@ Only the webhook writes `held`/`funded`.
 
 ## release-to-builder
 
-**Auth:** client owner after delivery, or admin  
-**Requires:** payment `held`  
-Creates Transfer to builder Connect account; sets `released`.
+**Input:** `{ request_id }`  
+**Auth:** Bearer JWT — request owner or admin  
+**Requires:** payment `held` + builder Connect account  
+**Output:** `{ ok: true, transfer_id }`  
+
+Client: `releasePayment` → `tryReleaseToBuilder`. On 501: mark request `completed` and toast that payout settles when Connect is live (no fake `released` for non-admin).
 
 ## create-connect-account
 
@@ -44,5 +47,13 @@ Creates Transfer to builder Connect account; sets `released`.
 Client: Profile → **Set up payouts** → `tryCreateConnectAccount` (501 → toast until secrets).
 
 Schema: `sql/006_connect.sql` (`stripe_connect_account_id`).
+
+### Checkout return URLs
+
+Configure Checkout Session:
+- `success_url`: `{ORVO_APP_URL}/?checkout=success`
+- `cancel_url`: `{ORVO_APP_URL}/?checkout=cancel`
+
+`app.js` `handleCheckoutReturn` toasts honestly (webhook still sole writer of `held`).
 
 Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL`, `ORVO_APP_URL`

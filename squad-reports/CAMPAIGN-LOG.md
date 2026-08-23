@@ -134,3 +134,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - SEO: index meta/OG/JSON-LD + `hire-ai-agent-builders.html` + sitemap
 - Mobile chat polish; HE page Manrope; robots disallow founder-checklist
 - Judge: `JUDGE-WAVE-2h.md`
+
+## 2026-08-23T04:00Z — pulse
+- `release-to-builder` Edge scaffold + `tryReleaseToBuilder` (501 → honest complete/settle toast)
+- Checkout return `?checkout=success|cancel` handler
+- `sql/008_quote_eta.sql` + `delivery_days` on quotes (fallback message prefix)
+- Client quote-received realtime toast + `js/events.js` track stub

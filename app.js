@@ -18,11 +18,16 @@
   let chatPoll = null;
   let postSignupIntent = 'client';
   let adminChannel = null;
+  let quotesChannel = null;
 
   const $ = (id) => document.getElementById(id);
   const FEE = () => window.ORVO_FEE_PERCENT || 0;
   // Fallback if supabase-config.js cached/old
   const ADMIN_EMAIL = 'danielmen.paran@gmail.com';
+
+  function track(event, props) {
+    try { window.ORVO_EVENTS?.track(event, props); } catch (_) { /* stub */ }
+  }
 
   function myEmail() {
     return (user?.email || profile?.email || '').toLowerCase().trim();
@@ -251,6 +256,52 @@
     profile = inserted;
   }
 
+  function handleCheckoutReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get('checkout') || params.get('paid');
+    if (!checkout) return;
+    const clean = () => {
+      const u = new URL(window.location.href);
+      u.searchParams.delete('checkout');
+      u.searchParams.delete('paid');
+      u.searchParams.delete('session_id');
+      window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+    };
+    if (checkout === 'success' || checkout === '1' || checkout === 'true') {
+      track('checkout_return_success', {});
+      toast('Checkout returned — funding confirms when the webhook marks funds held (not instant).', true);
+      clean();
+      if (user) {
+        ensureDashOpen();
+        go('requests');
+      }
+      return;
+    }
+    if (checkout === 'cancel' || checkout === '0') {
+      track('checkout_return_cancel', {});
+      toast('Checkout cancelled — job stays awaiting payment until you try again.', false);
+      clean();
+    }
+  }
+
+  function watchIncomingQuotes() {
+    if (!db || !user || quotesChannel) return;
+    // Client hears new quotes on their requests (best-effort; needs Realtime enabled)
+    quotesChannel = needDb().channel('quotes-in')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes' }, async (payload) => {
+        const q = payload.new;
+        if (!q?.request_id || q.builder_id === user.id) return;
+        const { data: req } = await needDb().from('requests').select('id,user_id,title').eq('id', q.request_id).maybeSingle();
+        if (!req || req.user_id !== user.id) return;
+        track('quote_received', { request_id: req.id, amount_cents: q.amount_cents });
+        toast('New quote on “' + (req.title || 'your request') + '”', true);
+        if ($('dashboard').classList.contains('open') && view === 'chat' && chatRequestId === req.id) {
+          loadChat();
+        }
+      })
+      .subscribe();
+  }
+
   async function refreshUser() {
     if (!db) return;
     const { data: { session } } = await db.auth.getSession();
@@ -261,6 +312,11 @@
     if (user && isAdmin()) {
       refreshAdminBadge();
       watchBuilderApplications();
+    }
+    if (user) watchIncomingQuotes();
+    else if (quotesChannel && db) {
+      db.removeChannel(quotesChannel);
+      quotesChannel = null;
     }
   }
 
@@ -705,17 +761,25 @@
       if (cents < 5000) throw new Error('Minimum quote is $50 USD');
       if (!msg) throw new Error('Add a message');
       if (!eta || eta < 1) throw new Error('Add delivery estimate in days');
-      msg = `ETA: ${eta} day${eta === 1 ? '' : 's'}\n\n` + msg;
-      const { error } = await needDb().from('quotes').insert({
+      const row = {
         request_id: quoteRequestId,
         builder_id: user.id,
         amount_cents: cents,
         message: msg,
         status: 'pending',
-      });
+        delivery_days: eta,
+      };
+      let { error } = await needDb().from('quotes').insert(row);
+      // If delivery_days column missing (008 not applied), prefix message
+      if (error && /delivery_days|column|schema/i.test(error.message || '')) {
+        delete row.delivery_days;
+        row.message = `ETA: ${eta} day${eta === 1 ? '' : 's'}\n\n` + msg;
+        ({ error } = await needDb().from('quotes').insert(row));
+      }
       if (error) throw error;
       closeQuote();
       go('quotes');
+      track('quote_sent', { request_id: quoteRequestId, amount_cents: cents, delivery_days: eta });
       toast('Quote sent!', true);
     } catch (e) {
       showMsg('quote-msg', e.message, false);
@@ -1172,6 +1236,7 @@
         <div class="card" style="cursor:default">
           <h3>${esc(names[q.builder_id] || 'Builder')} — ${money(q.amount_cents)}</h3>
           <p>${esc(q.message)}</p>
+          ${q.delivery_days ? `<p style="font-size:12px;color:var(--muted)">ETA ${esc(String(q.delivery_days))} days</p>` : ''}
           ${q.status === 'pending' ? `<button class="btn btn-primary btn-pay" data-qid="${q.id}" data-rid="${rid}">Accept & pay</button>` : `<span class="badge">${esc(statusLabel(q.status))}</span>`}
         </div>`).join('') : `<p class="empty">Waiting for quotes...</p>
           <p class="empty" style="padding-top:8px;font-size:13px">Vetted builders worldwide will reply here with USD quotes.</p>`;
@@ -1528,6 +1593,34 @@
     openDisputeSheet(rid);
   }
 
+  async function tryReleaseToBuilder(requestId) {
+    const base = window.SUPABASE_URL;
+    if (!base || !db) return { ok: false, reason: 'not_configured' };
+    try {
+      const { data: { session } } = await needDb().auth.getSession();
+      if (!session?.access_token) return { ok: false, reason: 'auth' };
+      const res = await fetch(`${base}/functions/v1/release-to-builder`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: window.SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({ request_id: requestId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 501 || body.error === 'not_configured') {
+        return { ok: false, reason: 'not_configured' };
+      }
+      if (!res.ok) {
+        return { ok: false, reason: body.message || body.error || 'release_failed' };
+      }
+      return { ok: true, transferId: body.transfer_id || null };
+    } catch {
+      return { ok: false, reason: 'network' };
+    }
+  }
+
   async function releasePayment(rid) {
     const ans = await askConfirm({
       title: 'Accept delivery & complete?',
@@ -1547,19 +1640,35 @@
       if (pay.status !== 'held' && !isAdmin()) {
         throw new Error('Release requires held funds (Stripe Checkout).');
       }
+
+      if (pay.status === 'held') {
+        const released = await tryReleaseToBuilder(rid);
+        if (released.ok) {
+          track('payment_released', { request_id: rid, via: 'edge' });
+          toast('Payment released to builder', true);
+          loadChat();
+          return;
+        }
+        // 501 / not live: mark request completed; payout settlement stays server-side later
+        const { error: e1 } = await needDb().from('requests').update({ status: 'completed' }).eq('id', rid);
+        if (e1) throw e1;
+        if (isAdmin()) {
+          const { error: e2 } = await needDb().from('payments')
+            .update({ status: 'released', released_at: new Date().toISOString() })
+            .eq('request_id', rid);
+          if (e2) throw e2;
+          toast('Payment marked released (admin)', true);
+        } else {
+          toast('Delivery accepted — ORVO will settle payout when Connect is live', true);
+        }
+        track('payment_release_pending', { request_id: rid, reason: released.reason });
+        loadChat();
+        return;
+      }
+
       const { error: e1 } = await needDb().from('requests').update({ status: 'completed' }).eq('id', rid);
       if (e1) throw e1;
-      if (isAdmin() && pay.status === 'held') {
-        const { error: e2 } = await needDb().from('payments')
-          .update({ status: 'released', released_at: new Date().toISOString() })
-          .eq('request_id', rid);
-        if (e2) throw e2;
-        toast('Payment released to builder', true);
-      } else if (pay.status === 'held') {
-        toast('Delivery accepted — ORVO will settle payout to the builder', true);
-      } else {
-        toast('Project completed', true);
-      }
+      toast('Project completed', true);
       loadChat();
     } catch (e) { toast(userFacingErr(e.message), false); }
   }
@@ -1626,6 +1735,7 @@
         : `Checkout unavailable (${checkout.reason}) — job is awaiting payment`;
       showPayAwaitingState(note);
       toast('Quote accepted — awaiting payment (not funded yet)', true);
+      track('quote_accepted', { request_id: rid, quote_id: qid, checkout: checkout.reason || 'redirect' });
       pendingPay = null;
       loadChat();
     } catch (e) {
@@ -1857,6 +1967,8 @@
     }
     await refreshUser();
     db.auth.onAuthStateChange(refreshUser);
+    handleCheckoutReturn();
+    track('app_boot', { authed: !!user });
   }
 
   // Design: gate hero entrance motion (CSS .ui-ready)

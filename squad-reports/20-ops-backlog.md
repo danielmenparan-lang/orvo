@@ -35,7 +35,9 @@
 
 **Honesty status (code):** Accept → `awaiting_payment` + `payments.pending` only. Client checkout calls Edge Function; without secrets → awaiting UI (not funded). Release requires `held`. Sibling quotes rejected.
 
-**Founder still:** Apply SQL 001→005 on Supabase; set `is_admin`; add Stripe secrets + deploy functions.
+**Founder still:** Apply SQL 001→008 on Supabase; set `is_admin`; add Stripe secrets + deploy functions (`create-checkout-session`, `stripe-webhook`, `create-connect-account`, `release-to-builder`).
+
+**Next code polish:** ~~request-detail spine~~ · ~~Connect onboard stub~~ · ~~founder SQL smoke~~ · ~~release-to-builder wire~~ · ~~checkout return~~ · ~~quote ETA column~~ — remaining: live Stripe secrets.
 
 ---
 
@@ -83,9 +85,7 @@
 | **P2-9** | ~~chat-policy module~~ | `js/chat-policy.js` | **DONE** |
 | **P2-10** | ~~SEO pages~~ | html + docs | **DONE** |
 | **P2-11** | ~~Footer year + ToS~~ | `index.html` | **DONE** |
-| **P2-12** | ~~Metrics sheet~~ | METRICS.md | **DONE** in docs |
-
-**Next code polish:** ~~request-detail spine~~ · ~~Connect onboard stub~~ · ~~founder SQL smoke~~ — remaining: live Stripe secrets, Connect Account Link implementation.
+| **P2-12** | ~~Metrics sheet~~ | METRICS.md + `js/events.js` | **DONE** — docs + client track stub |
 
 **Founder checklist:** `docs/FOUNDER-SQL-SMOKE.md` (also linked from admin Profile).
 

@@ -9,6 +9,7 @@ Run in Supabase SQL Editor, **in order**:
 5. `005_invites.sql` — concierge `request_invites` (admin → builder)  
 6. `006_connect.sql` — optional `profiles.stripe_connect_*` for Express payouts  
 7. `007_status_guards.sql` — `awaiting_payment` check, one payment/request, quote min $50  
+8. `008_quote_eta.sql` — `quotes.delivery_days`  
 
 Founder smoke checklist: `docs/FOUNDER-SQL-SMOKE.md` / `founder-checklist.html`.  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md`.
@@ -20,4 +21,4 @@ After first admin signup:
 update public.profiles set is_admin = true where email = 'danielmen.paran@gmail.com';
 ```
 
-**Prod apply status:** *not confirmed by agents — founder must run 001→007 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*
+**Prod apply status:** *not confirmed by agents — founder must run 001→008 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*
