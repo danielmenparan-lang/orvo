@@ -33,8 +33,19 @@
   <h1>Founder SQL smoke checklist</h1>
   <p class="lead">Apply migrations in Supabase, then tick each gate. Full notes: <code>docs/FOUNDER-SQL-SMOKE.md</code>.</p>
 
+  <section style="border-color:var(--o);background:#FFF8F4">
+    <h2>One paste (recommended)</h2>
+    <p style="font-size:14px;margin-bottom:12px">Supabase → <b>SQL Editor</b> → paste entire file → <b>Run</b> once. Includes 001→020 + admin SQL at bottom.</p>
+    <p style="margin-bottom:10px">
+      <a href="https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql" target="_blank" rel="noopener">Open APPLY-ALL-001-020.sql (raw) →</a>
+    </p>
+    <p style="font-size:12px;color:var(--muted)">Or from repo: <code>sql/APPLY-ALL-001-020.sql</code></p>
+    <label><input type="checkbox"/> Ran APPLY-ALL-001-020.sql in Supabase</label>
+    <label><input type="checkbox"/> Signed up once on site, then admin SQL applied</label>
+  </section>
+
   <section>
-    <h2>Apply order</h2>
+    <h2>Apply order (step-by-step alternative)</h2>
     <label><input type="checkbox"/> sql/001_mvp_schema.sql</label>
     <label><input type="checkbox"/> sql/002_payments_lockdown.sql</label>
     <label><input type="checkbox"/> sql/003_chat_and_trust.sql</label>

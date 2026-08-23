@@ -251,3 +251,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 ## 2026-08-23T13:00Z — pulse (post-finale)
 - Founder **Setup health** panel in Profile (live SQL table probes)
 - Footer Campaign PR #2 link
+
+## 2026-08-23T13:30Z — pulse (post-finale)
+- Founder checklist: **One paste (recommended)** section → raw `APPLY-ALL-001-020.sql` link
+- Setup health: missing-table fix hint + **Copy is_admin SQL** button (founder Profile)
+- Health panel footer → founder checklist (removed PR link from panel)

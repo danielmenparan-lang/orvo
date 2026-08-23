@@ -2730,16 +2730,19 @@
       : (configuredFounder
         ? '<span style="color:var(--o)">Founder email — set is_admin in Supabase SQL</span>'
         : '<span style="color:var(--muted)">Not admin</span>');
+    const allOk = (checks || []).every((c) => c.ok);
+    const fixBlock = !allOk ? `<p style="color:var(--o);font-size:12px;margin:8px 0 0">Missing tables? Supabase SQL Editor → paste <a href="https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql" target="_blank" rel="noopener" style="color:var(--o)">APPLY-ALL-001-020.sql</a> → Run once.</p>` : '';
     return `
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
         <b>Setup health</b> <span style="font-size:11px;color:var(--muted)">(live probes)</span>
         ${rows}
+        ${fixBlock}
         <hr style="border:none;border-top:1px solid var(--border);margin:10px 0"/>
         <div>${adminLine}</div>
         <div>${stripeLine}</div>
         <div style="margin-top:10px">
-          <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" style="color:var(--o)">Founder checklist →</a>
-          · <a href="https://github.com/danielmenparan-lang/orvo/pull/2" target="_blank" rel="noopener" style="color:var(--o)">Campaign PR #2 →</a>
+          <button type="button" class="btn btn-ghost" id="btn-copy-admin-sql" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy is_admin SQL</button>
+          <a href="founder-checklist.html" target="_blank" rel="noopener" style="color:var(--o)">Founder checklist →</a>
         </div>
       </div>`;
   }
@@ -2788,6 +2791,15 @@
       ${!isBuilder() && !isPending() && !adminOk ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="apply">Apply as a builder</button>' : ''}
       <button class="btn btn-ghost" id="logout-btn" style="width:100%;padding:12px">Sign out</button>`;
     $('logout-btn').addEventListener('click', doLogout);
+    $('btn-copy-admin-sql')?.addEventListener('click', async () => {
+      const sql = `update public.profiles set is_admin = true where email = '${esc(logged)}';`;
+      try {
+        await navigator.clipboard.writeText(sql.replace(/&#39;/g, "'"));
+        toast('Copied is_admin SQL — run in Supabase after signup', true);
+      } catch {
+        toast(sql, true);
+      }
+    });
     $('btn-connect-payouts')?.addEventListener('click', async () => {
       const btn = $('btn-connect-payouts');
       btn.disabled = true;
