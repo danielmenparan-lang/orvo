@@ -1,6 +1,7 @@
 // Scaffold — release held funds to builder Connect account.
 import { jsonResponse, optionsResponse } from '../_shared/cors.ts';
 import { parseJsonBody, requireBearer, requireUuidField, unauthorized } from '../_shared/auth.ts';
+import { requireReleaseSecrets } from '../_shared/stripe-env.ts';
 
 type Body = { request_id?: string };
 
@@ -15,7 +16,8 @@ Deno.serve(async (req) => {
   const requestId = requireUuidField(raw as Record<string, unknown>, 'request_id');
   if (requestId instanceof Response) return requestId;
 
-  if (!Deno.env.get('STRIPE_SECRET_KEY') || !Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+  const secrets = requireReleaseSecrets();
+  if (secrets instanceof Response) {
     return jsonResponse({
       error: 'not_configured',
       message: 'Set STRIPE_SECRET_KEY + SUPABASE_SERVICE_ROLE_KEY, then implement Transfer.',
@@ -23,7 +25,7 @@ Deno.serve(async (req) => {
     }, 501);
   }
 
-  // TODO: JWT owns request → payment held → Transfer → service-role released + completed
+  // TODO: JWT owns request → payment held → Transfer.create(source_transaction) → service-role released + completed
   return jsonResponse({
     error: 'not_implemented',
     message: 'Secrets present but release Transfer not implemented yet.',

@@ -23,6 +23,7 @@ Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops
 - [ ] `sql/017_stripe_webhook_events.sql` (optional until Stripe webhook live)
 - [ ] `sql/018_builder_application_notify.sql` (approve/reject → inbox)
 - [ ] `sql/019_notifications_unread_idx.sql` (unread partial index)
+- [ ] `sql/020_payment_checkout_open.sql` (checkout_open status comment)
 
 ## Privilege
 

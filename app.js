@@ -77,6 +77,7 @@
       cancelled: 'Cancelled',
       disputed: 'Disputed',
       pending: 'Pending',
+      checkout_open: 'Checkout open',
       accepted: 'Accepted',
       approved: 'Approved',
       paid: 'Paid',
@@ -566,6 +567,7 @@
     if (!user) { openAuth('login'); showMsg('login-msg', 'Sign in first', false); return; }
     hideMsg('post-msg');
     wireFieldCounter('post-desc', 'post-count', 4000);
+    wireFieldCounter('post-title', 'post-title-count', 80);
     $('post-modal').classList.add('open');
   }
   function closePost() { $('post-modal').classList.remove('open'); }
@@ -998,6 +1000,15 @@
         return hay.includes(qText);
       });
     }
+    const openIds = rows.filter((r) => r.status === 'open').map((r) => r.id);
+    const quoteCounts = {};
+    if (openIds.length) {
+      const { data: qrows } = await needDb().from('quotes')
+        .select('request_id').in('request_id', openIds).eq('status', 'pending');
+      (qrows || []).forEach((q) => {
+        quoteCounts[q.request_id] = (quoteCounts[q.request_id] || 0) + 1;
+      });
+    }
     if (!rows.length) {
       body.innerHTML = `<input class="admin-search" id="requests-search" type="search" placeholder="Search your requests…" value="${esc(qText)}" autocomplete="off"/>
         <p class="empty">${qText ? 'No requests match that search.' : 'No requests yet.'}</p>
@@ -1021,18 +1032,22 @@
         ${showAll ? 'Hide cancelled' : 'Show cancelled'}
       </button>
     </div>`;
-    body.innerHTML = filterBar + rows.map(r => `
+    body.innerHTML = filterBar + rows.map(r => {
+      const qc = quoteCounts[r.id] || 0;
+      const quoteBadge = qc ? ` · ${qc} quote${qc > 1 ? 's' : ''}` : '';
+      return `
       <div class="card">
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${esc(r.title)}</h3>
         <p>${esc(r.description.slice(0, 120))}</p>
-        <span class="badge">${esc(statusLabel(r.status))} · ${ago(r.created_at)}</span>
+        <span class="badge">${esc(statusLabel(r.status))}${quoteBadge} · ${ago(r.created_at)}</span>
         <div class="row">
           <button class="btn btn-primary btn-open-req" data-rid="${r.id}">Open</button>
           ${r.status === 'open' ? `<button class="btn btn-ghost btn-cancel-req" data-rid="${r.id}">Cancel</button>` : ''}
           <button class="btn btn-ghost btn-share-req" data-rid="${r.id}">Copy link</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     $('btn-toggle-cancelled')?.addEventListener('click', () => {
       window.__orvoShowAllRequests = !window.__orvoShowAllRequests;
       loadRequests();
@@ -1109,15 +1124,10 @@
     if (!data?.length) {
       body.innerHTML = searchBar + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
-      $('jobs-search')?.addEventListener('change', (e) => {
+      $('jobs-search')?.addEventListener('input', (e) => {
         window.__orvoJobsQuery = e.target.value || '';
-        loadJobs();
-      });
-      $('jobs-search')?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          window.__orvoJobsQuery = e.target.value || '';
-          loadJobs();
-        }
+        clearTimeout(window.__orvoJobsSearchT);
+        window.__orvoJobsSearchT = setTimeout(loadJobs, 280);
       });
       return;
     }
@@ -1140,15 +1150,10 @@
         </div>
       </div>`;
     }).join('');
-    $('jobs-search')?.addEventListener('change', (e) => {
+    $('jobs-search')?.addEventListener('input', (e) => {
       window.__orvoJobsQuery = e.target.value || '';
-      loadJobs();
-    });
-    $('jobs-search')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        window.__orvoJobsQuery = e.target.value || '';
-        loadJobs();
-      }
+      clearTimeout(window.__orvoJobsSearchT);
+      window.__orvoJobsSearchT = setTimeout(loadJobs, 280);
     });
     body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
     body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
@@ -1260,7 +1265,7 @@
       <p style="color:var(--gray);font-size:14px;margin-bottom:20px">${editing
         ? 'Update your application below. Status stays pending until ORVO reviews.'
         : 'ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.'}</p>
-      <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..."></textarea></div>
+      <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..." maxlength="2000"></textarea><p class="chat-meta" id="apply-bio-count">0 / 2000 (min 50)</p></div>
       <div class="field"><label>Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
       <div class="field"><label>Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" placeholder="GitHub, website, or leave empty"/></div>
       <div class="field"><label>LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" placeholder="https://linkedin.com/in/..."/></div>

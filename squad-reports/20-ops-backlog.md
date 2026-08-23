@@ -37,7 +37,7 @@
 
 **Founder still:** Apply SQL 001→019 on Supabase; set `is_admin`; add Stripe secrets + deploy functions (`STRIPE-DEPLOY-CHECKLIST.md`); flip `ORVO_CHECKOUT_LIVE` when Checkout is live.
 
-**Next code polish:** ~~pay request title~~ · ~~thread unread~~ · ~~mark read on chat~~ · ~~Stripe env helper~~ — remaining: live Stripe implementation.
+**Next code polish:** ~~quote counts on requests~~ · ~~form counters~~ · ~~jobs search debounce~~ · ~~release stripe-env~~ — remaining: live Stripe implementation.
 
 ---
 

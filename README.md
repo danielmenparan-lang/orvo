@@ -15,7 +15,7 @@ Branch / PR: `cursor/orvo-local-site-3bd5`
 
 ## Supabase SQL (order)
 
-See `sql/README.md` — run **001 → 019**, then:
+See `sql/README.md` — run **001 → 020**, then:
 
 ```sql
 update public.profiles set is_admin = true where email = 'your@email.com';

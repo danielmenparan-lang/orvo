@@ -28,8 +28,14 @@ export function siteUrl(): string {
   return Deno.env.get('SITE_URL') || Deno.env.get('ORVO_APP_URL') || 'https://fantastic-eclair-0b2c66.netlify.app';
 }
 
-export function orvoFeePercent(): number {
-  const raw = Deno.env.get('ORVO_FEE_PERCENT');
-  const n = raw != null ? Number(raw) : 0;
-  return Number.isFinite(n) && n >= 0 ? n : 0;
+export function requireReleaseSecrets(): { stripeKey: string } | Response {
+  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+  const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!stripeKey || !serviceRole) {
+    return jsonResponse({
+      error: 'not_configured',
+      message: 'Set STRIPE_SECRET_KEY + SUPABASE_SERVICE_ROLE_KEY, then implement Transfer.',
+    }, 501);
+  }
+  return { stripeKey };
 }

@@ -207,3 +207,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - `sql/019_notifications_unread_idx.sql`; Edge `_shared/stripe-env.ts`
 - SEO theme/manifest on hire + for-builders pages
 - `JUDGE-WAVE-4h.md` — integrity still PASS, Stripe blocked
+
+## 2026-08-23T09:30Z — pulse
+- Client requests show pending quote count; jobs search debounce
+- Post title / apply bio / dispute char counters
+- `sql/020_payment_checkout_open.sql`; release Edge uses stripe-env
+- `checkout_open` payment status label
