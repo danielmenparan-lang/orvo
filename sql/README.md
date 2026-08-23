@@ -5,7 +5,8 @@ Run in Supabase SQL Editor, **in order**:
 1. `001_mvp_schema.sql` — tables, RLS, privilege triggers  
 2. `002_payments_lockdown.sql` — clients insert `pending` only; `held`/`released` via webhook / `service_role` / admin  
 3. `003_chat_and_trust.sql` — server-side chat filters + thin deliveries / reviews / disputes  
-4. `004_global.sql` — `requests.location` text (optional country for global clients)  
+4. `004_global.sql` — `requests.location` text (optional country for global clients)
+5. `005_invites.sql` — concierge `request_invites` (admin → builder)  
 
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md`.
 

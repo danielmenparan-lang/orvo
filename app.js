@@ -1303,12 +1303,6 @@
         toast('Project completed', true);
       }
       loadChat();
-      setTimeout(() => {
-        if (confirm('Leave a quick 1–5 star review for the builder?')) {
-          const builderId = prompt('Confirm — opening review…') ; // noop path
-        }
-      }, 400);
-      // Prefer in-UI review card after reload
     } catch (e) { toast(e.message, false); }
   }
 
