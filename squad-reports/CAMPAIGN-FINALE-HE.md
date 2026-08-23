@@ -153,6 +153,6 @@ node tests/edge-auth.test.js
 
 ## Verdict
 
-**הקמפיין הושלם.** המוצר כנה, הלולאה שלמה, וה-scaffolds מוכנים. השלב הבא הוא **founder execution** — SQL, secrets, smoke, פרסום כנה.
+**הקמפיין הושלם.** המוצר כנה, הלולאה שלמה, ו-Stripe Edge **ממומש** (לא stub). השלב הבא הוא **founder execution** — SQL, secrets, smoke, פרסום כנה.
 
 קפה → SQL → admin → Stripe test → פרסום (אם ירוק) → concierge.

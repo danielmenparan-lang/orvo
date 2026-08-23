@@ -115,6 +115,20 @@
     return userFacingErr(typeof msg === 'string' ? msg : fallback);
   }
 
+  /** Honest copy when Checkout Edge returns not_configured / network / auth. */
+  function checkoutUnavailableMessage(checkout, fallback = 'Checkout unavailable — still awaiting payment') {
+    if (checkout?.reason === 'not_configured') {
+      return 'Stripe Checkout not configured yet — no card charged. Job stays awaiting payment.';
+    }
+    if (checkout?.reason === 'network') {
+      return 'Could not reach checkout — try again. No card charged.';
+    }
+    if (checkout?.reason === 'auth') {
+      return 'Sign in again to start checkout.';
+    }
+    return checkout?.message || fallback;
+  }
+
   function parseMoney(s) {
     const m = String(s || '').replace(/,/g, '').match(/\d+(\.\d+)?/);
     return m ? Math.round(parseFloat(m[0]) * 100) : 0;
@@ -838,9 +852,7 @@
       btn.disabled = false;
       btn.textContent = ctx.checkoutOpen ? 'Resume checkout' : 'Try checkout again';
     }
-    toast(checkout.reason === 'not_configured'
-      ? 'Checkout not live yet — no card charged'
-      : (checkout.message || 'Checkout unavailable — still awaiting payment'), false);
+    toast(checkoutUnavailableMessage(checkout), false);
   }
 
   /** Call Edge Function; 501/not_configured → caller shows awaiting state. */
@@ -1345,9 +1357,7 @@
         }
         el.disabled = false;
         el.textContent = el.dataset.checkoutOpen ? 'Continue checkout' : 'Complete payment';
-        toast(checkout.reason === 'not_configured'
-          ? 'Checkout not live yet — open request to retry'
-          : (checkout.message || 'Checkout unavailable — open request for details'), false);
+        toast(checkoutUnavailableMessage(checkout, 'Checkout unavailable — open request for details'), false);
         go('chat', rid);
       });
     });
@@ -2232,9 +2242,7 @@
       }
       btn.disabled = false;
       btn.textContent = btn.dataset.label || 'Try checkout again';
-      toast(checkout.reason === 'not_configured'
-        ? 'Checkout not live yet — no card charged'
-        : (checkout.message || 'Checkout unavailable — still awaiting payment'), false);
+      toast(checkoutUnavailableMessage(checkout), false);
     });
     $('btn-copy-req-link')?.addEventListener('click', () => copyRequestLink(rid));
     $('chat-form').addEventListener('submit', sendMsg);
@@ -2742,9 +2750,7 @@
         window.location.href = checkout.url;
         return;
       }
-      const note = checkout.reason === 'not_configured' || checkout.reason === 'network'
-        ? 'Checkout not live yet — no card charged'
-        : (checkout.message || `Checkout unavailable — job is awaiting payment`);
+      const note = checkoutUnavailableMessage(checkout, 'Checkout unavailable — job is awaiting payment');
       const { data: payAfter } = await needDb().from('payments').select('status').eq('request_id', rid).maybeSingle();
       showPayAwaitingState({
         extraNote: note,

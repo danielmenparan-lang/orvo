@@ -310,3 +310,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Admin KPI tiles **filter All requests** by status (open / awaiting / funded / completed)
 - Status chips: delivered + completed; Connect toast + Copy verify-edge
 - Netlify JS `must-revalidate`; CAMPAIGN-FINALE-HE Stripe/Transfer sync
+
+## 2026-08-23T19:00Z — pulse (post-finale)
+- Unified **`checkoutUnavailableMessage`** — honest Stripe-not-configured copy (no stale "not live yet")
+- `verify-edge.sh` curl robustness; founder checklist verify-edge CLI line
+- `JUDGE-WAVE-POST-FINALE.md` through 19:00; CAMPAIGN-FINALE-HE verdict sync
