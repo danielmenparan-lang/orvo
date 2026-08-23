@@ -165,3 +165,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Quote cards show builder ★ average when reviews exist
 - `netlify.toml` headers + `/hire` `/builders` redirects
 - `sql/012_notifications.sql` + webhook uses shared CORS
+
+## 2026-08-23T06:30Z — pulse
+- Offline banner; chat 2000 char counter
+- Pay sheet shows builder name + ETA
+- Admin application filter + builder jobs search
+- `sql/013_request_search.sql` + `tests/events.test.js`

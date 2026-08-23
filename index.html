@@ -63,6 +63,16 @@ a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer}
 .hidden{display:none!important}
 #boot-error{position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--red);color:#fff;padding:12px;text-align:center;font-size:14px}
+#offline-banner{
+  position:fixed;top:0;left:0;right:0;z-index:9998;background:#1A2438;color:var(--hero-fg);
+  padding:10px 16px;text-align:center;font-size:13px;font-weight:500;
+  transform:translateY(-100%);transition:transform .28s var(--ease);pointer-events:none;
+}
+#offline-banner.show{transform:translateY(0)}
+.chat-meta{display:flex;justify-content:flex-end;font-size:11px;color:var(--muted);margin:4px 2px 0}
+.chat-meta.warn{color:var(--o)}
+.admin-search{width:100%;max-width:320px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:14px;background:var(--bg)}
+.admin-search:focus{outline:none;border-color:rgba(255,107,53,.45);background:var(--surface)}
 
 nav{
   position:fixed;top:0;left:0;right:0;z-index:100;height:68px;
@@ -433,6 +443,7 @@ footer{
 
 <a class="skip-link" href="#how">Skip to content</a>
 <div id="boot-error" class="hidden"></div>
+<div id="offline-banner" role="status" aria-live="polite">You are offline — changes will sync when you reconnect.</div>
 <div id="toast"></div>
 
 <nav>
@@ -645,6 +656,7 @@ footer{
     <button class="modal-close" data-action="close-pay">✕</button>
     <h2 id="pay-title">Accept &amp; pay</h2>
     <p class="sub" id="pay-sub">Review the quote before locking in this builder</p>
+    <p id="pay-builder-line" class="field-hint" style="margin:-8px 0 14px"></p>
     <div id="pay-msg" class="msg hidden"></div>
     <div class="pay-rows" id="pay-breakdown">
       <div class="pay-row"><span>Quote amount</span><strong id="pay-amount">—</strong></div>
@@ -745,9 +757,9 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=26"></script>
-<script src="js/events.js?v=26"></script>
-<script src="supabase-config.js?v=26"></script>
-<script src="app.js?v=26"></script>
+<script src="js/chat-policy.js?v=27"></script>
+<script src="js/events.js?v=27"></script>
+<script src="supabase-config.js?v=27"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>

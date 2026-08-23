@@ -14,6 +14,7 @@ Run in Supabase SQL Editor, **in order**:
 10. `010_payment_stripe_fields.sql` — `held_at`, Connect snapshot fields, currency  
 11. `011_message_limits.sql` — messages.body 1–2000 chars  
 12. `012_notifications.sql` — optional notifications inbox (RLS read-own)  
+13. `013_request_search.sql` — optional FTS + trigram indexes for browse jobs  
 
 Founder smoke checklist: `docs/FOUNDER-SQL-SMOKE.md` / `founder-checklist.html`.  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md`.
@@ -25,4 +26,4 @@ After first admin signup:
 update public.profiles set is_admin = true where email = 'danielmen.paran@gmail.com';
 ```
 
-**Prod apply status:** *not confirmed by agents — founder must run 001→012 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*
+**Prod apply status:** *not confirmed by agents — founder must run 001→013 in Supabase SQL Editor and note the date in FOUNDER-SQL-SMOKE.md.*

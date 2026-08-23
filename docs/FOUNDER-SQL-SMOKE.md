@@ -16,6 +16,7 @@ Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops
 - [ ] `sql/010_payment_stripe_fields.sql` (held_at + Connect fields)
 - [ ] `sql/011_message_limits.sql` (body ≤ 2000)
 - [ ] `sql/012_notifications.sql` (optional inbox)
+- [ ] `sql/013_request_search.sql` (optional FTS indexes)
 
 ## Privilege
 

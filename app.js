@@ -432,6 +432,19 @@
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
   }
+
+  function wireOfflineBanner() {
+    const el = $('offline-banner');
+    if (!el) return;
+    const sync = () => {
+      el.classList.toggle('show', !navigator.onLine);
+      if (navigator.onLine) track('online', {});
+      else track('offline', {});
+    };
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    sync();
+  }
   function openAuth(tab) {
     hideMsg('login-msg'); hideMsg('signup-msg');
     $('auth-modal').classList.add('open');
@@ -461,12 +474,20 @@
   }
   function closeQuote() { $('quote-modal').classList.remove('open'); quoteRequestId = null; }
 
-  function openPaySheet({ qid, rid, amountCents, fee, builderNet }) {
+  function openPaySheet({ qid, rid, amountCents, fee, builderNet, builderName, etaDays }) {
     pendingPay = { qid, rid, amountCents, fee, builderNet };
     const sheet = $('pay-sheet');
     sheet.classList.remove('done');
     $('pay-title').textContent = 'Accept & pay';
     $('pay-sub').textContent = 'Review the quote before locking in this builder';
+    const bl = $('pay-builder-line');
+    if (bl) {
+      const bits = [];
+      if (builderName) bits.push('Builder: ' + builderName);
+      if (etaDays) bits.push('ETA ' + etaDays + ' days');
+      bl.textContent = bits.join(' · ');
+      bl.style.display = bits.length ? '' : 'none';
+    }
     $('pay-amount').textContent = money(amountCents);
     const pct = FEE();
     if (pct > 0) {
@@ -881,20 +902,37 @@
         <p class="empty" style="padding-top:12px;font-size:12px">Or wait for admin approval if you already applied.</p>`;
       return;
     }
-    const { data, error } = await needDb().from('requests').select('*').eq('status', 'open').order('created_at', { ascending: false });
+    const qText = (window.__orvoJobsQuery || '').trim().replace(/[%_,]/g, ' ').slice(0, 80);
+    body.innerHTML = '<p class="empty">Loading...</p>';
+    let query = needDb().from('requests').select('*').eq('status', 'open').order('created_at', { ascending: false });
+    if (qText) {
+      query = query.or(`title.ilike.%${qText}%,description.ilike.%${qText}%,category.ilike.%${qText}%`);
+    }
+    const { data, error } = await query;
     if (error) {
       body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>`;
       return;
     }
+    const searchBar = `<input class="admin-search" id="jobs-search" type="search" placeholder="Search jobs by title, category…" value="${esc(window.__orvoJobsQuery || '')}" autocomplete="off"/>`;
     if (!data?.length) {
-      body.innerHTML = `<p class="empty">No open jobs right now.</p>
+      body.innerHTML = searchBar + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
+      $('jobs-search')?.addEventListener('change', (e) => {
+        window.__orvoJobsQuery = e.target.value || '';
+        loadJobs();
+      });
+      $('jobs-search')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          window.__orvoJobsQuery = e.target.value || '';
+          loadJobs();
+        }
+      });
       return;
     }
     const { data: myQuotes } = await needDb().from('quotes').select('request_id,status').eq('builder_id', user.id);
     const quotedIds = new Set((myQuotes || []).map(q => q.request_id));
     const pendingIds = new Set((myQuotes || []).filter(q => q.status === 'pending').map(q => q.request_id));
-    body.innerHTML = data.map(r => {
+    body.innerHTML = searchBar + data.map(r => {
       const canMsg = isAdmin() || quotedIds.has(r.id) || r.assigned_builder_id === user.id;
       const already = pendingIds.has(r.id);
       return `
@@ -910,6 +948,16 @@
         </div>
       </div>`;
     }).join('');
+    $('jobs-search')?.addEventListener('change', (e) => {
+      window.__orvoJobsQuery = e.target.value || '';
+      loadJobs();
+    });
+    $('jobs-search')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        window.__orvoJobsQuery = e.target.value || '';
+        loadJobs();
+      }
+    });
     body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
     body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
   }
@@ -1162,8 +1210,9 @@
         </p>`;
       return;
     }
-    $('view-body').innerHTML = kpiHtml + data.map(a => `
-      <div class="card">
+    const searchHtml = `<input class="admin-search" id="admin-app-search" type="search" placeholder="Filter by name, email, or skills…" autocomplete="off"/>`;
+    const renderApps = (list) => list.map(a => `
+      <div class="card admin-app-card" data-search="${esc((a.full_name || '') + ' ' + (a.email || '') + ' ' + (a.skills || '')).toLowerCase()}">
         <h3>${esc(a.full_name)}</h3>
         <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${esc(a.email || '')}</p>
         <p><b>Skills:</b> ${esc(a.skills)}</p>
@@ -1173,8 +1222,19 @@
           <button class="btn btn-ghost btn-reject" data-uid="${a.user_id}">Reject</button>
         </div>
       </div>`).join('');
-    $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid)));
-    $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid)));
+    $('view-body').innerHTML = kpiHtml + searchHtml + `<div id="admin-app-list">${renderApps(data)}</div>`;
+    const bindApprove = () => {
+      $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid)));
+      $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid)));
+    };
+    bindApprove();
+    $('admin-app-search')?.addEventListener('input', (e) => {
+      const q = (e.target.value || '').trim().toLowerCase();
+      $('view-body').querySelectorAll('.admin-app-card').forEach((card) => {
+        const hay = card.getAttribute('data-search') || '';
+        card.style.display = !q || hay.includes(q) ? '' : 'none';
+      });
+    });
   }
 
   async function approveBuilder(uid) {
@@ -1511,9 +1571,10 @@
       <div class="chat">
         <div class="chat-msgs" id="chat-msgs"></div>
         <form class="chat-send" id="chat-form">
-          <input id="chat-input" placeholder="Type a message..." autocomplete="off"/>
+          <input id="chat-input" placeholder="Type a message..." autocomplete="off" maxlength="2000"/>
           <button class="btn btn-primary" type="submit">Send</button>
         </form>
+        <p class="chat-meta" id="chat-count">0 / 2000</p>
       </div>`;
 
     $('view-body').querySelectorAll('.btn-pay').forEach(b => {
@@ -1544,6 +1605,16 @@
     });
     $('btn-copy-req-link')?.addEventListener('click', () => copyRequestLink(rid));
     $('chat-form').addEventListener('submit', sendMsg);
+    const chatInput = $('chat-input');
+    const chatCount = $('chat-count');
+    const updateCount = () => {
+      if (!chatInput || !chatCount) return;
+      const n = chatInput.value.length;
+      chatCount.textContent = n + ' / 2000';
+      chatCount.classList.toggle('warn', n > 1800);
+    };
+    chatInput?.addEventListener('input', updateCount);
+    updateCount();
     await renderMsgs();
     chatSub = needDb().channel('c-' + rid)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'request_id=eq.' + rid }, renderMsgs)
@@ -1893,12 +1964,19 @@
     const { data: q } = await needDb().from('quotes').select('*').eq('id', qid).single();
     if (!q) return;
     const fee = FEE() > 0 ? Math.round(q.amount_cents * FEE() / 100) : 0;
+    let builderName = '';
+    try {
+      const { data: bp } = await needDb().from('profiles').select('full_name').eq('id', q.builder_id).maybeSingle();
+      builderName = bp?.full_name || '';
+    } catch (_) { /* ignore */ }
     openPaySheet({
       qid,
       rid,
       amountCents: q.amount_cents,
       fee,
       builderNet: q.amount_cents - fee,
+      builderName,
+      etaDays: q.delivery_days || null,
     });
   }
 
@@ -2202,6 +2280,7 @@
     handleCheckoutReturn();
     consumeViewDeepLink();
     wireNavScroll();
+    wireOfflineBanner();
     track('app_boot', { authed: !!user });
   }
 
