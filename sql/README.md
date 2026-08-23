@@ -2,6 +2,10 @@
 
 Run in Supabase SQL Editor, **in order**:
 
+**One-paste option:** `APPLY-ALL-001-020.sql` — entire 001→020 + admin SQL at bottom (recommended for founders).
+
+Numbered files (if you prefer step-by-step):
+
 1. `001_mvp_schema.sql` — tables, RLS, privilege triggers  
 2. `002_payments_lockdown.sql` — clients insert `pending` only; `held`/`released` via webhook / `service_role` / admin  
 3. `003_chat_and_trust.sql` — server-side chat filters + thin deliveries / reviews / disputes  
