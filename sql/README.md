@@ -28,6 +28,7 @@ Numbered files (if you prefer step-by-step):
 20. `020_payment_checkout_open.sql` — documents `checkout_open` status (comment only)  
 
 Founder smoke checklist: `docs/FOUNDER-SQL-SMOKE.md` / `founder-checklist.html`.  
+Founder setup CLI: `bash scripts/founder-setup.sh`  
 Stripe MVP: `docs/payments/STRIPE-CONNECT-MVP.md` · deploy: `docs/payments/STRIPE-DEPLOY-CHECKLIST.md`.
 
 Also aliased: `sql-FINAL-FIX.sql` / `sql-RUN-NOW.sql` ≈ latest full bootstrap (prefer numbered migrations).

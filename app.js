@@ -1059,7 +1059,8 @@
       h += `<div class="side-label">Admin</div>
         <button class="side-item" data-view="admin">Review builders</button>
         <button class="side-item" data-view="all-requests">All requests</button>
-        <button class="side-item" data-view="disputes">Disputes</button>`;
+        <button class="side-item" data-view="disputes">Disputes</button>
+        <a class="side-item" href="founder-checklist.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Founder setup ↗</a>`;
     }
     if (isBuilder()) {
       h += `<div class="side-label">Builder</div>
@@ -3047,7 +3048,7 @@
         <button class="btn btn-primary" id="btn-connect-payouts" style="width:100%;margin-top:12px;padding:12px">
           ${connectId ? 'Update payout onboarding' : 'Set up payouts'}
         </button>
-        <p style="font-size:12px;color:var(--muted);margin-top:8px">Scaffolded — live onboarding needs Stripe secrets.</p>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px">Connect Express onboarding — required before release transfers. Needs Stripe secrets deployed.</p>
       </div>` : '';
     $('view-body').innerHTML = `
       <p><b>${esc(profile?.full_name)}</b></p>
@@ -3229,11 +3230,25 @@
   $('reset-btn')?.addEventListener('click', submitPasswordReset);
 
   function wireLandingHonesty() {
-    const copy = $('trust-pay-copy');
-    if (!copy) return;
-    copy.textContent = window.ORVO_CHECKOUT_LIVE
-      ? 'quote → Stripe Checkout (held) → release when done'
-      : 'quote → await Checkout → release when done';
+    const live = !!window.ORVO_CHECKOUT_LIVE;
+    const trust = $('trust-pay-copy');
+    if (trust) {
+      trust.textContent = live
+        ? 'quote → Stripe Checkout (held) → release when done'
+        : 'quote → await Checkout → release when done';
+    }
+    const how = $('how-step3-copy');
+    if (how) {
+      how.textContent = live
+        ? 'Accept a quote, pay via Stripe Checkout — funds held until you approve delivery — then release to the builder.'
+        : 'Accept a quote, complete Checkout when live (held until you approve delivery), then release payment.';
+    }
+    const builderPaid = $('builder-paid-copy');
+    if (builderPaid) {
+      builderPaid.textContent = live
+        ? 'Client pays via Stripe Checkout; funds held until they release. Connect payouts in Profile. Founding fee 0%.'
+        : 'Client funds on ORVO when Checkout goes live. You mark delivered; they release. Founding fee 0%.';
+    }
   }
 
   // ── BOOT ──

@@ -1,24 +1,28 @@
 # Overnight squad status
 
-**Updated:** 2026-08-23 ~11:30 UTC — **10-hour campaign complete**
+**Updated:** 2026-08-23 ~17:30 UTC — **10-hour campaign + post-finale pulses complete**
 
 ## Campaign result
 - Branch: `cursor/orvo-local-site-3bd5` · PR #2
 - Demo: https://fantastic-eclair-0b2c66.netlify.app/
-- Verdict: `squad-reports/JUDGE-WAVE-10h.md` — integrity PASS, Stripe BLOCKED (secrets)
+- Verdict: `squad-reports/JUDGE-WAVE-POST-FINALE.md` — integrity PASS, Stripe **implemented** (founder deploy pending)
 - Founder brief: `squad-reports/CAMPAIGN-FINALE-HE.md`
 
-## Shipped (~10h pulses)
+## Shipped
 - Honest money loop (no fake funded/paid)
-- Chat gate + notifications spine (sql/012–020)
-- Stripe Edge scaffolds + deploy checklist
-- UX polish: post funnel, pay resume, admin KPI/filters, builder active jobs
+- SQL 001→020 + APPLY-ALL one-paste
+- Stripe Edge functions (checkout, webhook, connect, release) — **implemented**
+- Founder onboarding: health probes, banners, scripts (`founder-setup.sh`, `deploy-stripe.sh`)
+- Builder Connect nudges, dispute webhook, smoke test doc
 
 ## Founder unblock
-1. SQL 001→020 in Supabase + `is_admin`
-2. Stripe secrets + Edge deploy
-3. Flip `ORVO_CHECKOUT_LIVE` after smoke test
+```bash
+bash scripts/founder-setup.sh
+```
+1. APPLY-ALL SQL + `is_admin`
+2. Edge secrets + deploy
+3. Smoke test → `ORVO_CHECKOUT_LIVE=true`
 
 ## Limits (honest)
-- Live Stripe requires founder secrets — not agent-blocked, founder-blocked
-- Marketing assets in LAUNCH-KIT — founder posts, agents do not
+- Live money path requires founder secrets + Supabase SQL in prod
+- Marketing: `docs/marketing/LAUNCH-KIT.md` — founder posts only

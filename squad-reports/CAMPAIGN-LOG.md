@@ -295,3 +295,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Builder payout banner** in dashboard + jobs nudge when Connect missing
 - Setup health **Infra ready / All green** states
 - `JUDGE-WAVE-POST-FINALE.md` post-finale verdict update
+
+## 2026-08-23T17:30Z — pulse (post-finale)
+- Landing **honesty extended** — how-it-works step 3 + builder paid copy (`ORVO_CHECKOUT_LIVE`)
+- Admin sidebar **Founder setup ↗** link; Profile Connect copy updated
+- `STATUS.md` + `sql/README.md` synced to post-finale state
