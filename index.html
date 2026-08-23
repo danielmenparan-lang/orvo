@@ -170,6 +170,8 @@ nav .btn-ghost:hover{border-color:rgba(255,255,255,.45);transform:translateY(-1p
   background:rgba(255,255,255,.78);backdrop-filter:blur(8px);
 }
 .trust-item{font-size:13px;color:var(--gray)}.trust-item b{color:var(--ink);font-weight:600}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.in{opacity:1;transform:none}
 
 .section{padding:88px clamp(20px,5vw,64px);max-width:1100px;margin:0 auto}
 .section-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--o);margin-bottom:12px}
@@ -414,6 +416,7 @@ footer{
   .ui-ready .hero-ctas,.ui-ready .hero-visual,
   .modal-bg.open,.modal-bg.open .modal-box,.screen.open,#toast{animation:none!important}
   .brand-mark,.hero-text h1,.hero-text .lead,.hero-ctas,.hero-visual{opacity:1;transform:none}
+  .reveal{opacity:1;transform:none;transition:none}
   .btn,.btn-primary,.btn-ghost,.btn-black{transition:none}
   .btn-primary:hover,.btn-ghost:hover,.btn-black:hover,nav .btn-ghost:hover{transform:none}
 }
@@ -465,13 +468,13 @@ footer{
     </div>
   </section>
 
-  <div class="trust">
+  <div class="trust reveal">
     <div class="trust-item"><b>Vetted builders</b> — manual review before they see jobs</div>
     <div class="trust-item"><b>On-platform chat</b> — scope & price stay on ORVO</div>
     <div class="trust-item"><b>Hire flow</b> — quote → fund on ORVO → release when done</div>
   </div>
 
-  <section class="section" id="how">
+  <section class="section reveal" id="how">
     <p class="section-label">How it works</p>
     <h2>Post it. Builders quote.<br>You hire safe.</h2>
     <div class="steps">
@@ -481,7 +484,7 @@ footer{
     </div>
   </section>
 
-  <section class="section-dark" id="builders">
+  <section class="section-dark reveal" id="builders">
     <div class="section-inner">
       <p class="section-label">For builders</p>
       <h2>Build agents. Get paid.<br>Clients come to you.</h2>
@@ -495,7 +498,7 @@ footer{
     </div>
   </section>
 
-  <section class="cta">
+  <section class="cta reveal">
     <h2>Ready to hire a builder?</h2>
     <p>Post a request — vetted builders quote worldwide.</p>
     <div class="cta-btns">
@@ -722,9 +725,9 @@ footer{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/chat-policy.js?v=23"></script>
-<script src="js/events.js?v=23"></script>
-<script src="supabase-config.js?v=23"></script>
-<script src="app.js?v=23"></script>
+<script src="js/chat-policy.js?v=24"></script>
+<script src="js/events.js?v=24"></script>
+<script src="supabase-config.js?v=24"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>

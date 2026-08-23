@@ -147,3 +147,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Browse jobs: show Quote pending instead of duplicate Send quote
 - a11y: skip link + `:focus-visible`; SVG favicon; Netlify `_headers`
 - `sql/009_loop_hygiene.sql` quote status check + indexes
+
+## 2026-08-23T05:00Z — pulse
+- Builder nav CTA → Invited jobs + invite count badge
+- `ORVO_CHECKOUT_LIVE` pay-sheet CTA switch (false until secrets)
+- `sql/010_payment_stripe_fields.sql` (held_at, Connect snapshot cols)
+- Landing section scroll reveal; README ops quickstart

@@ -35,9 +35,9 @@
 
 **Honesty status (code):** Accept → `awaiting_payment` + `payments.pending` only. Client checkout calls Edge Function; without secrets → awaiting UI (not funded). Release requires `held`. Sibling quotes rejected.
 
-**Founder still:** Apply SQL 001→009 on Supabase; set `is_admin`; add Stripe secrets + deploy functions (`create-checkout-session`, `stripe-webhook`, `create-connect-account`, `release-to-builder`).
+**Founder still:** Apply SQL 001→010 on Supabase; set `is_admin`; add Stripe secrets + deploy functions; flip `ORVO_CHECKOUT_LIVE` when Checkout is live.
 
-**Next code polish:** ~~builder Invited home~~ · ~~withdraw quote / cancel request~~ · ~~a11y focus + favicon~~ — remaining: live Stripe secrets.
+**Next code polish:** ~~Invited nav CTA + badge~~ · ~~payment Stripe columns~~ · ~~section reveal~~ · ~~CHECKOUT_LIVE flag~~ — remaining: live Stripe secrets.
 
 ---
 

@@ -12,5 +12,9 @@ window.ORVO_DISPLAY_CURRENCY = 'USD';
 // Deprecated — ignore. Use Checkout Session (docs/payments/STRIPE-CONNECT-MVP.md), not Payment Links.
 window.STRIPE_PAYMENT_LINK = '';
 
+// Flip to true only after create-checkout-session is deployed with secrets.
+// Changes Accept & pay CTA copy to "Continue to Stripe Checkout".
+window.ORVO_CHECKOUT_LIVE = false;
+
 // Your email = ORVO admin (approve builders in Dashboard → Review builders)
 window.ORVO_ADMIN_EMAIL = 'danielmen.paran@gmail.com';

@@ -167,6 +167,20 @@
     } catch { /* SQL not ready */ }
   }
 
+  async function refreshInviteBadge() {
+    if (!isBuilder() || !db) return;
+    try {
+      const { count } = await needDb().from('request_invites')
+        .select('*', { count: 'exact', head: true }).eq('builder_id', user.id);
+      const btn = $('nav-main-btn');
+      if (btn && btn.dataset.action === 'invites') {
+        btn.textContent = count ? `Invited jobs (${count})` : 'Invited jobs';
+      }
+      const side = $('sidebar')?.querySelector('[data-view="invites"]');
+      if (side) side.textContent = count ? `Invited jobs (${count})` : 'Invited jobs';
+    } catch { /* table missing */ }
+  }
+
   function watchBuilderApplications() {
     if (!db || !isAdmin() || adminChannel) return;
     adminChannel = needDb().channel('admin-apps')
@@ -333,8 +347,9 @@
         btn.textContent = 'Review builders';
         btn.dataset.action = 'admin';
       } else if (isBuilder()) {
-        btn.textContent = 'Browse jobs';
-        btn.dataset.action = 'jobs';
+        btn.textContent = 'Invited jobs';
+        btn.dataset.action = 'invites';
+        refreshInviteBadge();
       } else {
         btn.textContent = 'Post request';
         btn.dataset.action = 'post';
@@ -388,14 +403,21 @@
       $('pay-fee').textContent = '0%';
     }
     $('pay-builder-net').textContent = money(builderNet);
-    $('pay-note').innerHTML =
-      'Card checkout is not live yet. Accepting locks this builder and marks the job ' +
-      '<strong>awaiting payment</strong> — not funded. Stripe Checkout is coming next.';
+    const checkoutLive = !!window.ORVO_CHECKOUT_LIVE;
+    if (checkoutLive) {
+      $('pay-note').innerHTML =
+        'You will continue to Stripe Checkout. Funds are <strong>held by ORVO</strong> until you approve delivery — not paid out immediately.';
+      $('pay-confirm-btn').textContent = 'Continue to Stripe Checkout';
+    } else {
+      $('pay-note').innerHTML =
+        'Card checkout is not live yet. Accepting locks this builder and marks the job ' +
+        '<strong>awaiting payment</strong> — not funded. Stripe Checkout is coming next.';
+      $('pay-confirm-btn').textContent = 'Accept quote — await payment';
+    }
     const msg = $('pay-msg');
     msg.className = 'msg hidden';
     msg.textContent = '';
     $('pay-confirm-btn').disabled = false;
-    $('pay-confirm-btn').textContent = 'Accept quote — await payment';
     $('pay-cancel-btn').textContent = 'Cancel';
     $('pay-modal').classList.add('open');
   }
@@ -617,6 +639,7 @@
     $('sidebar').querySelectorAll('[data-view]').forEach(el => {
       el.addEventListener('click', () => go(el.dataset.view));
     });
+    if (isBuilder()) refreshInviteBadge();
   }
 
   function go(v, id) {
@@ -1948,8 +1971,9 @@
         if ($('signup-intent')) $('signup-intent').value = 'builder';
       }
     }
-    else if (a === 'jobs') { e.preventDefault(); user ? (openDash(), go('jobs')) : openAuth('login'); }
-    else if (a === 'admin') { e.preventDefault(); user ? (openDash(), go('admin')) : openAuth('login'); }
+    else if (a === 'jobs') { e.preventDefault(); user ? (openDash('jobs'), go('jobs')) : openAuth('login'); }
+    else if (a === 'invites') { e.preventDefault(); user ? (openDash('invites'), go('invites')) : openAuth('login'); }
+    else if (a === 'admin') { e.preventDefault(); user ? (openDash('admin'), go('admin')) : openAuth('login'); }
     else if (a === 'close-dash') { e.preventDefault(); closeDash(); }
     else if (a === 'close-quote') closeQuote();
     else if (a === 'close-post') closePost();
@@ -2035,6 +2059,21 @@
 
   // Design: gate hero entrance motion (CSS .ui-ready)
   requestAnimationFrame(() => document.body.classList.add('ui-ready'));
+
+  // Section reveal on scroll (trust / how / builders / cta)
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) {
+          en.target.classList.add('in');
+          io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+  } else {
+    document.querySelectorAll('.reveal').forEach((el) => el.classList.add('in'));
+  }
 
   boot();
 })();
