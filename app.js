@@ -30,6 +30,7 @@
   const FEE = () => window.ORVO_FEE_PERCENT || 0;
   // Fallback if supabase-config.js cached/old
   const ADMIN_EMAIL = 'danielmen.paran@gmail.com';
+  const APPLY_ALL_SQL_URL = 'https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql';
 
   function track(event, props) {
     try { window.ORVO_EVENTS?.track(event, props); } catch (_) { /* stub */ }
@@ -156,6 +157,27 @@
     el.textContent = sanitizePublicErr(msg);
     el.classList.remove('hidden');
     console.warn('ORVO boot:', msg);
+  }
+
+  async function copyApplyAllSql() {
+    try {
+      const res = await fetch(APPLY_ALL_SQL_URL);
+      if (!res.ok) throw new Error('fetch failed');
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      toast('Copied APPLY-ALL SQL — Supabase SQL Editor → paste → Run once', true);
+      return true;
+    } catch {
+      toast('Could not copy — opening raw SQL in new tab', false);
+      window.open(APPLY_ALL_SQL_URL, '_blank', 'noopener');
+      return false;
+    }
+  }
+
+  function isConfiguredFounder() {
+    const logged = myEmail();
+    const cfg = cfgAdminEmail();
+    return !!(cfg && logged && cfg === logged);
   }
 
   // ── CHAT FILTER (js/chat-policy.js) ──
@@ -979,6 +1001,7 @@
     $('dashboard').classList.add('open');
     document.body.style.overflow = 'hidden';
     renderSidebar();
+    refreshFounderSetupBanner();
     go(preferredView || homeViewForRole());
   }
 
@@ -2708,11 +2731,60 @@
       }
     };
     await probe('Core profiles (001)', () => needDb().from('profiles').select('id', { head: true, count: 'exact' }));
+    await probe('Requests (001)', () => needDb().from('requests').select('id', { head: true, count: 'exact' }));
+    await probe('Quotes (001)', () => needDb().from('quotes').select('id', { head: true, count: 'exact' }));
+    await probe('Payments (001)', () => needDb().from('payments').select('id', { head: true, count: 'exact' }));
+    await probe('Messages (001)', () => needDb().from('messages').select('id', { head: true, count: 'exact' }));
+    await probe('Builder apps (001)', () => needDb().from('builder_applications').select('id', { head: true, count: 'exact' }));
     await probe('Notifications (012)', () => needDb().from('notifications').select('id', { head: true, count: 'exact' }));
     await probe('Invites (005)', () => needDb().from('request_invites').select('id', { head: true, count: 'exact' }));
     await probe('Disputes (003)', () => needDb().from('disputes').select('id', { head: true, count: 'exact' }));
     await probe('Reviews (003)', () => needDb().from('reviews').select('id', { head: true, count: 'exact' }));
     return checks;
+  }
+
+  async function refreshFounderSetupBanner() {
+    const el = $('founder-setup-banner');
+    if (!el || !user) {
+      el?.classList.add('hidden');
+      return;
+    }
+    if (!isConfiguredFounder() && !isAdmin()) {
+      el.classList.add('hidden');
+      return;
+    }
+    const adminOk = isAdmin();
+    let checks = [];
+    try {
+      checks = await probeSchemaHealth();
+    } catch {
+      checks = [];
+    }
+    const schemaOk = checks.length > 0 && checks.every((c) => c.ok);
+    if (schemaOk && adminOk) {
+      el.classList.add('hidden');
+      return;
+    }
+    const failN = checks.filter((c) => !c.ok).length;
+    const steps = [
+      !schemaOk ? `Run APPLY-ALL SQL${failN ? ` (${failN} table${failN === 1 ? '' : 's'} missing)` : ''}` : null,
+      !adminOk ? 'Copy is_admin SQL in Profile → run after signup' : null,
+    ].filter(Boolean);
+    el.classList.remove('hidden');
+    el.innerHTML = `
+      <div class="founder-banner-inner">
+        <div>
+          <b>Founder setup</b>
+          <span class="founder-banner-steps">${esc(steps.join(' · '))}</span>
+        </div>
+        <div class="founder-banner-actions">
+          <button type="button" class="btn btn-primary" id="btn-banner-copy-sql">Copy APPLY-ALL SQL</button>
+          <button type="button" class="btn btn-ghost" id="btn-banner-profile">Setup health</button>
+          <a href="founder-checklist.html" target="_blank" rel="noopener" class="btn btn-ghost">Checklist</a>
+        </div>
+      </div>`;
+    $('btn-banner-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
+    $('btn-banner-profile')?.addEventListener('click', () => go('profile'));
   }
 
   function renderHealthPanel(checks, { adminOk, configuredFounder }) {
@@ -2741,6 +2813,7 @@
         <div>${adminLine}</div>
         <div>${stripeLine}</div>
         <div style="margin-top:10px">
+          <button type="button" class="btn btn-primary" id="btn-copy-apply-all" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy APPLY-ALL SQL</button>
           <button type="button" class="btn btn-ghost" id="btn-copy-admin-sql" style="padding:8px 12px;font-size:12px;margin-right:8px">Copy is_admin SQL</button>
           <a href="founder-checklist.html" target="_blank" rel="noopener" style="color:var(--o)">Founder checklist →</a>
         </div>
@@ -2751,7 +2824,7 @@
     $('view-body').innerHTML = loadingSkeleton(3);
     const logged = (user?.email || '').toLowerCase().trim();
     const adminOk = isAdmin();
-    const configuredFounder = !!(cfgAdminEmail() && logged && cfgAdminEmail() === logged);
+    const configuredFounder = isConfiguredFounder();
     const showHealth = adminOk || configuredFounder;
     let healthHtml = '';
     if (showHealth) {
@@ -2791,10 +2864,12 @@
       ${!isBuilder() && !isPending() && !adminOk ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="apply">Apply as a builder</button>' : ''}
       <button class="btn btn-ghost" id="logout-btn" style="width:100%;padding:12px">Sign out</button>`;
     $('logout-btn').addEventListener('click', doLogout);
+    $('btn-copy-apply-all')?.addEventListener('click', () => copyApplyAllSql());
     $('btn-copy-admin-sql')?.addEventListener('click', async () => {
-      const sql = `update public.profiles set is_admin = true where email = '${esc(logged)}';`;
+      const safeEmail = logged.replace(/'/g, "''");
+      const sql = `update public.profiles set is_admin = true where email = '${safeEmail}';`;
       try {
-        await navigator.clipboard.writeText(sql.replace(/&#39;/g, "'"));
+        await navigator.clipboard.writeText(sql);
         toast('Copied is_admin SQL — run in Supabase after signup', true);
       } catch {
         toast(sql, true);
@@ -2815,6 +2890,7 @@
         ? 'Payout onboarding not live yet — Stripe Connect coming next'
         : 'Could not start Connect onboarding', false);
     });
+    if (showHealth) refreshFounderSetupBanner();
   }
 
   function ensureDashOpen() {

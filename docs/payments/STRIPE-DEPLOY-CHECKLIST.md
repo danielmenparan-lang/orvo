@@ -4,7 +4,9 @@ When secrets are ready, follow this order. Until then the app stays honest: **aw
 
 ## 1. Supabase SQL
 
-Run `sql/README.md` **001 → 020** (includes `017_stripe_webhook_events.sql` for webhook dedupe).
+**Recommended:** paste [APPLY-ALL-001-020.sql](https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql) once in SQL Editor.
+
+Or run step-by-step per `sql/README.md` **001 → 020** (includes `017_stripe_webhook_events.sql` for webhook dedupe).
 
 Set admin:
 

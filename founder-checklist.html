@@ -25,6 +25,11 @@
     a{color:var(--o);font-weight:600;text-decoration:none}
     a:hover{text-decoration:underline}
     .foot{margin-top:24px;font-size:13px;color:var(--muted)}
+    .btn-copy{
+      font-family:inherit;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px;border:none;
+      background:var(--o);color:#fff;cursor:pointer;
+    }
+    .btn-copy:hover{filter:brightness(1.05)}
   </style>
 </head>
 <body>
@@ -38,6 +43,10 @@
     <p style="font-size:14px;margin-bottom:12px">Supabase → <b>SQL Editor</b> → paste entire file → <b>Run</b> once. Includes 001→020 + admin SQL at bottom.</p>
     <p style="margin-bottom:10px">
       <a href="https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql" target="_blank" rel="noopener">Open APPLY-ALL-001-020.sql (raw) →</a>
+    </p>
+    <p style="margin-bottom:12px">
+      <button type="button" class="btn-copy" id="btn-copy-apply-all">Copy entire SQL to clipboard</button>
+      <span id="copy-status" style="font-size:12px;color:var(--muted);margin-left:8px"></span>
     </p>
     <p style="font-size:12px;color:var(--muted)">Or from repo: <code>sql/APPLY-ALL-001-020.sql</code></p>
     <label><input type="checkbox"/> Ran APPLY-ALL-001-020.sql in Supabase</label>
@@ -98,7 +107,37 @@ where email = 'danielmen.paran@gmail.com';</pre>
     <label><input type="checkbox"/> Checkout → held + funded</label>
   </section>
 
-  <p class="foot"><a href="index.html">← Back to ORVO</a> · Checkboxes are local-only (not saved).</p>
+  <p class="foot"><a href="index.html">← Back to ORVO</a> · Checkboxes saved in this browser.</p>
 </main>
+<script>
+(function () {
+  const APPLY_URL = 'https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql';
+  const KEY = 'orvo-founder-checklist';
+  const boxes = document.querySelectorAll('label input[type=checkbox]');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { saved = {}; }
+  boxes.forEach((box, i) => {
+    const id = String(i);
+    box.id = 'fc-' + id;
+    box.checked = !!saved[id];
+    box.addEventListener('change', () => {
+      saved[id] = box.checked;
+      localStorage.setItem(KEY, JSON.stringify(saved));
+    });
+  });
+  document.getElementById('btn-copy-apply-all')?.addEventListener('click', async () => {
+    const status = document.getElementById('copy-status');
+    try {
+      const res = await fetch(APPLY_URL);
+      if (!res.ok) throw new Error('fetch');
+      await navigator.clipboard.writeText(await res.text());
+      if (status) status.textContent = 'Copied — paste in Supabase SQL Editor → Run';
+    } catch {
+      if (status) status.textContent = 'Copy failed — use raw link above';
+      window.open(APPLY_URL, '_blank', 'noopener');
+    }
+  });
+})();
+</script>
 </body>
 </html>

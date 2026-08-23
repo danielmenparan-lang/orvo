@@ -256,3 +256,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Founder checklist: **One paste (recommended)** section → raw `APPLY-ALL-001-020.sql` link
 - Setup health: missing-table fix hint + **Copy is_admin SQL** button (founder Profile)
 - Health panel footer → founder checklist (removed PR link from panel)
+
+## 2026-08-23T14:00Z — pulse (post-finale)
+- **Copy APPLY-ALL SQL** — Profile health + founder checklist + dashboard banner
+- Founder **setup banner** in dashboard when schema/admin incomplete
+- Health probes expanded (requests, quotes, payments, messages, builder apps)
+- Checklist checkboxes persist in localStorage; footer Founder setup link

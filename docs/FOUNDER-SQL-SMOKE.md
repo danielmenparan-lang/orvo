@@ -2,7 +2,15 @@
 
 Run in Supabase **SQL Editor** after deploying migrations. Check each box in ops notes.
 
-## Apply order
+## One paste (recommended)
+
+Supabase → **SQL Editor** → paste entire file → **Run** once.
+
+- Raw file: [APPLY-ALL-001-020.sql](https://raw.githubusercontent.com/danielmenparan-lang/orvo/cursor/orvo-local-site-3bd5/sql/APPLY-ALL-001-020.sql)
+- Repo path: `sql/APPLY-ALL-001-020.sql` (includes 001→020 + admin SQL at bottom)
+- Interactive checklist: `founder-checklist.html` (copy button + saved checkboxes)
+
+## Apply order (step-by-step alternative)
 
 - [ ] `sql/001_mvp_schema.sql`
 - [ ] `sql/002_payments_lockdown.sql`
