@@ -2696,9 +2696,65 @@
     }
   }
 
+  async function probeSchemaHealth() {
+    const checks = [];
+    const probe = async (label, fn) => {
+      try {
+        const r = await fn();
+        if (r?.error) throw r.error;
+        checks.push({ label, ok: true });
+      } catch (e) {
+        checks.push({ label, ok: false, hint: userFacingErr(e.message || String(e)) });
+      }
+    };
+    await probe('Core profiles (001)', () => needDb().from('profiles').select('id', { head: true, count: 'exact' }));
+    await probe('Notifications (012)', () => needDb().from('notifications').select('id', { head: true, count: 'exact' }));
+    await probe('Invites (005)', () => needDb().from('request_invites').select('id', { head: true, count: 'exact' }));
+    await probe('Disputes (003)', () => needDb().from('disputes').select('id', { head: true, count: 'exact' }));
+    await probe('Reviews (003)', () => needDb().from('reviews').select('id', { head: true, count: 'exact' }));
+    return checks;
+  }
+
+  function renderHealthPanel(checks, { adminOk, configuredFounder }) {
+    const rows = (checks || []).map((c) =>
+      `<div style="display:flex;justify-content:space-between;gap:8px;margin:4px 0">
+        <span>${c.ok ? '✓' : '✗'} ${esc(c.label)}</span>
+        ${c.ok ? '<span style="color:var(--green)">OK</span>' : `<span style="color:var(--red);font-size:11px">${esc((c.hint || '').slice(0, 48))}</span>`}
+      </div>`
+    ).join('');
+    const stripeLine = window.ORVO_CHECKOUT_LIVE
+      ? '<span style="color:var(--green)">ORVO_CHECKOUT_LIVE = true</span>'
+      : '<span style="color:var(--muted)">Checkout off (flip after Stripe smoke test)</span>';
+    const adminLine = adminOk
+      ? '<span style="color:var(--green)">is_admin = yes</span>'
+      : (configuredFounder
+        ? '<span style="color:var(--o)">Founder email — set is_admin in Supabase SQL</span>'
+        : '<span style="color:var(--muted)">Not admin</span>');
+    return `
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6">
+        <b>Setup health</b> <span style="font-size:11px;color:var(--muted)">(live probes)</span>
+        ${rows}
+        <hr style="border:none;border-top:1px solid var(--border);margin:10px 0"/>
+        <div>${adminLine}</div>
+        <div>${stripeLine}</div>
+        <div style="margin-top:10px">
+          <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" style="color:var(--o)">Founder checklist →</a>
+          · <a href="https://github.com/danielmenparan-lang/orvo/pull/2" target="_blank" rel="noopener" style="color:var(--o)">Campaign PR #2 →</a>
+        </div>
+      </div>`;
+  }
+
   async function loadProfileView() {
+    $('view-body').innerHTML = loadingSkeleton(3);
     const logged = (user?.email || '').toLowerCase().trim();
     const adminOk = isAdmin();
+    const configuredFounder = !!(cfgAdminEmail() && logged && cfgAdminEmail() === logged);
+    const showHealth = adminOk || configuredFounder;
+    let healthHtml = '';
+    if (showHealth) {
+      const checks = await probeSchemaHealth();
+      healthHtml = renderHealthPanel(checks, { adminOk, configuredFounder });
+    }
     const bs = profile?.builder_status || 'none';
     const role = adminOk ? 'ORVO Admin' : isBuilder() ? 'Approved builder' : isPending() ? 'Application pending' : 'Client';
     const connectId = profile?.stripe_connect_account_id || '';
@@ -2708,7 +2764,6 @@
         Logged in: <code>${esc(logged)}</code><br>
         Builder status: <b>${esc(bs)}</b><br>
         DB is_admin: <b>yes</b><br>
-        <a href="founder-checklist.html#stripe" target="_blank" rel="noopener" style="color:var(--o)">Founder SQL smoke checklist →</a><br>
         <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-DEPLOY-CHECKLIST.md" target="_blank" rel="noopener" style="color:var(--o)">Stripe deploy checklist →</a>
       </div>` : '';
     const connectBlock = isBuilder() ? `
@@ -2725,6 +2780,7 @@
     $('view-body').innerHTML = `
       <p><b>${esc(profile?.full_name)}</b></p>
       <p style="color:var(--gray);margin:4px 0 16px">${esc(logged)} · ${role}</p>
+      ${healthHtml}
       ${debugBlock}
       ${connectBlock}
       ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="admin">Review builder applications</button>' : ''}

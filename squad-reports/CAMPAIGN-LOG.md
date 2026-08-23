@@ -247,3 +247,7 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 ## 2026-08-23T12:30Z — pulse (post-finale)
 - Chat payment/request Realtime on held/funded; confirming webhook banner
 - Admin all-requests Pay line; release Transfer scaffold steps
+
+## 2026-08-23T13:00Z — pulse (post-finale)
+- Founder **Setup health** panel in Profile (live SQL table probes)
+- Footer Campaign PR #2 link
