@@ -426,3 +426,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Approve/reject** builders require confirm sheet
 - Founder checklist: smoke test + `ORVO_CHECKOUT_LIVE` gates
 - Chat Send disabled style; deep-link role guards
+
+## 2026-08-24T05:30Z — pulse (post-finale)
+- **Copy view link** on dashboard panels (bookmarkable via syncDashUrl)
+- **Invite + sign-out** confirm sheets
+- Chat message `<time datetime>`; dashboard dialog aria when open
+- Admin Review builders also gets Copy link

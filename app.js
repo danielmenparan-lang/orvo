@@ -1251,6 +1251,12 @@
   }
 
   async function doLogout() {
+    const ans = await askConfirm({
+      title: 'Sign out?',
+      sub: 'You can sign back in anytime with the same email.',
+      okLabel: 'Sign out',
+    });
+    if (!ans.ok) return;
     await needDb().auth.signOut();
     user = null; profile = null;
     closeDash();
@@ -1360,20 +1366,26 @@
     $('view-title').textContent = titles[v] || 'Dashboard';
     syncDashUrl();
 
-    if (v === 'requests') { $('view-action').innerHTML = '<button class="btn btn-primary" data-action="post">+ Post request</button>'; loadRequests(); }
-    else if (v === 'jobs') loadJobs();
-    else if (v === 'invites') loadInvites();
-    else if (v === 'quotes') loadQuotes();
-    else if (v === 'messages') loadThreads();
+    if (v === 'requests') {
+      $('view-action').innerHTML = `<button class="btn btn-primary" data-action="post">+ Post request</button>${copyViewBtnHtml()}`;
+      loadRequests();
+    }
+    else if (v === 'jobs') { $('view-action').innerHTML = copyViewBtnHtml(); loadJobs(); }
+    else if (v === 'invites') { $('view-action').innerHTML = copyViewBtnHtml(); loadInvites(); }
+    else if (v === 'quotes') { $('view-action').innerHTML = copyViewBtnHtml(); loadQuotes(); }
+    else if (v === 'messages') { $('view-action').innerHTML = copyViewBtnHtml(); loadThreads(); }
     else if (v === 'chat') loadChat();
-    else if (v === 'apply') loadApply();
-    else if (v === 'status') loadStatus();
-    else if (v === 'profile') loadProfileView();
-    else if (v === 'admin') loadAdmin();
-    else if (v === 'all-requests') loadAllRequests();
-    else if (v === 'disputes') loadDisputes();
+    else if (v === 'apply') { $('view-action').innerHTML = copyViewBtnHtml(); loadApply(); }
+    else if (v === 'status') { $('view-action').innerHTML = copyViewBtnHtml(); loadStatus(); }
+    else if (v === 'profile') { $('view-action').innerHTML = copyViewBtnHtml(); loadProfileView(); }
+    else if (v === 'admin') {
+      // loadAdmin sets its own view-action (events + refresh)
+      loadAdmin();
+    }
+    else if (v === 'all-requests') { $('view-action').innerHTML = copyViewBtnHtml(); loadAllRequests(); }
+    else if (v === 'disputes') { $('view-action').innerHTML = copyViewBtnHtml(); loadDisputes(); }
     else if (v === 'notifications') {
-      $('view-action').innerHTML = '<button class="btn btn-ghost" id="btn-mark-all-read" style="padding:8px 12px;font-size:12px">Mark all read</button>';
+      $('view-action').innerHTML = `<button class="btn btn-ghost" id="btn-mark-all-read" style="padding:8px 12px;font-size:12px">Mark all read</button>${copyViewBtnHtml()}`;
       $('btn-mark-all-read')?.addEventListener('click', async () => {
         try {
           await needDb().from('notifications').update({ read_at: new Date().toISOString() })
@@ -1387,6 +1399,7 @@
       });
       loadNotifications();
     }
+    wireCopyViewLink();
   }
 
   // ── CLIENT ──
@@ -1617,6 +1630,26 @@
     } catch {
       toast(url, true);
     }
+  }
+
+  function copyViewBtnHtml() {
+    return '<button type="button" class="btn btn-ghost" id="btn-copy-view-link" style="padding:8px 12px;font-size:12px" title="Copy link to this dashboard view">Copy link</button>';
+  }
+
+  async function copyDashViewLink() {
+    syncDashUrl();
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      track('view_link_copied', { view: view || null });
+      toast('View link copied — open while signed in', true);
+    } catch {
+      toast(url, true);
+    }
+  }
+
+  function wireCopyViewLink() {
+    $('btn-copy-view-link')?.addEventListener('click', () => copyDashViewLink());
   }
 
   async function cancelRequest(rid) {
@@ -2005,7 +2038,9 @@
     refreshAdminBadge();
     $('view-action').innerHTML = `
       <button class="btn btn-ghost" id="admin-events" title="Copy client analytics buffer">Copy events</button>
-      <button class="btn btn-ghost" id="admin-refresh">Refresh</button>`;
+      <button class="btn btn-ghost" id="admin-refresh">Refresh</button>
+      ${copyViewBtnHtml()}`;
+    wireCopyViewLink();
     $('admin-refresh')?.addEventListener('click', loadAdmin);
     $('admin-events')?.addEventListener('click', async () => {
       const rows = window.ORVO_EVENTS?.dump?.() || [];
@@ -2323,6 +2358,12 @@
 
   async function inviteBuilder(requestId, builderId) {
     if (!builderId) { toast('Pick a builder', false); return; }
+    const ans = await askConfirm({
+      title: 'Invite this builder?',
+      sub: 'They will see this brief under Invited jobs and can quote or message.',
+      okLabel: 'Send invite',
+    });
+    if (!ans.ok) return;
     try {
       const { error } = await needDb().from('request_invites').insert({
         request_id: requestId,
@@ -2712,7 +2753,7 @@
     const names = Object.fromEntries((profs || []).map(p => [p.id, p.full_name]));
     box.innerHTML = (data || []).map(m => {
       const mine = m.sender_id === user.id;
-      return `<div class="chat-bubble ${mine ? 'me' : 'them'}"><small>${mine ? 'You' : esc(names[m.sender_id] || 'User')}</small>${esc(m.body)}<span class="chat-time">${ago(m.created_at)}</span></div>`;
+      return `<div class="chat-bubble ${mine ? 'me' : 'them'}"><small>${mine ? 'You' : esc(names[m.sender_id] || 'User')}</small>${esc(m.body)}<span class="chat-time"><time datetime="${esc(m.created_at || '')}">${ago(m.created_at)}</time></span></div>`;
     }).join('') || (() => {
       const st = chatRequestStatus || 'open';
       let hint = 'Start chatting — keep scope, quotes, and delivery links on ORVO.';
@@ -3581,7 +3622,10 @@
 
   function ensureDashOpen() {
     if ($('dashboard').classList.contains('open')) return;
-    $('dashboard').classList.add('open');
+    const dash = $('dashboard');
+    dash.classList.add('open');
+    dash.setAttribute('role', 'dialog');
+    dash.setAttribute('aria-modal', 'true');
     document.body.style.overflow = 'hidden';
     renderSidebar();
   }

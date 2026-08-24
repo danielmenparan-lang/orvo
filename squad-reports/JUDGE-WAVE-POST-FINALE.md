@@ -60,6 +60,8 @@ Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pu
 | Modal backdrop dismiss | PASS | click outside + page aria-hidden |
 | Auth error hygiene | PASS | userFacingErr + confirm-email copy |
 | Chat empty + cancelled | PASS | status hints; composer disabled |
+| Dashboard URL sync | PASS | syncDashUrl view/rid/status |
+| Approve/reject confirm | PASS | askConfirm before mutate |
 
 ## Founder execution (only remaining)
 
@@ -77,4 +79,4 @@ bash scripts/founder-setup.sh   # ordered steps
 - STRIPE_PAYMENT_LINK  
 - Client-written held/funded  
 
-— ORVO Judge · post-finale summary 2026-08-24T04:30Z
+— ORVO Judge · post-finale summary 2026-08-24T05:30Z
