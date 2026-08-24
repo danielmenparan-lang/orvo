@@ -275,6 +275,17 @@
     });
   }
 
+  function wireActivate(el, fn) {
+    el.addEventListener('click', fn);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); }
+    });
+  }
+
+  function isDbSchemaErr(msg) {
+    return /relation|does not exist|schema|42P01|column.*does not exist/i.test(msg || '');
+  }
+
   function isConfiguredFounder() {
     const logged = myEmail();
     const cfg = cfgAdminEmail();
@@ -1218,7 +1229,7 @@
 
   function bindKpiCards() {
     $('view-body')?.querySelectorAll('.kpi-card[data-goto]').forEach((el) => {
-      el.addEventListener('click', () => {
+      wireActivate(el, () => {
         if (el.dataset.status !== undefined) {
           window.__orvoAllReqsStatus = el.dataset.status || '';
         }
@@ -1358,10 +1369,7 @@
           if (link.includes('view=messages')) { go('messages'); return; }
           loadNotifications();
         };
-        el.addEventListener('click', open);
-        el.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
-        });
+        wireActivate(el, open);
       });
       refreshNotifBadge();
     } catch (e) {
@@ -1443,10 +1451,11 @@
       const quoteBadge = qc ? ` · ${qc} quote${qc > 1 ? 's' : ''}` : '';
       const payHint = r.status === 'awaiting_payment' && payByReq[r.id]
         ? ` · Pay: ${statusLabel(payByReq[r.id].status)}` : '';
+      const reqLabel = esc(r.title || 'Request');
       return `
-      <div class="card">
+      <div class="card" data-click="${r.id}" tabindex="0" role="button" aria-label="Open request: ${reqLabel}">
         <span class="tag">${esc(r.category || 'Project')}</span>
-        <h3>${esc(r.title)}</h3>
+        <h3>${reqLabel}</h3>
         <p>${esc(r.description.slice(0, 120))}</p>
         <span class="badge">${esc(statusLabel(r.status))}${quoteBadge}${payHint} · ${ago(r.created_at)}</span>
         <div class="row">
@@ -1465,6 +1474,12 @@
       window.__orvoRequestsQuery = e.target.value;
       clearTimeout(window.__orvoReqSearchT);
       window.__orvoReqSearchT = setTimeout(loadRequests, 280);
+    });
+    body.querySelectorAll('[data-click]').forEach((el) => {
+      wireActivate(el, (e) => {
+        if (e?.target?.closest?.('button')) return;
+        go('chat', el.dataset.click);
+      });
     });
     body.querySelectorAll('.btn-open-req').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.rid));
@@ -1694,17 +1709,26 @@
         <p style="font-size:13px;margin:8px 0 12px">Complete Connect so releases can transfer when clients pay.</p>
         <button type="button" class="btn btn-primary" id="btn-quotes-payout-connect" data-default-label="Set up payouts">Set up payouts</button>
       </div>` : '';
-    body.innerHTML = payoutNudge + data.map(q => `
-      <div class="card">
-        <h3>${esc(q.requests?.title || 'Project')}</h3>
+    body.innerHTML = payoutNudge + data.map(q => {
+      const title = esc(q.requests?.title || 'Project');
+      return `
+      <div class="card" data-click="${q.request_id}" tabindex="0" role="button" aria-label="Open quote: ${title}">
+        <h3>${title}</h3>
         <p>${esc(q.message)}</p>
         <span class="badge">${money(q.amount_cents)} · ${esc(statusLabel(q.status))}${q.delivery_days ? ' · ' + q.delivery_days + 'd' : ''}</span>
         <div class="row">
           <button class="btn btn-primary btn-open-quote" data-rid="${q.request_id}">Open</button>
           ${q.status === 'pending' ? `<button class="btn btn-ghost btn-withdraw-quote" data-qid="${q.id}">Withdraw</button>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     $('btn-quotes-payout-connect')?.addEventListener('click', (e) => startConnectOnboarding(e.currentTarget));
+    body.querySelectorAll('[data-click]').forEach((el) => {
+      wireActivate(el, (e) => {
+        if (e?.target?.closest?.('button')) return;
+        go('chat', el.dataset.click);
+      });
+    });
     body.querySelectorAll('.btn-open-quote').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.rid));
     });
@@ -1805,17 +1829,24 @@
       };
       const { data: saved, error: e1 } = await needDb().from('builder_applications')
         .upsert(row, { onConflict: 'user_id' }).select().single();
-      if (e1) throw new Error('Could not save application. Please try again.');
+      if (e1) throw e1;
       const { error: e2 } = await needDb().from('profiles')
         .update({ builder_status: 'pending' }).eq('id', user.id);
-      if (e2) throw new Error('Profile update failed: ' + e2.message);
+      if (e2) throw e2;
       await refreshUser();
       renderSidebar();
       go('status');
       toast(wasPending ? 'Application updated — still pending review.' : 'Application sent! Admin will see it in Review builders.', true);
       if (!saved) console.warn('ORVO: application saved but no row returned');
     } catch (e) {
-      toast(e.message, false);
+      const msg = e?.message || String(e);
+      if (isDbSchemaErr(msg)) {
+        const body = $('view-body');
+        body.innerHTML = `<p class="empty err">${esc(userFacingErr(msg))}</p>${founderSchemaFixHtml('Builder applications need APPLY-ALL SQL (001–020).')}`;
+        wireFounderSchemaFix(body);
+      } else {
+        toast(userFacingErr(msg), false);
+      }
     } finally {
       btn.disabled = false;
       btn.textContent = wasPending ? 'Save changes' : 'Submit application';
@@ -1901,13 +1932,13 @@
       ]);
       kpiHtml = `
         <div class="row" style="margin-bottom:20px">
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin"><p style="font-size:12px;color:var(--gray)">Pending builders</p><h3>${pendingBuilders}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="open"><p style="font-size:12px;color:var(--gray)">Open requests</p><h3>${openReqs}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="awaiting_payment"><p style="font-size:12px;color:var(--gray)">Awaiting pay</p><h3>${awaitingPay}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="funded"><p style="font-size:12px;color:var(--gray)">Funded</p><h3>${funded}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="completed"><p style="font-size:12px;color:var(--gray)">Completed</p><h3>${completed}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="disputes"><p style="font-size:12px;color:var(--gray)">Disputes</p><h3>${openDisputes}</h3></div>
-          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin"><p style="font-size:12px;color:var(--gray)">Approved builders</p><h3>${approvedBuilders}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin" tabindex="0" role="button" aria-label="Pending builders: ${pendingBuilders}"><p style="font-size:12px;color:var(--gray)">Pending builders</p><h3>${pendingBuilders}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="open" tabindex="0" role="button" aria-label="Open requests: ${openReqs}"><p style="font-size:12px;color:var(--gray)">Open requests</p><h3>${openReqs}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="awaiting_payment" tabindex="0" role="button" aria-label="Awaiting payment: ${awaitingPay}"><p style="font-size:12px;color:var(--gray)">Awaiting pay</p><h3>${awaitingPay}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="funded" tabindex="0" role="button" aria-label="Funded requests: ${funded}"><p style="font-size:12px;color:var(--gray)">Funded</p><h3>${funded}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="all-requests" data-status="completed" tabindex="0" role="button" aria-label="Completed requests: ${completed}"><p style="font-size:12px;color:var(--gray)">Completed</p><h3>${completed}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="disputes" tabindex="0" role="button" aria-label="Open disputes: ${openDisputes}"><p style="font-size:12px;color:var(--gray)">Disputes</p><h3>${openDisputes}</h3></div>
+          <div class="card kpi-card" style="flex:1;min-width:120px;cursor:pointer" data-goto="admin" tabindex="0" role="button" aria-label="Approved builders: ${approvedBuilders}"><p style="font-size:12px;color:var(--gray)">Approved builders</p><h3>${approvedBuilders}</h3></div>
         </div>
         <h3 style="margin:8px 0 12px;font-size:16px">Pending builder applications</h3>`;
     } catch (_) {
@@ -2128,7 +2159,7 @@
       window.__orvoAllReqsSearchT = setTimeout(loadAllRequests, 280);
     });
     $('view-body').querySelectorAll('[data-status]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      wireActivate(btn, () => {
         window.__orvoAllReqsStatus = btn.dataset.status || '';
         loadAllRequests();
       });
@@ -2652,11 +2683,7 @@
       </div>`;
     }).join('');
     body.querySelectorAll('[data-click]').forEach(el => {
-      const open = () => go('chat', el.dataset.click);
-      el.addEventListener('click', open);
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
-      });
+      wireActivate(el, () => go('chat', el.dataset.click));
     });
   }
 

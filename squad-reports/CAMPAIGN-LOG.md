@@ -385,3 +385,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Threads** try/catch errors, role-aware empty CTAs, keyboard nav (Enter/Space)
 - **Notifications** keyboard a11y on inbox cards
 - **TEN-HOUR-CAMPAIGN** post-finale note; card `:focus-visible` outline
+
+## 2026-08-24T02:00Z — pulse (post-finale)
+- **`wireActivate`** shared helper — click + Enter/Space keyboard nav
+- **Admin KPI cards** + status filter chips keyboard accessible
+- **My requests / My quotes** cards click-to-open (buttons still work)
+- **doApply** schema errors → founderSchemaFixHtml inline
