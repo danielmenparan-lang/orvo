@@ -892,6 +892,13 @@
     focusModal(el, '#reset-pass');
   }
   function closePasswordReset() {
+    if ($('reset-pass')) $('reset-pass').value = '';
+    if ($('reset-pass2')) $('reset-pass2').value = '';
+    const hint = $('reset-pass2-hint');
+    if (hint) {
+      hint.textContent = 'Must match new password';
+      hint.classList.remove('warn');
+    }
     const el = $('reset-modal');
     el?.classList.remove('open');
     blurModal(el);
@@ -1066,11 +1073,17 @@
     const meta = $(metaId);
     if (!input || !meta) return;
     const min = opts?.min || 0;
+    const optional = !!opts?.optional;
     const sync = () => {
       const n = (input.value || '').length;
       if (min > 0 && n < min) {
-        meta.textContent = n + ' / ' + max + ' (need ' + (min - n) + ' more)';
-        meta.classList.add('warn');
+        if (optional && n === 0) {
+          meta.textContent = n + ' / ' + max + ' (optional · ' + min + '+ to include)';
+          meta.classList.remove('warn');
+        } else {
+          meta.textContent = n + ' / ' + max + ' (need ' + (min - n) + ' more)';
+          meta.classList.add('warn');
+        }
       } else {
         meta.textContent = n + ' / ' + max + (min > 0 ? ' ✓' : '');
         meta.classList.toggle('warn', n > max * 0.9);
@@ -2099,7 +2112,8 @@
   async function doQuote() {
     if (!quoteRequestId) return;
     const btn = $('quote-btn');
-    btn.disabled = true;
+    const prevLabel = btn?.textContent || 'Send quote';
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
     try {
       const cents = parseMoney($('quote-price').value);
       const eta = parseInt(($('quote-eta')?.value || '').trim(), 10);
@@ -2130,7 +2144,9 @@
       toast('Quote sent!', true);
     } catch (e) {
       showSchemaMsg('quote-msg', e?.message || String(e), 'Quotes need APPLY-ALL SQL (001–020).');
-    } finally { btn.disabled = false; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
+    }
   }
 
   async function loadQuotes() {
@@ -3323,8 +3339,11 @@
     pendingReview = { rid, builderId, rating: 0 };
     hideMsg('review-msg');
     if ($('review-body')) $('review-body').value = '';
-    wireFieldCounter('review-body', 'review-count', 500);
-    document.querySelectorAll('.star-btn').forEach((b) => b.classList.remove('on'));
+    wireFieldCounter('review-body', 'review-count', 500, { min: 20, optional: true });
+    document.querySelectorAll('.star-btn').forEach((b) => {
+      b.classList.remove('on');
+      b.setAttribute('aria-pressed', 'false');
+    });
     const el = $('review-modal');
     el?.classList.add('open');
     focusModal(el, '.star-btn[data-rating="1"]');
@@ -3340,7 +3359,9 @@
     pendingReview.rating = n;
     document.querySelectorAll('.star-btn').forEach((b) => {
       const r = parseInt(b.dataset.rating, 10);
-      b.classList.toggle('on', r <= n);
+      const on = r <= n;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
   async function submitReview() {
@@ -4261,6 +4282,32 @@
     sync();
   }
 
+  function wirePasswordMatchHint(passId, confirmId, hintId) {
+    const p1 = $(passId);
+    const p2 = $(confirmId);
+    const hint = $(hintId);
+    if (!p1 || !p2 || !hint) return;
+    const sync = () => {
+      const a = p1.value || '';
+      const b = p2.value || '';
+      if (!b) {
+        hint.textContent = 'Must match new password';
+        hint.classList.remove('warn');
+        return;
+      }
+      if (a !== b) {
+        hint.textContent = 'Passwords do not match';
+        hint.classList.add('warn');
+      } else {
+        hint.textContent = 'Passwords match';
+        hint.classList.remove('warn');
+      }
+    };
+    p1.addEventListener('input', sync);
+    p2.addEventListener('input', sync);
+    sync();
+  }
+
   function wirePassToggles() {
     document.querySelectorAll('[data-pass-toggle]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -4272,6 +4319,11 @@
         btn.setAttribute('aria-pressed', show ? 'true' : 'false');
       });
     });
+  }
+
+  function wireFooterYear() {
+    const el = $('footer-year');
+    if (el) el.textContent = String(new Date().getFullYear());
   }
 
   function wireLandingHonesty() {
@@ -4332,7 +4384,9 @@
     wireLandingHonesty();
     wirePasswordHint('signup-pass', 'signup-pass-hint', 6);
     wirePasswordHint('reset-pass', 'reset-pass-hint', 6);
+    wirePasswordMatchHint('reset-pass', 'reset-pass2', 'reset-pass2-hint');
     wirePassToggles();
+    wireFooterYear();
     track('app_boot', { authed: !!user });
   }
 

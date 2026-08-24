@@ -593,7 +593,7 @@ footer{
 
   <footer>
     <div class="footer-meta">
-      <span>© 2026 ORVO — Custom AI agents · Global marketplace</span>
+      <span>© <span id="footer-year">2026</span> ORVO — Custom AI agents · Global marketplace</span>
       <span class="footer-he">Hebrew UI coming · USD quotes · 0% founding fee · <a href="https://github.com/danielmenparan-lang/orvo/pull/2" style="color:var(--muted)">Campaign PR #2</a></span>
     </div>
     <div class="footer-links">
@@ -660,7 +660,9 @@ footer{
       <p class="field-hint" id="reset-pass-hint">Min 6 characters</p>
       <button type="button" class="hero-secondary pass-toggle" data-pass-toggle="reset-pass" aria-pressed="false">Show</button>
     </div>
-    <div class="field"><label for="reset-pass2">Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password"/></div>
+    <div class="field"><label for="reset-pass2">Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password"/>
+      <p class="field-hint" id="reset-pass2-hint">Must match new password</p>
+    </div>
     <button class="btn-black" id="reset-btn">Update password</button>
   </div>
 </div>
@@ -806,11 +808,11 @@ footer{
     <div class="field">
       <label>Stars</label>
       <div class="star-row" id="review-stars" role="group" aria-label="Rating">
-        <button type="button" class="star-btn" data-rating="1" aria-label="1 star">★</button>
-        <button type="button" class="star-btn" data-rating="2" aria-label="2 stars">★</button>
-        <button type="button" class="star-btn" data-rating="3" aria-label="3 stars">★</button>
-        <button type="button" class="star-btn" data-rating="4" aria-label="4 stars">★</button>
-        <button type="button" class="star-btn" data-rating="5" aria-label="5 stars">★</button>
+        <button type="button" class="star-btn" data-rating="1" aria-label="1 star" aria-pressed="false">★</button>
+        <button type="button" class="star-btn" data-rating="2" aria-label="2 stars" aria-pressed="false">★</button>
+        <button type="button" class="star-btn" data-rating="3" aria-label="3 stars" aria-pressed="false">★</button>
+        <button type="button" class="star-btn" data-rating="4" aria-label="4 stars" aria-pressed="false">★</button>
+        <button type="button" class="star-btn" data-rating="5" aria-label="5 stars" aria-pressed="false">★</button>
       </div>
     </div>
     <div class="field">
@@ -851,6 +853,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=66"></script>
+<script src="app.js?v=67"></script>
 </body>
 </html>

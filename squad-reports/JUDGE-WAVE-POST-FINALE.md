@@ -99,6 +99,10 @@ Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pu
 | Logout session clear | PASS | last-view + password fields |
 | Apply URL validate | PASS | optional portfolio/LinkedIn http(s) |
 | Mutate busy states | PASS | cancel/withdraw/approve/reject/invite |
+| Reset password match | PASS | live confirm hint + clear on close |
+| Review min + stars | PASS | optional 20+ counter; aria-pressed |
+| Quote Sending… | PASS | busy label while insert |
+| Footer year | PASS | dynamic getFullYear |
 
 ## Founder execution (only remaining)
 
@@ -116,4 +120,4 @@ bash scripts/founder-setup.sh   # ordered steps
 - STRIPE_PAYMENT_LINK  
 - Client-written held/funded  
 
-— ORVO Judge · post-finale summary 2026-08-24T11:00Z
+— ORVO Judge · post-finale summary 2026-08-24T11:30Z

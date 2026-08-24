@@ -494,3 +494,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Apply URL check** — optional portfolio/LinkedIn must be http(s)
 - **Busy states** — cancel request, withdraw quote, approve/reject, invite
 - Signup clears password after account create
+
+## 2026-08-24T11:30Z — pulse (post-finale)
+- **Reset confirm match** — live hint on reset-pass2; passwords cleared on close/success
+- **Review polish** — optional min-20 counter; star buttons aria-pressed
+- **Quote Sending…** — busy label while inserting
+- **Footer year** — dynamic getFullYear()
