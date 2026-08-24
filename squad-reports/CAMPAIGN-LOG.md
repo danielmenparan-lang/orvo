@@ -369,3 +369,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Admin **status deep link** `?view=all-requests&status=` + Copy filtered link
 - Netlify **HTML must-revalidate**; confirming payment `aria-live`
 - Pay awaiting note polish (not funded)
+
+## 2026-08-24T00:30Z — pulse (post-finale)
+- **My quotes Connect nudge** — Set up payouts CTA (empty + list)
+- Clear search on My requests / Browse jobs empty match
+- `supabase-config.js` must-revalidate; smoke test admin funded deep-link tip

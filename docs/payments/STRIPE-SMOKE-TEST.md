@@ -23,6 +23,7 @@ Run after SQL + admin + Edge secrets + `bash scripts/deploy-stripe.sh`.
 4. Return URL: `/?checkout=success&rid=<uuid>`
 5. UI shows “Confirming payment with Stripe webhook…”
 6. Within ~30s: payment **Held**, request **Funded** (webhook only — not instant)
+7. Admin check (optional): open `/?view=all-requests&status=funded` or All requests → Funded chip
 
 ### 2. Deliver → Release
 

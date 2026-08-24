@@ -934,7 +934,7 @@
     } else {
       $('pay-note').innerHTML =
         'Quote accepted. Status is <strong>awaiting payment</strong>, not funded. ' +
-        'ORVO will try Checkout if configured — otherwise the job stays awaiting payment until Stripe is live.';
+        'ORVO will try Checkout if configured — otherwise the job stays awaiting payment (not funded).';
     }
     showMsg('pay-msg', extraNote || (checkoutLive ? 'Complete checkout to hold funds' : 'No card charged yet — awaiting payment'), true);
     $('pay-cancel-btn').textContent = 'Close';
@@ -1412,12 +1412,16 @@
       body.innerHTML = `<input class="admin-search" id="requests-search" type="search" placeholder="Search your requests…" value="${esc(qText)}" autocomplete="off"/>
         <p class="empty">${qText ? 'No requests match that search.' : 'No requests yet.'}</p>
         <p class="empty" style="padding-top:8px;font-size:13px">${qText ? 'Try another term or clear the search.' : 'Post your first agent brief — vetted builders worldwide reply with quotes in USD.'}</p>
-        ${!qText ? '<button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">+ Post request</button>' : ''}
+        ${!qText ? '<button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">+ Post request</button>' : '<button type="button" class="btn btn-ghost" id="btn-clear-req-search" style="margin-top:12px;padding:8px 12px;font-size:12px">Clear search</button>'}
         ${showAll || qText ? '' : '<p class="empty" style="padding-top:12px;font-size:12px"><button type="button" class="hero-secondary" id="btn-show-cancelled" style="color:var(--gray)">Show cancelled</button></p>'}`;
       $('requests-search')?.addEventListener('input', (e) => {
         window.__orvoRequestsQuery = e.target.value;
         clearTimeout(window.__orvoReqSearchT);
         window.__orvoReqSearchT = setTimeout(loadRequests, 280);
+      });
+      $('btn-clear-req-search')?.addEventListener('click', () => {
+        window.__orvoRequestsQuery = '';
+        loadRequests();
       });
       $('btn-show-cancelled')?.addEventListener('click', () => {
         window.__orvoShowAllRequests = true;
@@ -1586,10 +1590,15 @@
     };
     if (!data?.length) {
       body.innerHTML = searchBar + payoutNudge + activeHtml + `<p class="empty">No open jobs${qText ? ' matching that search' : ' right now'}.</p>
-        <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>`;
+        <p class="empty" style="padding-top:8px;font-size:13px">Check back soon — new client briefs from anywhere appear here. Quotes are in USD.</p>
+        ${qText ? '<button type="button" class="btn btn-ghost" id="btn-clear-jobs-search" style="margin-top:12px;padding:8px 12px;font-size:12px">Clear search</button>' : ''}`;
       bindJobsSearch();
       bindActiveBtns();
       bindJobsPayoutNudge();
+      $('btn-clear-jobs-search')?.addEventListener('click', () => {
+        window.__orvoJobsQuery = '';
+        loadJobs();
+      });
       return;
     }
     const { data: myQuotes } = await needDb().from('quotes').select('request_id,status').eq('builder_id', user.id);
@@ -1664,12 +1673,25 @@
       return;
     }
     if (!data?.length) {
-      body.innerHTML = `<p class="empty">No quotes yet.</p>
+      const payoutNudge = !profile?.stripe_connect_account_id
+        ? `<div class="card" style="border-color:var(--o);background:#FFF8F4;margin-bottom:16px;cursor:default">
+          <b>Payout setup</b>
+          <p style="font-size:13px;margin:8px 0 12px">Set up Connect before funded jobs release — ORVO needs a connected account.</p>
+          <button type="button" class="btn btn-primary" id="btn-quotes-payout-connect" data-default-label="Set up payouts">Set up payouts</button>
+        </div>` : '';
+      body.innerHTML = `${payoutNudge}<p class="empty">No quotes yet.</p>
         <p class="empty" style="padding-top:8px;font-size:13px">Browse open jobs and send your first quote in USD.</p>
         <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-goto="jobs">Browse jobs</button>`;
+      $('btn-quotes-payout-connect')?.addEventListener('click', (e) => startConnectOnboarding(e.currentTarget));
       return;
     }
-    body.innerHTML = data.map(q => `
+    const payoutNudge = !profile?.stripe_connect_account_id
+      ? `<div class="card" style="border-color:var(--o);background:#FFF8F4;margin-bottom:16px;cursor:default">
+        <b>Payout setup</b>
+        <p style="font-size:13px;margin:8px 0 12px">Complete Connect so releases can transfer when clients pay.</p>
+        <button type="button" class="btn btn-primary" id="btn-quotes-payout-connect" data-default-label="Set up payouts">Set up payouts</button>
+      </div>` : '';
+    body.innerHTML = payoutNudge + data.map(q => `
       <div class="card">
         <h3>${esc(q.requests?.title || 'Project')}</h3>
         <p>${esc(q.message)}</p>
@@ -1679,6 +1701,7 @@
           ${q.status === 'pending' ? `<button class="btn btn-ghost btn-withdraw-quote" data-qid="${q.id}">Withdraw</button>` : ''}
         </div>
       </div>`).join('');
+    $('btn-quotes-payout-connect')?.addEventListener('click', (e) => startConnectOnboarding(e.currentTarget));
     body.querySelectorAll('.btn-open-quote').forEach(el => {
       el.addEventListener('click', () => go('chat', el.dataset.rid));
     });
@@ -2041,11 +2064,11 @@
       { key: 'completed', label: 'Completed' },
       { key: 'disputed', label: 'Disputed' },
     ];
-    const chipHtml = `<div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">${
+    const chipHtml = `<div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:8px;align-items:center">${
       statusChips.map((c) =>
         `<button type="button" class="btn btn-ghost channel-chip${statusFilter === c.key ? ' on' : ''}" data-status="${c.key}" style="padding:6px 12px;font-size:12px">${c.label} (${countFor(c.key)})</button>`
       ).join('')
-    }</div>`;
+    }${statusFilter ? '<button type="button" class="btn btn-ghost" id="btn-copy-filter-link" style="padding:6px 12px;font-size:12px">Copy filtered link</button>' : ''}</div>`;
     const searchHtml = `${chipHtml}<input class="admin-search" id="all-reqs-search" type="search" placeholder="Filter requests…" value="${esc(qText)}" autocomplete="off"/>`;
     const emptyMsg = !rows.length
       ? `<p class="empty">No requests${qText ? ' match that search' : (statusFilter ? ' with that status' : '')}.</p>
@@ -2073,6 +2096,15 @@
       window.__orvoAllReqsStatus = '';
       window.__orvoAllReqsQuery = '';
       loadAllRequests();
+    });
+    $('btn-copy-filter-link')?.addEventListener('click', async () => {
+      const url = `${window.location.origin}${window.location.pathname}?view=all-requests&status=${encodeURIComponent(statusFilter)}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast('Copied filtered admin link', true);
+      } catch {
+        toast(url, true);
+      }
     });
     $('all-reqs-search')?.addEventListener('input', (e) => {
       window.__orvoAllReqsQuery = e.target.value;
@@ -2320,7 +2352,7 @@
           : (checkoutLive ? 'Pay with Stripe Checkout' : 'Try checkout again');
         const confirming = checkoutPollTimer && payStatus !== 'held';
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Payment</b>
-          ${confirming ? '<p class="pay-confirming" style="font-size:12px;margin:0 0 8px">Confirming payment with Stripe webhook…</p>' : ''}
+          ${confirming ? '<p class="pay-confirming" style="font-size:12px;margin:0 0 8px" role="status" aria-live="polite">Confirming payment with Stripe webhook…</p>' : ''}
           <p>${payNote}</p>
           <p style="font-size:12px;color:var(--muted);margin:8px 0">Payment: <span class="badge">${esc(payBadge)}</span>
             ${payRow ? ' · ' + money(payRow.amount_cents) : ''}</p>
