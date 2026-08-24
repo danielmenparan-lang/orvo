@@ -1780,7 +1780,7 @@
       $('btn-chat-back')?.addEventListener('click', () => go('messages'));
       loadChat();
     }
-    else if (v === 'apply') { $('view-action').innerHTML = copyViewBtnHtml(); loadApply(); }
+    else if (v === 'apply') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadApply(); }
     else if (v === 'status') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadStatus(); }
     else if (v === 'profile') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadProfileView(); }
     else if (v === 'admin') {
@@ -2074,12 +2074,24 @@
     });
   }
 
+  function flashBtnLabel(btn, label, ms) {
+    if (!btn) return;
+    const prev = btn.getAttribute('data-default-label') || btn.textContent;
+    btn.setAttribute('data-default-label', prev);
+    btn.textContent = label;
+    clearTimeout(btn.__orvoFlashT);
+    btn.__orvoFlashT = setTimeout(() => {
+      if (btn.isConnected) btn.textContent = prev;
+    }, ms || 1600);
+  }
+
   async function copyRequestLink(rid) {
     const url = `${window.location.origin}${window.location.pathname}?rid=${encodeURIComponent(rid)}`;
     try {
       await navigator.clipboard.writeText(url);
       track('request_link_copied', { request_id: rid });
       toast('Link copied — open it while signed in', true);
+      flashBtnLabel($('btn-copy-req-link'), 'Copied!');
     } catch {
       toast(url, true);
     }
@@ -2096,6 +2108,7 @@
       await navigator.clipboard.writeText(url);
       track('view_link_copied', { view: view || null });
       toast('View link copied — open while signed in', true);
+      flashBtnLabel($('btn-copy-view-link'), 'Copied!');
     } catch {
       toast(url, true);
     }
@@ -3740,6 +3753,7 @@
     }
     const btn = $('dispute-confirm-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+    setFieldsDisabled(['dispute-details'], true);
     try {
       const { data: req, error: re } = await needDb().from('requests').select('*').eq('id', rid).single();
       if (re) throw re;
@@ -3767,6 +3781,7 @@
       if (!isDbSchemaErr(msg)) toast(userFacingErr(msg), false);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Open dispute'; }
+      setFieldsDisabled(['dispute-details'], false);
     }
   }
 
@@ -4421,8 +4436,16 @@
   $('forgot-btn')?.addEventListener('click', doForgotPassword);
   $('signup-btn').addEventListener('click', doSignup);
   $('quote-btn').addEventListener('click', doQuote);
-  $('quote-price')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doQuote(); } });
-  $('quote-eta')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doQuote(); } });
+  $('quote-price')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); $('quote-eta')?.focus(); }
+  });
+  $('quote-eta')?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const msg = ($('quote-text')?.value || '').trim();
+    if (!msg) $('quote-text')?.focus();
+    else doQuote();
+  });
   $('post-btn').addEventListener('click', doPost);
   $('pay-confirm-btn').addEventListener('click', confirmAcceptPay);
   $('pay-resume-btn')?.addEventListener('click', resumeCheckoutFromSheet);
@@ -4468,6 +4491,21 @@
   syncChipPressed('.budget-chip');
 
   document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const t = e.target;
+      const typing = t && (
+        t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable
+      );
+      if (!typing && $('dashboard')?.classList.contains('open') && !document.querySelector('.modal-bg.open')) {
+        const search = $('dashboard').querySelector('.admin-search');
+        if (search) {
+          e.preventDefault();
+          search.focus();
+          search.select();
+          return;
+        }
+      }
+    }
     if (e.key === 'Tab') {
       if (document.querySelector('.modal-bg.open')) trapModalTab(e);
       else trapDashTab(e);

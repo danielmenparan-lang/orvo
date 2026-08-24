@@ -518,3 +518,10 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Quote ETA** — live 1–180 hint and max validation
 - **Review** — 20-or-blank body; Ctrl+Enter on review/confirm-note
 - **Spellcheck** — post/quote/dispute/review/confirm/apply textareas
+
+## 2026-08-24T13:30Z — pulse (post-finale)
+- **Quote Enter nav** — price → ETA → message (or send if pitch filled)
+- **Apply Refresh** — panel refresh on apply view
+- **Slash-to-search** — `/` focuses dashboard search
+- **Copy link Copied!** — view + request link flash; skip-to-content → landing
+- **Dispute field disable** — details locked while submit
