@@ -478,3 +478,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Last dashboard view** restored from sessionStorage when reopening (role-guarded)
 - **Password min-6 live hint** on signup + reset; Show/Hide toggles on login/signup/reset
 - Browse jobs cards show **posted time** via timeAgoHtml
+
+## 2026-08-24T10:00Z — pulse (post-finale)
+- **Post mins** — title ≥8 / description ≥40 with live counters; form clears after success
+- **Quote + dispute** message counters show remaining to min 20
+- **Chat send busy** — disables input/button while Sending… (no double-send)

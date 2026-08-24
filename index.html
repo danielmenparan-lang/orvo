@@ -673,7 +673,7 @@ footer{
     <p class="sub">Only approved builders will see this</p>
     <div id="post-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="field"><label for="post-title">Title</label><input id="post-title" placeholder="e.g. WhatsApp order bot for my restaurant" maxlength="80"/>
-      <p class="chat-meta" id="post-title-count">0 / 80</p>
+      <p class="chat-meta" id="post-title-count">0 / 80 (min 8)</p>
     </div>
     <div class="field"><label>Primary channel</label>
       <div class="row" style="margin:0 0 8px">
@@ -693,7 +693,7 @@ footer{
         <button type="button" class="btn btn-ghost goal-chip" data-goal="Automate internal ops workflows">Ops</button>
       </div>
       <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..." maxlength="4000"></textarea>
-      <p class="chat-meta" id="post-count">0 / 4000</p>
+      <p class="chat-meta" id="post-count">0 / 4000 (min 40)</p>
     </div>
     <div class="field"><label for="post-cat">Category</label>
       <select id="post-cat"><option>WhatsApp / Chat</option><option>Voice / Phone</option><option>Automation</option><option>CRM / Email</option><option>Other</option></select>
@@ -726,7 +726,7 @@ footer{
     </div>
     <div class="field"><label for="quote-eta">Delivery estimate (days)</label><input id="quote-eta" type="number" min="1" max="180" placeholder="e.g. 14"/></div>
     <div class="field"><label for="quote-text">Message</label><textarea id="quote-text" placeholder="Why you're the right builder..." maxlength="2000"></textarea>
-      <p class="chat-meta" id="quote-count">0 / 2000</p>
+      <p class="chat-meta" id="quote-count">0 / 2000 (min 20)</p>
     </div>
     <button class="btn-black" id="quote-btn">Send quote</button>
   </div>
@@ -851,6 +851,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=63"></script>
+<script src="app.js?v=64"></script>
 </body>
 </html>

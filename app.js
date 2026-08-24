@@ -1083,8 +1083,8 @@
   function openPost() {
     if (!user) { openAuth('login'); showMsg('login-msg', 'Sign in first', false); return; }
     hideMsg('post-msg');
-    wireFieldCounter('post-desc', 'post-count', 4000);
-    wireFieldCounter('post-title', 'post-title-count', 80);
+    wireFieldCounter('post-title', 'post-title-count', 80, { min: 8 });
+    wireFieldCounter('post-desc', 'post-count', 4000, { min: 40 });
     track('post_modal_open', {});
     const el = $('post-modal');
     el.classList.add('open');
@@ -1095,13 +1095,21 @@
     el.classList.remove('open');
     blurModal(el);
   }
+  function clearPostForm() {
+    if ($('post-title')) $('post-title').value = '';
+    if ($('post-desc')) $('post-desc').value = '';
+    if ($('post-country')) $('post-country').value = '';
+    if ($('post-budget')) $('post-budget').value = '';
+    document.querySelectorAll('.budget-chip').forEach((x) => x.classList.remove('on'));
+    document.querySelectorAll('.goal-chip').forEach((x) => x.classList.remove('on'));
+  }
   function openQuoteModal(reqId) {
     quoteRequestId = reqId;
     hideMsg('quote-msg');
     $('quote-price').value = '';
     if ($('quote-eta')) $('quote-eta').value = '';
     $('quote-text').value = '';
-    wireFieldCounter('quote-text', 'quote-count', 2000);
+    wireFieldCounter('quote-text', 'quote-count', 2000, { min: 20 });
     wireQuotePriceHint();
     if ($('quote-heading')) $('quote-heading').textContent = 'Send quote';
     if ($('quote-sub')) $('quote-sub').textContent = 'Your price and pitch to the client';
@@ -1676,7 +1684,9 @@
       const desc = $('post-desc').value.trim();
       const country = ($('post-country')?.value || '').trim().slice(0, 80);
       if (!title) throw new Error('Add a short title');
+      if (title.length < 8) throw new Error('Title needs at least 8 characters');
       if (!desc) throw new Error('Describe your project');
+      if (desc.length < 40) throw new Error('Description needs at least 40 characters');
       const row = {
         user_id: user.id,
         title: title.slice(0, 80),
@@ -1694,7 +1704,7 @@
         ({ error } = await needDb().from('requests').insert(row));
       }
       if (error) throw error;
-      if ($('post-country')) $('post-country').value = '';
+      clearPostForm();
       closePost();
       track('post_success', { category: row.category });
       openDash();
@@ -2082,6 +2092,7 @@
       let msg = $('quote-text').value.trim();
       if (cents < 5000) throw new Error('Minimum quote is $50 USD');
       if (!msg) throw new Error('Add a message');
+      if (msg.length < 20) throw new Error('Message needs at least 20 characters');
       if (!eta || eta < 1) throw new Error('Add delivery estimate in days');
       const row = {
         request_id: quoteRequestId,
@@ -3081,6 +3092,7 @@
   async function sendMsg(e) {
     e.preventDefault();
     const input = $('chat-input');
+    const sendBtn = $('chat-form')?.querySelector('button[type="submit"]');
     const body = input.value.trim();
     if (!body || !chatRequestId) return;
     if (body.length > 2000) {
@@ -3097,6 +3109,8 @@
       if (!check.ok) { toast(check.msg, false); return; }
     }
     input.value = '';
+    input.disabled = true;
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; }
     try {
       const { error } = await needDb().from('messages').insert({
         request_id: chatRequestId, sender_id: user.id, body, is_agent: false,
@@ -3111,6 +3125,14 @@
     } catch (err) {
       input.value = body;
       toastSchemaErr(err?.message || String(err));
+    } finally {
+      const closed = chatRequestStatus === 'cancelled' || chatRequestStatus === 'disputed';
+      input.disabled = closed;
+      if (sendBtn) {
+        sendBtn.disabled = closed;
+        sendBtn.textContent = 'Send';
+      }
+      if (!closed) input.focus();
     }
   }
 
@@ -3354,7 +3376,7 @@
     pendingDisputeRid = rid;
     hideMsg('dispute-msg');
     if ($('dispute-details')) $('dispute-details').value = '';
-    wireFieldCounter('dispute-details', 'dispute-count', 2000);
+    wireFieldCounter('dispute-details', 'dispute-count', 2000, { min: 20 });
     const el = $('dispute-modal');
     el?.classList.add('open');
     focusModal(el, '#dispute-details');
