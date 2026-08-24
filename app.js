@@ -1274,7 +1274,10 @@
 
   function openDash(preferredView) {
     if (!user) { openAuth('login'); return; }
-    $('dashboard').classList.add('open');
+    const dash = $('dashboard');
+    dash.classList.add('open');
+    dash.setAttribute('role', 'dialog');
+    dash.setAttribute('aria-modal', 'true');
     document.body.style.overflow = 'hidden';
     renderSidebar();
     refreshFounderSetupBanner();
@@ -1283,7 +1286,10 @@
   }
 
   function closeDash() {
-    $('dashboard').classList.remove('open');
+    const dash = $('dashboard');
+    dash.classList.remove('open');
+    dash.removeAttribute('role');
+    dash.removeAttribute('aria-modal');
     document.body.style.overflow = '';
     stopChat();
     stopCheckoutPoll();
@@ -1338,6 +1344,9 @@
     });
   }
 
+  let __orvoLastNav = { v: null, rid: null };
+  let __orvoPushNav = true;
+
   function go(v, id) {
     if (v !== 'chat') {
       if (chatSub && db) db.removeChannel(chatSub);
@@ -1374,7 +1383,12 @@
     else if (v === 'invites') { $('view-action').innerHTML = copyViewBtnHtml(); loadInvites(); }
     else if (v === 'quotes') { $('view-action').innerHTML = copyViewBtnHtml(); loadQuotes(); }
     else if (v === 'messages') { $('view-action').innerHTML = copyViewBtnHtml(); loadThreads(); }
-    else if (v === 'chat') loadChat();
+    else if (v === 'chat') {
+      $('view-action').innerHTML = `<button type="button" class="btn btn-ghost" id="btn-chat-back" style="padding:8px 12px;font-size:12px">← Messages</button>${copyViewBtnHtml()}`;
+      wireCopyViewLink();
+      $('btn-chat-back')?.addEventListener('click', () => go('messages'));
+      loadChat();
+    }
     else if (v === 'apply') { $('view-action').innerHTML = copyViewBtnHtml(); loadApply(); }
     else if (v === 'status') { $('view-action').innerHTML = copyViewBtnHtml(); loadStatus(); }
     else if (v === 'profile') { $('view-action').innerHTML = copyViewBtnHtml(); loadProfileView(); }
@@ -1399,7 +1413,17 @@
       });
       loadNotifications();
     }
-    wireCopyViewLink();
+    if (v !== 'chat') wireCopyViewLink();
+    if ($('dashboard')?.classList.contains('open') && __orvoPushNav) {
+      syncDashUrl();
+      const navRid = v === 'chat' ? id : null;
+      if (__orvoLastNav.v !== v || __orvoLastNav.rid !== navRid) {
+        __orvoLastNav = { v, rid: navRid };
+        try {
+          window.history.pushState({ orvoView: v, orvoRid: navRid }, '', window.location.href);
+        } catch { /* ignore */ }
+      }
+    }
   }
 
   // ── CLIENT ──
@@ -2515,7 +2539,17 @@
     chatPoll = null;
     chatRequestId = rid;
 
-    const { data: req } = await needDb().from('requests').select('*').eq('id', rid).single();
+    const { data: req, error: reqErr } = await needDb().from('requests').select('*').eq('id', rid).single();
+    if (reqErr) {
+      $('view-body').innerHTML = `<p class="empty err">${esc(userFacingErr(reqErr.message))}</p>${founderSchemaFixHtml('Project chat needs APPLY-ALL SQL.')}`;
+      wireFounderSchemaFix($('view-body'));
+      return;
+    }
+    if (!req) {
+      toast('Request not found', false);
+      go('messages');
+      return;
+    }
     if (!(await canChatOnRequest(req))) {
       toast('Message only after you quote or are assigned to this job.', false);
       go(isBuilder() ? 'jobs' : 'messages');
@@ -2523,6 +2557,7 @@
     }
     markThreadNotificationsRead(rid);
     chatRequestStatus = req?.status || 'open';
+    $('view-title').textContent = (req.title || 'Chat').slice(0, 48);
 
     const { data: payRow } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
 
@@ -2700,10 +2735,13 @@
     };
     chatInput?.addEventListener('input', updateCount);
     updateCount();
-    if (req?.status === 'cancelled') {
+    if (req?.status === 'cancelled' || req?.status === 'disputed') {
+      const closedHint = req.status === 'disputed'
+        ? 'Dispute open — messaging stays for facts only; release is frozen.'
+        : 'Request cancelled — messaging closed.';
       if (chatInput) {
         chatInput.disabled = true;
-        chatInput.placeholder = 'Request cancelled — messaging closed';
+        chatInput.placeholder = closedHint;
       }
       $('chat-form')?.querySelector('button[type="submit"]')?.setAttribute('disabled', 'true');
     }
@@ -3766,6 +3804,27 @@
     else if ($('post-modal').classList.contains('open')) closePost();
     else if ($('auth-modal').classList.contains('open')) closeAuth();
     else if ($('dashboard').classList.contains('open')) closeDash();
+  });
+
+  window.addEventListener('popstate', () => {
+    if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    const hasDashParams = params.get('view') || params.get('rid') || (params.get('status') && isAdmin());
+    if ($('dashboard')?.classList.contains('open')) {
+      if (!hasDashParams) {
+        __orvoPushNav = false;
+        closeDash();
+        __orvoLastNav = { v: null, rid: null };
+        __orvoPushNav = true;
+        return;
+      }
+      __orvoPushNav = false;
+      consumeViewDeepLink();
+      __orvoLastNav = { v: view, rid: chatRequestId };
+      __orvoPushNav = true;
+      return;
+    }
+    if (hasDashParams) consumeViewDeepLink();
   });
 
   // Enter key on login

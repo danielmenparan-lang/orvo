@@ -432,3 +432,10 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Invite + sign-out** confirm sheets
 - Chat message `<time datetime>`; dashboard dialog aria when open
 - Admin Review builders also gets Copy link
+
+## 2026-08-24T06:00Z — pulse (post-finale)
+- **Chat nav** — ← Messages back button + copy link in panel head
+- **Browser back** — pushState on go(); popstate closes dash or restores view/rid
+- **loadChat errors** — schema APPLY-ALL empty state; missing request → messages
+- Chat **view-title** from request title; composer disabled for **disputed** (facts-only hint)
+- Dashboard **dialog aria** on openDash/closeDash; `#view-action` flex layout
