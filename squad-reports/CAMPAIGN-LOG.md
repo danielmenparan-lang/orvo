@@ -396,3 +396,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **`showSchemaMsg`** — post/quote/dispute/review modals get APPLY-ALL CTAs on schema errors
 - **Active jobs, invites, disputes** cards click-to-open + keyboard nav
 - Sidebar **`aria-current="page"`** on active nav item
+
+## 2026-08-24T03:00Z — pulse (post-finale)
+- **Pay sheet** accept errors → showSchemaMsg; dialog `aria-*` on pay modal
+- **Browse jobs** cards click-to-quote or open chat (keyboard nav)
+- **toastSchemaErr** on admin approve/reject/invite schema failures
+- Dashboard **nav/main** landmarks + side-item focus outline

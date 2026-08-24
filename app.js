@@ -300,6 +300,15 @@
     return /relation|does not exist|schema|42P01|column.*does not exist/i.test(msg || '');
   }
 
+  function toastSchemaErr(msg, hint) {
+    const text = userFacingErr(msg);
+    if (isDbSchemaErr(msg) && (isAdmin() || isConfiguredFounder())) {
+      toast(text + ' — Copy APPLY-ALL from Profile → Setup health.', false);
+    } else {
+      toast(text, false);
+    }
+  }
+
   function isConfiguredFounder() {
     const logged = myEmail();
     const cfg = cfgAdminEmail();
@@ -1651,10 +1660,13 @@
     body.innerHTML = searchBar + payoutNudge + activeHtml + data.map(r => {
       const canMsg = isAdmin() || quotedIds.has(r.id) || r.assigned_builder_id === user.id;
       const already = pendingIds.has(r.id);
+      const title = esc(r.title || 'Job');
+      const action = canMsg || already ? 'chat' : 'quote';
+      const aria = action === 'quote' ? `Send quote: ${title}` : `Open job: ${title}`;
       return `
-      <div class="card">
+      <div class="card" data-job-card="${r.id}" data-job-action="${action}" tabindex="0" role="button" aria-label="${aria}">
         <span class="tag">${esc(r.category || 'Project')}</span>
-        <h3>${esc(r.title)}</h3>
+        <h3>${title}</h3>
         <p>${esc(r.description)}</p>
         <p>Budget: ${esc(r.budget || 'Not specified')}${r.location ? ' · ' + esc(r.location) : ''}</p>
         <div class="row">
@@ -1667,6 +1679,14 @@
     bindJobsSearch();
     bindActiveBtns();
     bindJobsPayoutNudge();
+    body.querySelectorAll('[data-job-card]').forEach((el) => {
+      wireActivate(el, (e) => {
+        if (e?.target?.closest?.('button')) return;
+        const rid = el.dataset.jobCard;
+        if (el.dataset.jobAction === 'quote') openQuoteModal(rid);
+        else go('chat', rid);
+      });
+    });
     body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
     body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
   }
@@ -2027,7 +2047,7 @@
       toast('Builder approved!', true);
       track('builder_approved', { user_id: uid });
       loadAdmin();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   async function rejectBuilder(uid) {
@@ -2040,7 +2060,7 @@
       if (e2) throw e2;
       toast('Rejected', true);
       loadAdmin();
-    } catch (e) { toast(e.message, false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   async function loadInvites() {
@@ -2220,7 +2240,7 @@
       });
       if (error) throw error;
       toast('Builder invited', true);
-    } catch (e) { toast(e.message, false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   async function loadDisputes() {
@@ -3070,9 +3090,10 @@
       loadChat();
     } catch (e) {
       btn.disabled = false;
-      btn.textContent = 'Accept quote — await payment';
-      showMsg('pay-msg', userFacingErr(e.message), false);
-      toast(e.message, false);
+      btn.textContent = 'Accept quote — try checkout';
+      const msg = e?.message || String(e);
+      showSchemaMsg('pay-msg', msg, 'Payments need APPLY-ALL SQL (002+).');
+      if (!isDbSchemaErr(msg)) toast(userFacingErr(msg), false);
     }
   }
 

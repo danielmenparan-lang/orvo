@@ -313,6 +313,7 @@ footer{
   border:none;background:none;text-align:left;color:var(--gray);transition:background .15s,color .15s;
 }
 .side-item:hover{background:rgba(255,255,255,.85);color:var(--black)}
+.side-item:focus-visible{outline:2px solid var(--o);outline-offset:2px}
 .side-item.active{background:var(--surface);color:var(--black);font-weight:600;box-shadow:var(--shadow-hair)}
 .side-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 14px 4px;margin-top:8px;font-weight:600}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;min-height:400px}
@@ -325,7 +326,7 @@ footer{
   cursor:pointer;background:rgba(255,255,255,.7);transition:border-color .15s,background .15s;
 }
 .card:hover{border-color:var(--border-strong);background:var(--surface)}
-.card[data-click]:focus-visible,.card[data-nid]:focus-visible,.kpi-card:focus-visible{outline:2px solid var(--o);outline-offset:2px}
+.card[data-click]:focus-visible,.card[data-nid]:focus-visible,.card[data-job-card]:focus-visible,.kpi-card:focus-visible{outline:2px solid var(--o);outline-offset:2px}
 .channel-chip:focus-visible{outline:2px solid var(--o);outline-offset:2px}
 .card:not([data-click]){cursor:default}
 .card h3{font-size:16px;font-weight:600;margin-bottom:6px}
@@ -716,7 +717,7 @@ footer{
 </div>
 
 <!-- ACCEPT & PAY -->
-<div class="modal-bg" id="pay-modal">
+<div class="modal-bg" id="pay-modal" role="dialog" aria-modal="true" aria-labelledby="pay-title" aria-describedby="pay-note">
   <div class="modal-box pay-sheet" id="pay-sheet">
     <button class="modal-close" data-action="close-pay">✕</button>
     <h2 id="pay-title">Accept &amp; pay</h2>
@@ -815,8 +816,8 @@ footer{
     <button class="btn btn-ghost" data-action="close-dash">← Back to site</button>
   </div>
   <div class="screen-body">
-    <div class="sidebar" id="sidebar"></div>
-    <div class="panel">
+    <div class="sidebar" id="sidebar" role="navigation" aria-label="Dashboard"></div>
+    <div class="panel" role="main" aria-labelledby="view-title">
       <div class="panel-head">
         <h2 id="view-title">Dashboard</h2>
         <div id="view-action"></div>
@@ -833,6 +834,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=52"></script>
+<script src="app.js?v=53"></script>
 </body>
 </html>
