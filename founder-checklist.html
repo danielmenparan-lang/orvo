@@ -115,7 +115,9 @@ where email = 'danielmen.paran@gmail.com';</pre>
     <p style="font-size:13px;margin-bottom:12px">CLI probe: <code>bash scripts/verify-edge.sh</code> (404 = not deployed · 501 = secrets pending)</p>
     <p style="font-size:13px;margin-bottom:12px">Smoke test: <code>docs/payments/STRIPE-SMOKE-TEST.md</code></p>
     <label><input type="checkbox"/> Secrets set + Edge Functions deployed</label>
-    <label><input type="checkbox"/> Checkout → held + funded</label>
+    <label><input type="checkbox"/> Ran <a href="https://github.com/danielmenparan-lang/orvo/blob/cursor/orvo-local-site-3bd5/docs/payments/STRIPE-SMOKE-TEST.md" target="_blank" rel="noopener">STRIPE-SMOKE-TEST.md</a> (Checkout → held)</label>
+    <label><input type="checkbox"/> Flipped <code>ORVO_CHECKOUT_LIVE=true</code> in <code>supabase-config.js</code> after smoke pass</label>
+    <label><input type="checkbox"/> Checkout → held + funded (live)</label>
   </section>
 
   <p class="foot"><a href="index.html">← Back to ORVO</a> · Checkboxes saved in this browser.</p>

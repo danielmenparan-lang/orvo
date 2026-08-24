@@ -811,12 +811,6 @@
     if (rid) {
       ensureDashOpen();
       go('chat', rid);
-      params.delete('rid');
-      params.delete('view');
-      params.delete('status');
-      const u = new URL(window.location.href);
-      u.search = params.toString();
-      window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
       return;
     }
     const status = params.get('status');
@@ -826,28 +820,44 @@
     }
     let v = params.get('view');
     if (!v && status && allowedStatus.has(status) && isAdmin()) v = 'all-requests';
-    if (!v) {
-      if (status) {
-        params.delete('status');
-        const u = new URL(window.location.href);
-        u.search = params.toString();
-        window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
-      }
-      return;
-    }
+    if (!v) return;
     const allowed = new Set([
       'requests', 'jobs', 'invites', 'quotes', 'messages', 'apply', 'status',
       'profile', 'admin', 'all-requests', 'disputes', 'notifications',
     ]);
     if (!allowed.has(v)) return;
-    if (v === 'all-requests' && !isAdmin()) return;
+    if ((v === 'all-requests' || v === 'admin' || v === 'disputes') && !isAdmin()) return;
+    if ((v === 'jobs' || v === 'invites' || v === 'quotes') && !(isBuilder() || isAdmin())) return;
     ensureDashOpen();
     go(v);
-    params.delete('view');
-    params.delete('status');
-    const u = new URL(window.location.href);
-    u.search = params.toString();
-    window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
+  }
+
+  function syncDashUrl() {
+    try {
+      const u = new URL(window.location.href);
+      const dashOpen = $('dashboard')?.classList.contains('open');
+      if (!dashOpen) {
+        u.searchParams.delete('view');
+        u.searchParams.delete('rid');
+        u.searchParams.delete('status');
+      } else if (view === 'chat' && chatRequestId) {
+        u.searchParams.set('rid', chatRequestId);
+        u.searchParams.delete('view');
+        u.searchParams.delete('status');
+      } else if (view) {
+        u.searchParams.set('view', view);
+        u.searchParams.delete('rid');
+        if (view === 'all-requests' && window.__orvoAllReqsStatus) {
+          u.searchParams.set('status', window.__orvoAllReqsStatus);
+        } else {
+          u.searchParams.delete('status');
+        }
+      }
+      const q = u.searchParams.toString();
+      const next = u.pathname + (q ? '?' + q : '') + u.hash;
+      const cur = window.location.pathname + window.location.search + window.location.hash;
+      if (next !== cur) window.history.replaceState({}, '', next);
+    } catch { /* ignore */ }
   }
 
   function wireNavScroll() {
@@ -1271,6 +1281,7 @@
     document.body.style.overflow = '';
     stopChat();
     stopCheckoutPoll();
+    syncDashUrl();
   }
 
   function renderSidebar() {
@@ -1347,6 +1358,7 @@
       notifications: 'Notifications',
     };
     $('view-title').textContent = titles[v] || 'Dashboard';
+    syncDashUrl();
 
     if (v === 'requests') { $('view-action').innerHTML = '<button class="btn btn-primary" data-action="post">+ Post request</button>'; loadRequests(); }
     else if (v === 'jobs') loadJobs();
@@ -2096,6 +2108,12 @@
   }
 
   async function approveBuilder(uid) {
+    const ans = await askConfirm({
+      title: 'Approve this builder?',
+      sub: 'They can browse jobs and send quotes immediately.',
+      okLabel: 'Approve builder',
+    });
+    if (!ans.ok) return;
     try {
       const { error: e1 } = await needDb().from('builder_applications')
         .update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
@@ -2111,6 +2129,12 @@
   }
 
   async function rejectBuilder(uid) {
+    const ans = await askConfirm({
+      title: 'Reject this application?',
+      sub: 'The builder will see a rejected status. You can re-invite later if needed.',
+      okLabel: 'Reject application',
+    });
+    if (!ans.ok) return;
     try {
       const { error: e1 } = await needDb().from('builder_applications')
         .update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
@@ -2282,6 +2306,7 @@
     $('view-body').querySelectorAll('[data-status]').forEach((btn) => {
       wireActivate(btn, () => {
         window.__orvoAllReqsStatus = btn.dataset.status || '';
+        syncDashUrl();
         loadAllRequests();
       });
     });

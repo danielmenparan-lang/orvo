@@ -420,3 +420,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Chat empty** status-aware hints; composer disabled when cancelled
 - **sendMsg** toastSchemaErr; login/signup/reset msgs `role="alert"`
 - Judge gates for 04:00 + 04:30
+
+## 2026-08-24T05:00Z — pulse (post-finale)
+- **`syncDashUrl`** — bookmarkable `?view=` / `?rid=` while dashboard open
+- **Approve/reject** builders require confirm sheet
+- Founder checklist: smoke test + `ORVO_CHECKOUT_LIVE` gates
+- Chat Send disabled style; deep-link role guards
