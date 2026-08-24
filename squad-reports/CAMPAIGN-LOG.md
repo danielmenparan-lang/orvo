@@ -456,3 +456,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **`document.title`** — shows current view + unread badge count `(3) Messages · ORVO`
 - **Visibility refresh** — refreshNotifBadge + chat renderMsgs on tab return
 - **Chat autoscroll guard** — only scrolls down when user is near bottom
+
+## 2026-08-24T08:00Z — pulse (post-finale)
+- **Reconnect refresh** — `refreshActiveDashView()` reloads the open dashboard view after coming back online
+- **Visibility refresh** now updates list views too (requests/jobs/messages/quotes/profile/admin)
+- Chat **browser title** now uses the request title instead of generic `Chat`

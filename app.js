@@ -960,22 +960,46 @@
     const el = $('offline-banner');
     if (!el) return;
     const sync = () => {
+      const backOnline = el.classList.contains('show') && navigator.onLine;
       el.classList.toggle('show', !navigator.onLine);
-      if (navigator.onLine) track('online', {});
-      else track('offline', {});
+      if (navigator.onLine) {
+        track('online', {});
+        if (backOnline) {
+          toast('Back online — refreshing ORVO', true);
+          refreshActiveDashView({ reason: 'online' });
+        }
+      } else track('offline', {});
     };
     window.addEventListener('online', sync);
     window.addEventListener('offline', sync);
     sync();
   }
 
+  function refreshActiveDashView({ reason } = {}) {
+    if (!$('dashboard')?.classList.contains('open') || !user) return;
+    refreshNotifBadge();
+    if (view === 'chat' && chatRequestId) {
+      if (reason === 'visibility') renderMsgs();
+      else loadChat();
+      return;
+    }
+    if (view === 'notifications') return loadNotifications();
+    if (view === 'messages') return loadThreads();
+    if (view === 'requests') return loadRequests();
+    if (view === 'jobs') return loadJobs();
+    if (view === 'invites') return loadInvites();
+    if (view === 'quotes') return loadQuotes();
+    if (view === 'status') return loadStatus();
+    if (view === 'profile') return loadProfileView();
+    if (view === 'admin') return loadAdmin();
+    if (view === 'all-requests') return loadAllRequests();
+    if (view === 'disputes') return loadDisputes();
+  }
+
   function wireVisibilityRefresh() {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden || !user) return;
-      refreshNotifBadge();
-      if ($('dashboard')?.classList.contains('open') && view === 'chat' && chatRequestId) {
-        renderMsgs();
-      }
+      refreshActiveDashView({ reason: 'visibility' });
     });
   }
   function openAuth(tab) {
@@ -2695,6 +2719,7 @@
     markThreadNotificationsRead(rid);
     chatRequestStatus = req?.status || 'open';
     $('view-title').textContent = (req.title || 'Chat').slice(0, 48);
+    syncDocTitle($('view-title').textContent);
 
     const { data: payRow } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
 
