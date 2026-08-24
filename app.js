@@ -471,6 +471,18 @@
     } catch { /* table missing */ }
   }
 
+  let __orvoUnread = 0;
+  const BASE_TITLE = 'ORVO — Hire vetted builders for custom AI agents';
+
+  function syncDocTitle(viewLabel) {
+    const prefix = __orvoUnread ? `(${__orvoUnread > 9 ? '9+' : __orvoUnread}) ` : '';
+    if (viewLabel) {
+      document.title = prefix + viewLabel + ' · ORVO';
+    } else {
+      document.title = prefix + BASE_TITLE;
+    }
+  }
+
   async function refreshNotifBadge() {
     if (!user || !db) return;
     try {
@@ -478,6 +490,8 @@
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id).is('read_at', null);
       const n = count || 0;
+      __orvoUnread = n;
+      syncDocTitle($('dashboard')?.classList.contains('open') ? ($('view-title')?.textContent || null) : null);
       const label = n ? (n > 9 ? '9+' : String(n)) : '';
       const side = $('sidebar')?.querySelector('[data-view="notifications"]');
       if (side) {
@@ -954,6 +968,16 @@
     window.addEventListener('offline', sync);
     sync();
   }
+
+  function wireVisibilityRefresh() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden || !user) return;
+      refreshNotifBadge();
+      if ($('dashboard')?.classList.contains('open') && view === 'chat' && chatRequestId) {
+        renderMsgs();
+      }
+    });
+  }
   function openAuth(tab) {
     hideMsg('login-msg'); hideMsg('signup-msg');
     const el = $('auth-modal');
@@ -1367,6 +1391,7 @@
     stopChat();
     stopCheckoutPoll();
     syncDashUrl();
+    syncDocTitle(null);
     blurDashClose();
   }
 
@@ -1456,6 +1481,7 @@
       notifications: 'Notifications',
     };
     $('view-title').textContent = titles[v] || 'Dashboard';
+    syncDocTitle(titles[v] || null);
     syncDashUrl();
 
     if (v === 'requests') {
@@ -2915,7 +2941,8 @@
       else if (st === 'completed') hint = 'Project completed. You can still message for wrap-up notes.';
       return `<p class="empty" style="padding:20px">${esc(hint)}</p>`;
     })();
-    box.scrollTop = box.scrollHeight;
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
+    if (nearBottom) box.scrollTop = box.scrollHeight;
   }
 
   async function sendMsg(e) {
@@ -4023,6 +4050,7 @@
     consumeViewDeepLink();
     wireNavScroll();
     wireOfflineBanner();
+    wireVisibilityRefresh();
     wireLandingHonesty();
     track('app_boot', { authed: !!user });
   }

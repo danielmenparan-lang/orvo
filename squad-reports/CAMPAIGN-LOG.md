@@ -451,3 +451,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **`timeAgoHtml`** on requests, jobs, quotes, invites, disputes, admin, apply status
 - **Dashboard Tab trap** + skip link to `#view-body`
 - Chat empty hints for **funded / delivered / completed**
+
+## 2026-08-24T07:30Z — pulse (post-finale)
+- **`document.title`** — shows current view + unread badge count `(3) Messages · ORVO`
+- **Visibility refresh** — refreshNotifBadge + chat renderMsgs on tab return
+- **Chat autoscroll guard** — only scrolls down when user is near bottom
