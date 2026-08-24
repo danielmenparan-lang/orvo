@@ -218,6 +218,32 @@
 
   function hideMsg(id) { $(id)?.classList.add('hidden'); }
 
+  function setFieldInvalid(id, invalid) {
+    const el = $(id);
+    if (!el) return;
+    if (invalid) el.setAttribute('aria-invalid', 'true');
+    else el.removeAttribute('aria-invalid');
+  }
+  function clearFieldInvalid(ids) {
+    (ids || []).forEach((id) => setFieldInvalid(id, false));
+  }
+  function focusFirstInvalid(ids) {
+    for (const id of ids || []) {
+      const el = $(id);
+      if (el?.getAttribute('aria-invalid') === 'true') {
+        el.focus();
+        return true;
+      }
+    }
+    return false;
+  }
+  function setFieldsDisabled(ids, disabled) {
+    (ids || []).forEach((id) => {
+      const el = $(id);
+      if (el) el.disabled = !!disabled;
+    });
+  }
+
   function bootErr(msg, { setupHint = false } = {}) {
     const el = $('boot-error');
     el.textContent = sanitizePublicErr(msg);
@@ -885,6 +911,7 @@
   // ── MODALS ──
   function openPasswordResetModal() {
     hideMsg('reset-msg');
+    clearFieldInvalid(['reset-pass', 'reset-pass2']);
     if ($('reset-pass')) $('reset-pass').value = '';
     if ($('reset-pass2')) $('reset-pass2').value = '';
     const el = $('reset-modal');
@@ -906,16 +933,23 @@
   async function submitPasswordReset() {
     const p1 = ($('reset-pass')?.value || '');
     const p2 = ($('reset-pass2')?.value || '');
-    if (p1.length < 6) {
+    const short = p1.length < 6;
+    const mismatch = p1 !== p2;
+    setFieldInvalid('reset-pass', short);
+    setFieldInvalid('reset-pass2', !short && mismatch);
+    if (short) {
       showMsg('reset-msg', 'Password must be at least 6 characters', false);
+      focusFirstInvalid(['reset-pass', 'reset-pass2']);
       return;
     }
-    if (p1 !== p2) {
+    if (mismatch) {
       showMsg('reset-msg', 'Passwords do not match', false);
+      focusFirstInvalid(['reset-pass', 'reset-pass2']);
       return;
     }
     const btn = $('reset-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Updating…'; }
+    setFieldsDisabled(['reset-pass', 'reset-pass2'], true);
     try {
       const { error } = await needDb().auth.updateUser({ password: p1 });
       if (error) throw error;
@@ -927,6 +961,7 @@
       showMsg('reset-msg', userFacingErr(e.message), false);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Update password'; }
+      setFieldsDisabled(['reset-pass', 'reset-pass2'], false);
     }
   }
 
@@ -1045,6 +1080,7 @@
   }
   function openAuth(tab) {
     hideMsg('login-msg'); hideMsg('signup-msg');
+    clearFieldInvalid(['login-email', 'login-pass', 'signup-name', 'signup-email', 'signup-pass']);
     const el = $('auth-modal');
     el.classList.add('open');
     setAuthTab(tab || 'login');
@@ -1106,6 +1142,7 @@
   function openPost() {
     if (!user) { openAuth('login'); showMsg('login-msg', 'Sign in first', false); return; }
     hideMsg('post-msg');
+    clearFieldInvalid(['post-title', 'post-desc']);
     wireFieldCounter('post-title', 'post-title-count', 80, { min: 8 });
     wireFieldCounter('post-desc', 'post-count', 4000, { min: 40 });
     track('post_modal_open', {});
@@ -1135,6 +1172,7 @@
   function openQuoteModal(reqId) {
     quoteRequestId = reqId;
     hideMsg('quote-msg');
+    clearFieldInvalid(['quote-price', 'quote-eta', 'quote-text']);
     $('quote-price').value = '';
     if ($('quote-eta')) $('quote-eta').value = '';
     $('quote-text').value = '';
@@ -1406,15 +1444,32 @@
   // ── AUTH ACTIONS ──
   async function doSignup() {
     const btn = $('signup-btn');
+    const email = $('signup-email').value.trim();
+    const pass = $('signup-pass').value;
+    const name = $('signup-name').value.trim();
+    const ids = ['signup-name', 'signup-email', 'signup-pass'];
+    setFieldInvalid('signup-name', !name || name.length < 2);
+    setFieldInvalid('signup-email', !looksLikeEmail(email));
+    setFieldInvalid('signup-pass', pass.length < 6);
+    if (!name || name.length < 2) {
+      showMsg('signup-msg', 'Enter your full name (at least 2 characters)', false);
+      focusFirstInvalid(ids);
+      return;
+    }
+    if (!looksLikeEmail(email)) {
+      showMsg('signup-msg', 'Enter a valid email address', false);
+      focusFirstInvalid(ids);
+      return;
+    }
+    if (pass.length < 6) {
+      showMsg('signup-msg', 'Password must be at least 6 characters', false);
+      focusFirstInvalid(ids);
+      return;
+    }
     btn.disabled = true;
     btn.textContent = 'Creating…';
+    setFieldsDisabled(ids.concat('signup-intent'), true);
     try {
-      const email = $('signup-email').value.trim();
-      const pass = $('signup-pass').value;
-      const name = $('signup-name').value.trim();
-      if (!name || name.length < 2) throw new Error('Enter your full name (at least 2 characters)');
-      if (!looksLikeEmail(email)) throw new Error('Enter a valid email address');
-      if (pass.length < 6) throw new Error('Password must be at least 6 characters');
       const { data, error } = await needDb().auth.signUp({
         email, password: pass,
         options: { data: { full_name: name.slice(0, 80) } },
@@ -1439,17 +1494,21 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Create account';
+      setFieldsDisabled(ids.concat('signup-intent'), false);
     }
   }
 
   async function doForgotPassword() {
     const email = ($('login-email').value || '').trim();
+    setFieldInvalid('login-email', !looksLikeEmail(email));
     if (!email) {
       showMsg('login-msg', 'Enter your email above, then click Forgot password', false);
+      $('login-email')?.focus();
       return;
     }
     if (!looksLikeEmail(email)) {
       showMsg('login-msg', 'Enter a valid email address', false);
+      $('login-email')?.focus();
       return;
     }
     const btn = $('forgot-btn');
@@ -1468,12 +1527,19 @@
 
   async function doLogin() {
     const btn = $('login-btn');
+    const email = $('login-email').value.trim();
+    const pass = $('login-pass').value;
+    setFieldInvalid('login-email', !looksLikeEmail(email));
+    setFieldInvalid('login-pass', !pass);
+    if (!looksLikeEmail(email) || !pass) {
+      showMsg('login-msg', 'Enter a valid email and password', false);
+      focusFirstInvalid(['login-email', 'login-pass']);
+      return;
+    }
     btn.disabled = true;
     btn.textContent = 'Signing in…';
+    setFieldsDisabled(['login-email', 'login-pass'], true);
     try {
-      const email = $('login-email').value.trim();
-      const pass = $('login-pass').value;
-      if (!looksLikeEmail(email) || !pass) throw new Error('Enter a valid email and password');
       const { data, error } = await needDb().auth.signInWithPassword({ email, password: pass });
       if (error) {
         if (/email not confirmed/i.test(error.message)) {
@@ -1496,6 +1562,7 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Sign in';
+      setFieldsDisabled(['login-email', 'login-pass'], false);
     }
   }
 
@@ -1727,15 +1794,35 @@
   async function doPost() {
     const btn = $('post-btn');
     const prevLabel = btn?.textContent || 'Post request';
+    const title = ($('post-title')?.value || '').trim();
+    const desc = $('post-desc').value.trim();
+    const country = ($('post-country')?.value || '').trim().slice(0, 80);
+    const fieldIds = ['post-title', 'post-desc', 'post-country', 'post-budget', 'post-cat'];
+    setFieldInvalid('post-title', !title || title.length < 8);
+    setFieldInvalid('post-desc', !desc || desc.length < 40);
+    if (!title) {
+      showMsg('post-msg', 'Add a short title', false);
+      focusFirstInvalid(['post-title', 'post-desc']);
+      return;
+    }
+    if (title.length < 8) {
+      showMsg('post-msg', 'Title needs at least 8 characters', false);
+      focusFirstInvalid(['post-title', 'post-desc']);
+      return;
+    }
+    if (!desc) {
+      showMsg('post-msg', 'Describe your project', false);
+      focusFirstInvalid(['post-title', 'post-desc']);
+      return;
+    }
+    if (desc.length < 40) {
+      showMsg('post-msg', 'Description needs at least 40 characters', false);
+      focusFirstInvalid(['post-title', 'post-desc']);
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
+    setFieldsDisabled(fieldIds, true);
     try {
-      const title = ($('post-title')?.value || '').trim();
-      const desc = $('post-desc').value.trim();
-      const country = ($('post-country')?.value || '').trim().slice(0, 80);
-      if (!title) throw new Error('Add a short title');
-      if (title.length < 8) throw new Error('Title needs at least 8 characters');
-      if (!desc) throw new Error('Describe your project');
-      if (desc.length < 40) throw new Error('Description needs at least 40 characters');
       const row = {
         user_id: user.id,
         title: title.slice(0, 80),
@@ -1763,6 +1850,7 @@
       showSchemaMsg('post-msg', e?.message || String(e), 'Requests need APPLY-ALL SQL (001–020).');
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
+      setFieldsDisabled(fieldIds, false);
     }
   }
 
@@ -2142,15 +2230,36 @@
     if (!quoteRequestId) return;
     const btn = $('quote-btn');
     const prevLabel = btn?.textContent || 'Send quote';
+    const fieldIds = ['quote-price', 'quote-eta', 'quote-text'];
+    const cents = parseMoney($('quote-price').value);
+    const eta = parseInt(($('quote-eta')?.value || '').trim(), 10);
+    const msg = $('quote-text').value.trim();
+    setFieldInvalid('quote-price', cents < 5000);
+    setFieldInvalid('quote-eta', !eta || eta < 1);
+    setFieldInvalid('quote-text', !msg || msg.length < 20);
+    if (cents < 5000) {
+      showSchemaMsg('quote-msg', 'Minimum quote is $50 USD', 'Quotes need APPLY-ALL SQL (001–020).');
+      focusFirstInvalid(fieldIds);
+      return;
+    }
+    if (!eta || eta < 1) {
+      showSchemaMsg('quote-msg', 'Add delivery estimate in days', 'Quotes need APPLY-ALL SQL (001–020).');
+      focusFirstInvalid(fieldIds);
+      return;
+    }
+    if (!msg) {
+      showSchemaMsg('quote-msg', 'Add a message', 'Quotes need APPLY-ALL SQL (001–020).');
+      focusFirstInvalid(fieldIds);
+      return;
+    }
+    if (msg.length < 20) {
+      showSchemaMsg('quote-msg', 'Message needs at least 20 characters', 'Quotes need APPLY-ALL SQL (001–020).');
+      focusFirstInvalid(fieldIds);
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    setFieldsDisabled(fieldIds, true);
     try {
-      const cents = parseMoney($('quote-price').value);
-      const eta = parseInt(($('quote-eta')?.value || '').trim(), 10);
-      let msg = $('quote-text').value.trim();
-      if (cents < 5000) throw new Error('Minimum quote is $50 USD');
-      if (!msg) throw new Error('Add a message');
-      if (msg.length < 20) throw new Error('Message needs at least 20 characters');
-      if (!eta || eta < 1) throw new Error('Add delivery estimate in days');
       const row = {
         request_id: quoteRequestId,
         builder_id: user.id,
@@ -2175,6 +2284,7 @@
       showSchemaMsg('quote-msg', e?.message || String(e), 'Quotes need APPLY-ALL SQL (001–020).');
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
+      setFieldsDisabled(fieldIds, false);
     }
   }
 
@@ -3498,6 +3608,7 @@
   function openDisputeSheet(rid) {
     pendingDisputeRid = rid;
     hideMsg('dispute-msg');
+    clearFieldInvalid(['dispute-details']);
     if ($('dispute-details')) $('dispute-details').value = '';
     wireFieldCounter('dispute-details', 'dispute-count', 2000, { min: 20 });
     const el = $('dispute-modal');
@@ -3516,8 +3627,10 @@
     const rid = pendingDisputeRid;
     if (!rid) return;
     const details = ($('dispute-details')?.value || '').trim();
+    setFieldInvalid('dispute-details', details.length < 20);
     if (details.length < 20) {
       showMsg('dispute-msg', 'Please write at least 20 characters', false);
+      $('dispute-details')?.focus();
       return;
     }
     const btn = $('dispute-confirm-btn');
@@ -4255,16 +4368,24 @@
       else trapDashTab(e);
       return;
     }
-    if (e.key !== 'Escape') return;
-    if ($('confirm-modal')?.classList.contains('open')) closeConfirm(false);
-    else if ($('reset-modal')?.classList.contains('open')) closePasswordReset();
-    else if ($('review-modal')?.classList.contains('open')) closeReview();
-    else if ($('dispute-modal')?.classList.contains('open')) closeDispute();
-    else if ($('pay-modal').classList.contains('open')) closePay();
-    else if ($('quote-modal').classList.contains('open')) closeQuote();
-    else if ($('post-modal').classList.contains('open')) closePost();
-    else if ($('auth-modal').classList.contains('open')) closeAuth();
-    else if ($('dashboard').classList.contains('open')) closeDashFromButton();
+    if (e.key === 'Escape') {
+      const search = e.target?.classList?.contains('admin-search') ? e.target : null;
+      if (search && search.value) {
+        e.preventDefault();
+        search.value = '';
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+      if ($('confirm-modal')?.classList.contains('open')) closeConfirm(false);
+      else if ($('reset-modal')?.classList.contains('open')) closePasswordReset();
+      else if ($('review-modal')?.classList.contains('open')) closeReview();
+      else if ($('dispute-modal')?.classList.contains('open')) closeDispute();
+      else if ($('pay-modal').classList.contains('open')) closePay();
+      else if ($('quote-modal').classList.contains('open')) closeQuote();
+      else if ($('post-modal').classList.contains('open')) closePost();
+      else if ($('auth-modal').classList.contains('open')) closeAuth();
+      else if ($('dashboard').classList.contains('open')) closeDashFromButton();
+    }
   });
 
   window.addEventListener('popstate', () => {
@@ -4300,8 +4421,29 @@
     if (e.key === 'Enter') { e.preventDefault(); $('signup-pass')?.focus(); }
   });
   $('signup-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
+  $('reset-pass')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('reset-pass2')?.focus(); }
+  });
   $('reset-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitPasswordReset(); });
   $('reset-btn')?.addEventListener('click', submitPasswordReset);
+  $('post-title')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('post-desc')?.focus(); }
+  });
+  $('post-country')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('post-budget')?.focus(); }
+  });
+  $('post-budget')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); doPost(); }
+  });
+  $('post-desc')?.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doPost(); }
+  });
+  $('quote-text')?.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doQuote(); }
+  });
+  $('dispute-details')?.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitDispute(); }
+  });
 
   function wirePasswordHint(inputId, hintId, min) {
     const input = $(inputId);

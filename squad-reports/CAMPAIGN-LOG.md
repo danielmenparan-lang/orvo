@@ -506,3 +506,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Auth polish** — email format check; signup name ≥2 live hint; Forgot Sending…
 - **Chip aria-pressed** — channel/goal/budget; reset on clearPostForm
 - **Enter nav** — login/signup email advances to password
+
+## 2026-08-24T12:30Z — pulse (post-finale)
+- **aria-invalid** — login/signup/post/quote/dispute/reset; focus first invalid
+- **Busy fields** — disable inputs while auth/post/quote/reset submit
+- **Escape search** — clears dash search without closing dashboard
+- **Enter nav** — post title→desc, country→budget; reset pass→confirm; Ctrl/Cmd+Enter on post/quote/dispute
