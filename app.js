@@ -170,6 +170,11 @@
     return h < 24 ? h + 'h' : Math.floor(h / 24) + 'd';
   }
 
+  function timeAgoHtml(d) {
+    if (!d) return esc(ago(d));
+    return `<time datetime="${esc(d)}">${esc(ago(d))}</time>`;
+  }
+
   function toast(msg, ok) {
     const el = $('toast');
     if (!el) return;
@@ -186,7 +191,7 @@
     const lines = Array.from({ length: n || 3 }, (_, i) =>
       `<div class="skel-line ${i === 0 ? 'lg' : (i === (n || 3) - 1 ? 'sm' : '')}"></div>`
     ).join('');
-    return `<div class="skel" aria-busy="true" aria-label="Loading">${lines}</div>`;
+    return `<div class="skel" role="status" aria-busy="true" aria-label="Loading">${lines}</div>`;
   }
 
   function showMsg(id, text, ok) {
@@ -357,6 +362,26 @@
       setTimeout(() => ret.focus(), 0);
     }
     syncPageAriaHidden();
+  }
+
+  function trapDashTab(e) {
+    if (e.key !== 'Tab') return;
+    if (document.querySelector('.modal-bg.open')) return;
+    const dash = $('dashboard');
+    if (!dash?.classList.contains('open')) return;
+    const nodes = [...dash.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )].filter((el) => el.offsetParent !== null);
+    if (nodes.length < 2) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   function followNotificationLink(link) {
@@ -1538,14 +1563,30 @@
         wireFounderSchemaFix(body);
         return;
       }
-      body.innerHTML = data.map((n) => {
+      const qText = (window.__orvoNotifQuery || '').trim().toLowerCase();
+      const rows = qText
+        ? data.filter((n) => ((n.title || '') + ' ' + (n.body || '')).toLowerCase().includes(qText))
+        : data;
+      const searchBar = `<input class="admin-search" id="notif-search" type="search" placeholder="Search notifications…" value="${esc(window.__orvoNotifQuery || '')}" autocomplete="off"/>`;
+      const emptyMatch = `<p class="empty">No notifications match that search.</p>
+        <button type="button" class="btn btn-ghost" id="btn-clear-notif-search" style="margin-top:12px;padding:8px 12px;font-size:12px">Clear search</button>`;
+      body.innerHTML = searchBar + (rows.length ? rows.map((n) => {
         const unread = !n.read_at;
         return `<div class="card ${unread ? 'notif-unread' : ''}" data-nid="${n.id}" data-link="${esc(n.link_path || '')}" tabindex="0" role="button" aria-label="${esc(n.title)}" style="cursor:pointer">
           <h3>${esc(n.title)}</h3>
           ${n.body ? `<p>${esc(n.body)}</p>` : ''}
-          <span class="badge">${unread ? 'New · ' : ''}<time datetime="${esc(n.created_at || '')}">${ago(n.created_at)}</time></span>
+          <span class="badge">${unread ? 'New · ' : ''}${timeAgoHtml(n.created_at)}</span>
         </div>`;
-      }).join('');
+      }).join('') : emptyMatch);
+      $('notif-search')?.addEventListener('input', (e) => {
+        window.__orvoNotifQuery = e.target.value || '';
+        clearTimeout(window.__orvoNotifSearchT);
+        window.__orvoNotifSearchT = setTimeout(loadNotifications, 280);
+      });
+      $('btn-clear-notif-search')?.addEventListener('click', () => {
+        window.__orvoNotifQuery = '';
+        loadNotifications();
+      });
       body.querySelectorAll('[data-nid]').forEach((el) => {
         const open = async () => {
           const id = el.dataset.nid;
@@ -1645,7 +1686,7 @@
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${reqLabel}</h3>
         <p>${esc(r.description.slice(0, 120))}</p>
-        <span class="badge">${esc(statusLabel(r.status))}${quoteBadge}${payHint} · ${ago(r.created_at)}</span>
+        <span class="badge">${esc(statusLabel(r.status))}${quoteBadge}${payHint} · ${timeAgoHtml(r.created_at)}</span>
         <div class="row">
           <button class="btn btn-primary btn-open-req" data-rid="${r.id}">Open</button>
           ${r.status === 'awaiting_payment' ? `<button class="btn btn-primary btn-pay-req" data-rid="${r.id}" data-qid="${esc(payByReq[r.id]?.quote_id || '')}" data-checkout-open="${payByReq[r.id]?.status === 'checkout_open' ? '1' : ''}">${payByReq[r.id]?.status === 'checkout_open' ? 'Continue checkout' : 'Complete payment'}</button>` : ''}
@@ -1795,7 +1836,7 @@
         <h3>${title}</h3>
         <p style="font-size:13px;color:var(--gray);margin:6px 0 10px">${esc((r.description || '').slice(0, 100))}${(r.description || '').length > 100 ? '…' : ''}</p>
         <div class="row">
-          <span class="badge">${esc(statusLabel(r.status))}</span>
+          <span class="badge">${esc(statusLabel(r.status))} · ${timeAgoHtml(r.updated_at || r.created_at)}</span>
           <button class="btn btn-primary btn-open-active" data-rid="${r.id}">Open project</button>
         </div>
       </div>`;
@@ -1937,19 +1978,35 @@
         <p style="font-size:13px;margin:8px 0 12px">Complete Connect so releases can transfer when clients pay.</p>
         <button type="button" class="btn btn-primary" id="btn-quotes-payout-connect" data-default-label="Set up payouts">Set up payouts</button>
       </div>` : '';
-    body.innerHTML = payoutNudge + data.map(q => {
+    const qText = (window.__orvoQuotesQuery || '').trim().toLowerCase();
+    const rows = qText
+      ? data.filter((q) => ((q.requests?.title || '') + ' ' + (q.message || '') + ' ' + (q.status || '')).toLowerCase().includes(qText))
+      : data;
+    const searchBar = `<input class="admin-search" id="quotes-search" type="search" placeholder="Search your quotes…" value="${esc(window.__orvoQuotesQuery || '')}" autocomplete="off"/>`;
+    const emptyMatch = `<p class="empty">No quotes match that search.</p>
+      <button type="button" class="btn btn-ghost" id="btn-clear-quotes-search" style="margin-top:12px;padding:8px 12px;font-size:12px">Clear search</button>`;
+    body.innerHTML = searchBar + payoutNudge + (rows.length ? rows.map(q => {
       const title = esc(q.requests?.title || 'Project');
       return `
       <div class="card" data-click="${q.request_id}" tabindex="0" role="button" aria-label="Open quote: ${title}">
         <h3>${title}</h3>
         <p>${esc(q.message)}</p>
-        <span class="badge">${money(q.amount_cents)} · ${esc(statusLabel(q.status))}${q.delivery_days ? ' · ' + q.delivery_days + 'd' : ''}</span>
+        <span class="badge">${money(q.amount_cents)} · ${esc(statusLabel(q.status))}${q.delivery_days ? ' · ' + q.delivery_days + 'd' : ''} · ${timeAgoHtml(q.created_at)}</span>
         <div class="row">
           <button class="btn btn-primary btn-open-quote" data-rid="${q.request_id}">Open</button>
           ${q.status === 'pending' ? `<button class="btn btn-ghost btn-withdraw-quote" data-qid="${q.id}">Withdraw</button>` : ''}
         </div>
       </div>`;
-    }).join('');
+    }).join('') : emptyMatch);
+    $('quotes-search')?.addEventListener('input', (e) => {
+      window.__orvoQuotesQuery = e.target.value || '';
+      clearTimeout(window.__orvoQuotesSearchT);
+      window.__orvoQuotesSearchT = setTimeout(loadQuotes, 280);
+    });
+    $('btn-clear-quotes-search')?.addEventListener('click', () => {
+      window.__orvoQuotesQuery = '';
+      loadQuotes();
+    });
     $('btn-quotes-payout-connect')?.addEventListener('click', (e) => startConnectOnboarding(e.currentTarget));
     body.querySelectorAll('[data-click]').forEach((el) => {
       wireActivate(el, (e) => {
@@ -2101,7 +2158,7 @@
     $('view-body').innerHTML = `
       <p><strong>Status:</strong> <span class="badge">${esc(statusLabel(app.status))}</span></p>
       <p style="color:var(--gray);margin:12px 0 20px;font-size:14px">${msgs[app.status] || ''}</p>
-      <p style="font-size:13px;color:var(--gray)">Submitted ${ago(app.created_at)}</p>
+      <p style="font-size:13px;color:var(--gray)">Submitted ${timeAgoHtml(app.created_at)}</p>
       ${app.status === 'approved' ? '<button class="btn btn-primary" style="margin-top:20px;padding:12px 28px" data-goto="jobs">Browse jobs</button>' : ''}
       ${app.status === 'pending' ? '<button class="btn btn-ghost" style="margin-top:12px;padding:12px 28px" data-goto="apply">Edit application</button>' : ''}`;
   }
@@ -2296,6 +2353,7 @@
         <p>${esc((r.description || '').slice(0, 160))}</p>
         <p>Budget: ${esc(r.budget || 'Not specified')}${r.location ? ' · ' + esc(r.location) : ''}</p>
         ${inv.note ? `<p style="font-size:12px;color:var(--gray)">Note: ${esc(inv.note)}</p>` : ''}
+        <p style="font-size:12px;color:var(--gray)">${timeAgoHtml(inv.created_at)}</p>
         <div class="row">
           <button class="btn btn-primary btn-quote" data-rid="${rid}">Send quote</button>
           <button class="btn btn-ghost btn-chat" data-rid="${rid}">Message</button>
@@ -2378,7 +2436,7 @@
       return `
       <div class="card" data-click="${r.id}" tabindex="0" role="button" aria-label="Open request: ${title}">
         <h3>${title}</h3>
-        <p>${esc(statusLabel(r.status))}${payLine} · ${ago(r.created_at)}${r.location ? ' · ' + esc(r.location) : ''}</p>
+        <p>${esc(statusLabel(r.status))}${payLine} · ${timeAgoHtml(r.created_at)}${r.location ? ' · ' + esc(r.location) : ''}</p>
         <p style="font-size:13px;color:var(--gray);margin:8px 0">${esc((r.description || '').slice(0, 140))}</p>
         <div class="row" style="align-items:center">
           <select class="invite-builder" data-rid="${r.id}" style="flex:1;min-width:160px;padding:10px;border:1px solid var(--border);border-radius:8px">
@@ -2478,7 +2536,7 @@
       <div class="card" data-click="${d.request_id}" tabindex="0" role="button" aria-label="Open disputed request" style="cursor:pointer">
         <h3>Dispute · ${esc(d.reason)}</h3>
         <p>${esc(d.details)}</p>
-        <p style="font-size:12px;color:var(--gray)">${esc(statusLabel(d.status))} · ${ago(d.created_at)}</p>
+        <p style="font-size:12px;color:var(--gray)">${esc(statusLabel(d.status))} · ${timeAgoHtml(d.created_at)}</p>
         <div class="row">
           <button class="btn btn-ghost btn-goto-req" data-rid="${d.request_id}">Open request</button>
           <button class="btn btn-primary btn-resolve" data-id="${d.id}" data-rid="${d.request_id}" data-how="resolved_client">Resolve → client</button>
@@ -2852,6 +2910,9 @@
       else if (st === 'awaiting_payment') hint = 'No messages yet — finish checkout to hold funds, then align on delivery here.';
       else if (st === 'cancelled') hint = 'This request was cancelled — messaging stays for history only.';
       else if (st === 'disputed') hint = 'Dispute open — keep messages factual; ORVO admin is reviewing.';
+      else if (st === 'funded' || st === 'in_progress') hint = 'Funds are held. Align on delivery here — mark delivered when the client can test.';
+      else if (st === 'delivered') hint = 'Work marked delivered. Client can release payment or open a dispute.';
+      else if (st === 'completed') hint = 'Project completed. You can still message for wrap-up notes.';
       return `<p class="empty" style="padding:20px">${esc(hint)}</p>`;
     })();
     box.scrollTop = box.scrollHeight;
@@ -2963,7 +3024,18 @@
         ${emptyCta}`;
       return;
     }
-    body.innerHTML = list.map(r => {
+    const qText = (window.__orvoThreadsQuery || '').trim().toLowerCase();
+    const filtered = qText
+      ? list.filter((r) => {
+        const prev = previews[r.id];
+        const hay = ((r.title || '') + ' ' + (r.status || '') + ' ' + (prev?.body || '')).toLowerCase();
+        return hay.includes(qText);
+      })
+      : list;
+    const searchBar = `<input class="admin-search" id="threads-search" type="search" placeholder="Search conversations…" value="${esc(window.__orvoThreadsQuery || '')}" autocomplete="off"/>`;
+    const emptyMatch = `<p class="empty">No conversations match that search.</p>
+      <button type="button" class="btn btn-ghost" id="btn-clear-threads-search" style="margin-top:12px;padding:8px 12px;font-size:12px">Clear search</button>`;
+    body.innerHTML = searchBar + (filtered.length ? filtered.map(r => {
       const prev = previews[r.id];
       const snippet = prev
         ? ((prev.sender_id === user.id ? 'You: ' : '') + prev.body).slice(0, 100) + (prev.body.length > 100 ? '…' : '')
@@ -2978,10 +3050,19 @@
         <div class="thread-meta">
           ${isUnread ? '<span class="badge-new">New</span>' : ''}
           ${r.status ? `<span class="badge">${esc(statusLabel(r.status))}</span>` : ''}
-          <span class="badge"><time datetime="${esc(t || '')}">${ago(t)}</time></span>
+          <span class="badge">${timeAgoHtml(t)}</span>
         </div>
       </div>`;
-    }).join('');
+    }).join('') : emptyMatch);
+    $('threads-search')?.addEventListener('input', (e) => {
+      window.__orvoThreadsQuery = e.target.value || '';
+      clearTimeout(window.__orvoThreadsSearchT);
+      window.__orvoThreadsSearchT = setTimeout(loadThreads, 280);
+    });
+    $('btn-clear-threads-search')?.addEventListener('click', () => {
+      window.__orvoThreadsQuery = '';
+      loadThreads();
+    });
     body.querySelectorAll('[data-click]').forEach(el => {
       wireActivate(el, () => go('chat', el.dataset.click));
     });
@@ -3848,6 +3929,7 @@
   document.querySelector('.channel-chip[data-channel="WhatsApp / Chat"]')?.classList.add('on');
 
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') { trapDashTab(e); return; }
     if (e.key !== 'Escape') return;
     if ($('confirm-modal')?.classList.contains('open')) closeConfirm(false);
     else if ($('reset-modal')?.classList.contains('open')) closePasswordReset();

@@ -445,3 +445,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **`followNotificationLink`** — inbox taps route to any dashboard view/rid
 - **Semantic timestamps** — `<time datetime>` on thread + notification badges
 - **Close dash** — history.back when nav stack exists; Escape uses same path
+
+## 2026-08-24T07:00Z — pulse (post-finale)
+- **Search** on threads, quotes, and notifications (empty-match + clear)
+- **`timeAgoHtml`** on requests, jobs, quotes, invites, disputes, admin, apply status
+- **Dashboard Tab trap** + skip link to `#view-body`
+- Chat empty hints for **funded / delivered / completed**
