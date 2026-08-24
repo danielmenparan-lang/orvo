@@ -29,7 +29,7 @@ Do these in order. One primary CTA for the whole day (clients **or** builders �
 - [ ] **11.** Evening — 10 client intros + 10 builder intros (scripts §3, EN default)
 - [ ] **12.** Night — tick §8 asset checklist; skim `08-gtm.md` Week 1 only
 
-**Do not:** auto-post from agents · claim live Stripe escrow · advertise “browse all jobs” before ≥5–8 approved builders.
+**Do not:** auto-post from agents · scrape LinkedIn / auto-DM · claim live Stripe escrow · advertise “browse all jobs” before ≥5–8 approved builders.
 
 ---
 
@@ -53,6 +53,7 @@ Do these in order. One primary CTA for the whole day (clients **or** builders �
 | 12:00 | LinkedIn comment / X | Post **4** (how it works) | same |
 | 18:00 | IG Feed or LinkedIn | Post **2** (pain) or **6** (example job) | same |
 | Evening | WhatsApp DMs | 10 SMB intros + 10 builder intros | scripts below |
+| Builders | LinkedIn People search | 10–15 founding-builder notes / day (50 tracker) | `LINKEDIN-BUILDER-OUTREACH.md` |
 
 Day-2: Post **3** (builders) + Post **5** (trust).  
 Day-3: Post **1** (brand) if you haven’t used it as pin.
@@ -141,7 +142,7 @@ Optional HE restaurant UTM: `?utm_source=seo&utm_medium=landing&utm_campaign=wa_
 | Cadence | Action |
 |---------|--------|
 | 2× daily | Review builder applications; approve/reject with reason |
-| Daily | 10–15 WhatsApp or LinkedIn touches |
+| Daily | 10–15 WhatsApp or LinkedIn touches (builders: `LINKEDIN-BUILDER-OUTREACH.md`) |
 | 4× week | Social from `10-social.md` (don’t burn all 10 in one day) |
 | End of week | Count: waitlist, builder apps, approvals, requests, quotes |
 
