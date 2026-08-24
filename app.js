@@ -329,12 +329,59 @@
     setTimeout(syncPageAriaHidden, 0);
   }
   function syncPageAriaHidden() {
-    const open = !!document.querySelector('.modal-bg.open');
-    document.querySelectorAll('main, nav, #dashboard, footer, #boot-error').forEach((el) => {
+    const modalOpen = !!document.querySelector('.modal-bg.open');
+    const dashOpen = $('dashboard')?.classList.contains('open');
+    const hideLanding = modalOpen || dashOpen;
+    document.querySelectorAll('main, nav, footer, #boot-error, #boot-error-actions').forEach((el) => {
       if (!el) return;
-      if (open) el.setAttribute('aria-hidden', 'true');
+      if (hideLanding) el.setAttribute('aria-hidden', 'true');
       else el.removeAttribute('aria-hidden');
     });
+    const dash = $('dashboard');
+    if (dash) {
+      if (modalOpen && dashOpen) dash.setAttribute('aria-hidden', 'true');
+      else dash.removeAttribute('aria-hidden');
+    }
+  }
+
+  let dashFocusReturn = null;
+  function focusDashOpen() {
+    dashFocusReturn = document.activeElement;
+    syncPageAriaHidden();
+    setTimeout(() => $('dashboard')?.querySelector('[data-action="close-dash"]')?.focus?.(), 40);
+  }
+  function blurDashClose() {
+    const ret = dashFocusReturn;
+    dashFocusReturn = null;
+    if (ret && typeof ret.focus === 'function' && document.contains(ret)) {
+      setTimeout(() => ret.focus(), 0);
+    }
+    syncPageAriaHidden();
+  }
+
+  function followNotificationLink(link) {
+    if (!link) return false;
+    let qs = String(link).trim();
+    if (qs.includes('?')) qs = qs.split('?').pop();
+    else if (qs.startsWith('?')) qs = qs.slice(1);
+    const params = new URLSearchParams(qs);
+    const rid = params.get('rid');
+    if (rid) { go('chat', rid); return true; }
+    const status = params.get('status');
+    const allowedStatus = new Set(['open', 'awaiting_payment', 'funded', 'delivered', 'completed', 'disputed']);
+    if (status && allowedStatus.has(status)) window.__orvoAllReqsStatus = status;
+    let v = params.get('view');
+    if (!v && status && allowedStatus.has(status) && isAdmin()) v = 'all-requests';
+    if (!v) return false;
+    const allowed = new Set([
+      'requests', 'jobs', 'invites', 'quotes', 'messages', 'apply', 'status',
+      'profile', 'admin', 'all-requests', 'disputes', 'notifications',
+    ]);
+    if (!allowed.has(v)) return false;
+    if ((v === 'all-requests' || v === 'admin' || v === 'disputes') && !isAdmin()) return false;
+    if ((v === 'jobs' || v === 'invites' || v === 'quotes') && !(isBuilder() || isAdmin())) return false;
+    go(v);
+    return true;
   }
 
   function isConfiguredFounder() {
@@ -1282,6 +1329,7 @@
     renderSidebar();
     refreshFounderSetupBanner();
     refreshBuilderPayoutBanner();
+    focusDashOpen();
     go(preferredView || homeViewForRole());
   }
 
@@ -1294,6 +1342,16 @@
     stopChat();
     stopCheckoutPoll();
     syncDashUrl();
+    blurDashClose();
+  }
+
+  function closeDashFromButton() {
+    if (window.history.state?.orvoView && window.history.length > 1) {
+      __orvoPushNav = false;
+      window.history.back();
+      return;
+    }
+    closeDash();
   }
 
   function renderSidebar() {
@@ -1485,7 +1543,7 @@
         return `<div class="card ${unread ? 'notif-unread' : ''}" data-nid="${n.id}" data-link="${esc(n.link_path || '')}" tabindex="0" role="button" aria-label="${esc(n.title)}" style="cursor:pointer">
           <h3>${esc(n.title)}</h3>
           ${n.body ? `<p>${esc(n.body)}</p>` : ''}
-          <span class="badge">${unread ? 'New · ' : ''}${ago(n.created_at)}</span>
+          <span class="badge">${unread ? 'New · ' : ''}<time datetime="${esc(n.created_at || '')}">${ago(n.created_at)}</time></span>
         </div>`;
       }).join('');
       body.querySelectorAll('[data-nid]').forEach((el) => {
@@ -1496,12 +1554,7 @@
             await needDb().from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id).eq('user_id', user.id);
           } catch (_) { /* ignore */ }
           refreshNotifBadge();
-          if (link.includes('rid=')) {
-            const rid = new URLSearchParams(link.replace(/^\?/, '')).get('rid');
-            if (rid) { go('chat', rid); return; }
-          }
-          if (link.includes('view=invites')) { go('invites'); return; }
-          if (link.includes('view=messages')) { go('messages'); return; }
+          if (followNotificationLink(link)) return;
           loadNotifications();
         };
         wireActivate(el, open);
@@ -2925,7 +2978,7 @@
         <div class="thread-meta">
           ${isUnread ? '<span class="badge-new">New</span>' : ''}
           ${r.status ? `<span class="badge">${esc(statusLabel(r.status))}</span>` : ''}
-          <span class="badge">${ago(t)}</span>
+          <span class="badge"><time datetime="${esc(t || '')}">${ago(t)}</time></span>
         </div>
       </div>`;
     }).join('');
@@ -3666,6 +3719,7 @@
     dash.setAttribute('aria-modal', 'true');
     document.body.style.overflow = 'hidden';
     renderSidebar();
+    focusDashOpen();
   }
 
   // ── EVENT ROUTER ──
@@ -3727,7 +3781,7 @@
     else if (a === 'invites') { e.preventDefault(); user ? (openDash('invites'), go('invites')) : openAuth('login'); }
     else if (a === 'notifications') { e.preventDefault(); user ? (openDash('notifications'), go('notifications')) : openAuth('login'); }
     else if (a === 'admin') { e.preventDefault(); user ? (openDash('admin'), go('admin')) : openAuth('login'); }
-    else if (a === 'close-dash') { e.preventDefault(); closeDash(); }
+    else if (a === 'close-dash') { e.preventDefault(); closeDashFromButton(); }
     else if (a === 'close-quote') closeQuote();
     else if (a === 'close-post') closePost();
     else if (a === 'close-pay') closePay();
@@ -3803,7 +3857,7 @@
     else if ($('quote-modal').classList.contains('open')) closeQuote();
     else if ($('post-modal').classList.contains('open')) closePost();
     else if ($('auth-modal').classList.contains('open')) closeAuth();
-    else if ($('dashboard').classList.contains('open')) closeDash();
+    else if ($('dashboard').classList.contains('open')) closeDashFromButton();
   });
 
   window.addEventListener('popstate', () => {

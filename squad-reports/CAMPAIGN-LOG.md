@@ -439,3 +439,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **loadChat errors** — schema APPLY-ALL empty state; missing request → messages
 - Chat **view-title** from request title; composer disabled for **disputed** (facts-only hint)
 - Dashboard **dialog aria** on openDash/closeDash; `#view-action` flex layout
+
+## 2026-08-24T06:30Z — pulse (post-finale)
+- **Dashboard a11y** — landing aria-hidden when dash open; focus close button on open
+- **`followNotificationLink`** — inbox taps route to any dashboard view/rid
+- **Semantic timestamps** — `<time datetime>` on thread + notification badges
+- **Close dash** — history.back when nav stack exists; Escape uses same path
