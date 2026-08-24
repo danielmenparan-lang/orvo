@@ -3,7 +3,7 @@
 ## Verdict
 **Integrity PASS · Stripe IMPLEMENTED (founder deploy pending)**
 
-Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pulses (12:00→02:00 Aug 24) added founder onboarding, full Stripe Edge handlers, client polish, admin KPI filters, and ops scripts — without reopening strategy locks.
+Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pulses (12:00→02:30 Aug 24) added founder onboarding, full Stripe Edge handlers, client polish, admin KPI filters, and ops scripts — without reopening strategy locks.
 
 ## Gates (updated)
 
@@ -48,6 +48,8 @@ Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pu
 | Apply/status schema errors | PASS | founderSchemaFixHtml on load |
 | Thread/notif keyboard a11y | PASS | tabindex + Enter/Space |
 | wireActivate + list cards | PASS | requests/quotes click-to-open; KPI chips |
+| Modal schema errors | PASS | showSchemaMsg on post/quote/dispute/review |
+| Invites/disputes/active nav | PASS | card open + sidebar aria-current |
 
 ## Founder execution (only remaining)
 
@@ -65,4 +67,4 @@ bash scripts/founder-setup.sh   # ordered steps
 - STRIPE_PAYMENT_LINK  
 - Client-written held/funded  
 
-— ORVO Judge · post-finale summary 2026-08-24T02:00Z
+— ORVO Judge · post-finale summary 2026-08-24T02:30Z

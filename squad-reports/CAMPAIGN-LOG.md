@@ -391,3 +391,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Admin KPI cards** + status filter chips keyboard accessible
 - **My requests / My quotes** cards click-to-open (buttons still work)
 - **doApply** schema errors → founderSchemaFixHtml inline
+
+## 2026-08-24T02:30Z — pulse (post-finale)
+- **`showSchemaMsg`** — post/quote/dispute/review modals get APPLY-ALL CTAs on schema errors
+- **Active jobs, invites, disputes** cards click-to-open + keyboard nav
+- Sidebar **`aria-current="page"`** on active nav item

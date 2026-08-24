@@ -197,6 +197,20 @@
     el.classList.remove('hidden');
   }
 
+  function showSchemaMsg(id, text, hint) {
+    const el = $(id);
+    if (!el) return;
+    const msg = userFacingErr(text);
+    if (isDbSchemaErr(text)) {
+      el.innerHTML = `<span>${esc(msg)}</span>${founderSchemaFixHtml(hint || 'Schema missing? Run APPLY-ALL SQL.')}`;
+      wireFounderSchemaFix(el);
+    } else {
+      el.textContent = msg;
+    }
+    el.className = 'msg err';
+    el.classList.remove('hidden');
+  }
+
   function hideMsg(id) { $(id)?.classList.add('hidden'); }
 
   function bootErr(msg, { setupHint = false } = {}) {
@@ -1248,8 +1262,11 @@
     }
     view = v;
     chatRequestId = v === 'chat' ? id : null;
-    $('sidebar').querySelectorAll('.side-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.view === v);
+    $('sidebar').querySelectorAll('.side-item[data-view]').forEach(el => {
+      const on = el.dataset.view === v;
+      el.classList.toggle('active', on);
+      if (on) el.setAttribute('aria-current', 'page');
+      else el.removeAttribute('aria-current');
     });
     $('view-action').innerHTML = '';
     const titles = {
@@ -1325,7 +1342,7 @@
       go('requests');
       toast('Request posted!', true);
     } catch (e) {
-      showMsg('post-msg', e.message, false);
+      showSchemaMsg('post-msg', e?.message || String(e), 'Requests need APPLY-ALL SQL (001–020).');
     } finally { btn.disabled = false; }
   }
 
@@ -1580,15 +1597,18 @@
       </div>` : '';
     const activeHtml = (activeJobs || []).length ? `
       <h3 style="font-size:15px;margin:0 0 12px">Your active jobs</h3>
-      ${(activeJobs || []).map((r) => `
-      <div class="card" style="border-left:3px solid var(--o);margin-bottom:12px">
-        <h3>${esc(r.title)}</h3>
+      ${(activeJobs || []).map((r) => {
+        const title = esc(r.title || 'Project');
+        return `
+      <div class="card" data-click="${r.id}" tabindex="0" role="button" aria-label="Open active job: ${title}" style="border-left:3px solid var(--o);margin-bottom:12px">
+        <h3>${title}</h3>
         <p style="font-size:13px;color:var(--gray);margin:6px 0 10px">${esc((r.description || '').slice(0, 100))}${(r.description || '').length > 100 ? '…' : ''}</p>
         <div class="row">
           <span class="badge">${esc(statusLabel(r.status))}</span>
           <button class="btn btn-primary btn-open-active" data-rid="${r.id}">Open project</button>
         </div>
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
       <hr style="border:none;border-top:1px solid var(--border);margin:20px 0 16px"/>
       <h3 style="font-size:15px;margin:0 0 12px">Browse open jobs</h3>` : '';
     const bindJobsSearch = () => {
@@ -1599,6 +1619,12 @@
       });
     };
     const bindActiveBtns = () => {
+      body.querySelectorAll('[data-click]').forEach((el) => {
+        wireActivate(el, (e) => {
+          if (e?.target?.closest?.('button')) return;
+          go('chat', el.dataset.click);
+        });
+      });
       body.querySelectorAll('.btn-open-active').forEach((b) => {
         b.addEventListener('click', () => go('chat', b.dataset.rid));
       });
@@ -1677,7 +1703,7 @@
       track('quote_sent', { request_id: quoteRequestId, amount_cents: cents, delivery_days: eta });
       toast('Quote sent!', true);
     } catch (e) {
-      showMsg('quote-msg', e.message, false);
+      showSchemaMsg('quote-msg', e?.message || String(e), 'Quotes need APPLY-ALL SQL (001–020).');
     } finally { btn.disabled = false; }
   }
 
@@ -2045,19 +2071,27 @@
     }
     body.innerHTML = data.map(inv => {
       const r = inv.requests || {};
+      const rid = r.id || inv.request_id;
+      const title = esc(r.title || 'Request');
       return `
-      <div class="card">
+      <div class="card" data-click="${rid}" tabindex="0" role="button" aria-label="Open invite: ${title}">
         <span class="tag">${esc(r.category || 'Invite')}</span>
-        <h3>${esc(r.title || 'Request')}</h3>
+        <h3>${title}</h3>
         <p>${esc((r.description || '').slice(0, 160))}</p>
         <p>Budget: ${esc(r.budget || 'Not specified')}${r.location ? ' · ' + esc(r.location) : ''}</p>
         ${inv.note ? `<p style="font-size:12px;color:var(--gray)">Note: ${esc(inv.note)}</p>` : ''}
         <div class="row">
-          <button class="btn btn-primary btn-quote" data-rid="${r.id || inv.request_id}">Send quote</button>
-          <button class="btn btn-ghost btn-chat" data-rid="${r.id || inv.request_id}">Message</button>
+          <button class="btn btn-primary btn-quote" data-rid="${rid}">Send quote</button>
+          <button class="btn btn-ghost btn-chat" data-rid="${rid}">Message</button>
         </div>
       </div>`;
     }).join('');
+    body.querySelectorAll('[data-click]').forEach((el) => {
+      wireActivate(el, (e) => {
+        if (e?.target?.closest?.('button')) return;
+        go('chat', el.dataset.click);
+      });
+    });
     body.querySelectorAll('.btn-quote').forEach(b => b.addEventListener('click', () => openQuoteModal(b.dataset.rid)));
     body.querySelectorAll('.btn-chat').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
   }
@@ -2211,7 +2245,7 @@
       return;
     }
     $('view-body').innerHTML = data.map(d => `
-      <div class="card" style="cursor:default">
+      <div class="card" data-click="${d.request_id}" tabindex="0" role="button" aria-label="Open disputed request" style="cursor:pointer">
         <h3>Dispute · ${esc(d.reason)}</h3>
         <p>${esc(d.details)}</p>
         <p style="font-size:12px;color:var(--gray)">${esc(statusLabel(d.status))} · ${ago(d.created_at)}</p>
@@ -2221,6 +2255,12 @@
           <button class="btn btn-primary btn-resolve" data-id="${d.id}" data-rid="${d.request_id}" data-how="resolved_builder">Resolve → builder</button>
         </div>
       </div>`).join('');
+    $('view-body').querySelectorAll('[data-click]').forEach((el) => {
+      wireActivate(el, (e) => {
+        if (e?.target?.closest?.('button')) return;
+        go('chat', el.dataset.click);
+      });
+    });
     $('view-body').querySelectorAll('.btn-goto-req').forEach(b => b.addEventListener('click', () => go('chat', b.dataset.rid)));
     $('view-body').querySelectorAll('.btn-resolve').forEach(b => {
       b.addEventListener('click', () => resolveDispute(b.dataset.id, b.dataset.rid, b.dataset.how));
@@ -2737,8 +2777,9 @@
       toast('Thanks for the review!', true);
       loadChat();
     } catch (e) {
-      showMsg('review-msg', userFacingErr(e.message), false);
-      toast(userFacingErr(e.message), false);
+      const msg = e?.message || String(e);
+      showSchemaMsg('review-msg', msg, 'Reviews need APPLY-ALL SQL (010+).');
+      if (!isDbSchemaErr(msg)) toast(userFacingErr(msg), false);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Submit review'; }
     }
@@ -2845,8 +2886,9 @@
       toast('Dispute opened — release frozen', true);
       loadChat();
     } catch (e) {
-      showMsg('dispute-msg', userFacingErr(e.message), false);
-      toast(userFacingErr(e.message), false);
+      const msg = e?.message || String(e);
+      showSchemaMsg('dispute-msg', msg, 'Disputes need APPLY-ALL SQL (009+).');
+      if (!isDbSchemaErr(msg)) toast(userFacingErr(msg), false);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Open dispute'; }
     }
