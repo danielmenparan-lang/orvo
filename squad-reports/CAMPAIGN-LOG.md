@@ -525,3 +525,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Slash-to-search** — `/` focuses dashboard search
 - **Copy link Copied!** — view + request link flash; skip-to-content → landing
 - **Dispute field disable** — details locked while submit
+
+## 2026-08-24T14:00Z — pulse (post-finale)
+- **Last email** — restore from localStorage; focus password when prefilled
+- **Toast dismiss** — click or Escape (before closing dashboard)
+- **Ctrl/Cmd+K** — focuses dashboard search; invites list search
+- **Mark all read** — Marking… busy; admin Copy events flashes Copied!

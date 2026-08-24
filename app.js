@@ -186,6 +186,12 @@
     clearTimeout(el._t);
     el._t = setTimeout(() => el.classList.remove('show'), 3500);
   }
+  function hideToast() {
+    const el = $('toast');
+    if (!el) return;
+    el.classList.remove('show');
+    clearTimeout(el._t);
+  }
 
   function loadingSkeleton(n) {
     const lines = Array.from({ length: n || 3 }, (_, i) =>
@@ -1081,6 +1087,9 @@
   function openAuth(tab) {
     hideMsg('login-msg'); hideMsg('signup-msg');
     clearFieldInvalid(['login-email', 'login-pass', 'signup-name', 'signup-email', 'signup-pass']);
+    const saved = restoredEmail();
+    if ($('login-email') && !$('login-email').value && saved) $('login-email').value = saved;
+    if ($('signup-email') && !$('signup-email').value && saved) $('signup-email').value = saved;
     const el = $('auth-modal');
     el.classList.add('open');
     setAuthTab(tab || 'login');
@@ -1090,7 +1099,8 @@
         ? 'Sign in or create an account to post your agent brief.'
         : 'Sign in or create your account';
     }
-    focusModal(el, tab === 'signup' ? '#signup-name' : '#login-email');
+    const loginFocus = ($('login-email')?.value && !$('login-pass')?.value) ? '#login-pass' : '#login-email';
+    focusModal(el, tab === 'signup' ? '#signup-name' : loginFocus);
   }
   function closeAuth() {
     const el = $('auth-modal');
@@ -1108,6 +1118,13 @@
   }
   function looksLikeEmail(s) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+  }
+  function rememberEmail(email) {
+    if (!looksLikeEmail(email)) return;
+    try { localStorage.setItem('orvo.lastEmail', String(email).trim().toLowerCase()); } catch { /* private mode */ }
+  }
+  function restoredEmail() {
+    try { return (localStorage.getItem('orvo.lastEmail') || '').trim(); } catch { return ''; }
   }
   function syncChipPressed(selector) {
     document.querySelectorAll(selector).forEach((x) => {
@@ -1508,6 +1525,7 @@
         postSignupIntent = 'client';
         await refreshUser();
         if ($('signup-pass')) $('signup-pass').value = '';
+        rememberEmail(email);
         closeAuth();
         routeAfterSignup(intent);
         toast('Welcome!', true);
@@ -1516,6 +1534,7 @@
       setAuthTab('login');
       postSignupIntent = 'client';
       if ($('signup-pass')) $('signup-pass').value = '';
+      rememberEmail(email);
       showMsg('login-msg', 'Account created! Sign in to continue.', true);
     } catch (e) {
       showMsg('signup-msg', userFacingErr(e?.message || String(e)), false);
@@ -1581,6 +1600,7 @@
       }
       if (!data.session) throw new Error('No session');
       await refreshUser();
+      rememberEmail(email);
       closeAuth();
       if ($('login-pass')) $('login-pass').value = '';
       routeAfterLogin();
@@ -1793,6 +1813,8 @@
       $('view-action').innerHTML = `<button class="btn btn-ghost" id="btn-mark-all-read" style="padding:8px 12px;font-size:12px">Mark all read</button>${refreshViewBtnHtml()}${copyViewBtnHtml()}`;
       wireRefreshView();
       $('btn-mark-all-read')?.addEventListener('click', async () => {
+        const btn = $('btn-mark-all-read');
+        if (btn) { btn.disabled = true; btn.textContent = 'Marking…'; }
         try {
           await needDb().from('notifications').update({ read_at: new Date().toISOString() })
             .eq('user_id', user.id).is('read_at', null);
@@ -1801,6 +1823,7 @@
           loadNotifications();
         } catch (e) {
           toast(userFacingErr(e.message), false);
+          if (btn) { btn.disabled = false; btn.textContent = 'Mark all read'; }
         }
       });
       loadNotifications();
@@ -2651,6 +2674,7 @@
       try {
         await navigator.clipboard.writeText(text);
         toast('Copied ' + rows.length + ' session events', true);
+        flashBtnLabel($('admin-events'), 'Copied!');
       } catch {
         toast(rows.length ? 'Events in console' : 'No events yet', true);
         console.info('[ORVO] events dump', rows);
@@ -2827,7 +2851,17 @@
         <button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-goto="jobs">Browse jobs</button>`;
       return;
     }
-    body.innerHTML = data.map(inv => {
+    const qText = (window.__orvoInvitesQuery || '').trim().toLowerCase();
+    const rows = qText
+      ? data.filter((inv) => {
+          const r = inv.requests || {};
+          return ((r.title || '') + ' ' + (r.description || '') + ' ' + (r.category || '') + ' ' + (inv.note || '')).toLowerCase().includes(qText);
+        })
+      : data;
+    const searchBar = `<input class="admin-search" id="invites-search" type="search" placeholder="Search invites…" value="${esc(window.__orvoInvitesQuery || '')}" autocomplete="off"/>`;
+    const emptyMatch = `<p class="empty">No invites match that search.</p>
+      <button type="button" class="btn btn-ghost" id="btn-clear-invites-search" style="margin-top:12px;padding:8px 12px;font-size:12px">Clear search</button>`;
+    body.innerHTML = searchBar + (rows.length ? rows.map(inv => {
       const r = inv.requests || {};
       const rid = r.id || inv.request_id;
       const title = esc(r.title || 'Request');
@@ -2844,7 +2878,16 @@
           <button class="btn btn-ghost btn-chat" data-rid="${rid}">Message</button>
         </div>
       </div>`;
-    }).join('');
+    }).join('') : emptyMatch);
+    $('invites-search')?.addEventListener('input', (e) => {
+      window.__orvoInvitesQuery = e.target.value || '';
+      clearTimeout(window.__orvoInvitesSearchT);
+      window.__orvoInvitesSearchT = setTimeout(loadInvites, 280);
+    });
+    $('btn-clear-invites-search')?.addEventListener('click', () => {
+      window.__orvoInvitesQuery = '';
+      loadInvites();
+    });
     body.querySelectorAll('[data-click]').forEach((el) => {
       wireActivate(el, (e) => {
         if (e?.target?.closest?.('button')) return;
@@ -4491,6 +4534,17 @@
   syncChipPressed('.budget-chip');
 
   document.addEventListener('keydown', (e) => {
+    const dashOpen = $('dashboard')?.classList.contains('open');
+    const modalOpen = !!document.querySelector('.modal-bg.open');
+    if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey) && !e.altKey && dashOpen && !modalOpen) {
+      const search = $('dashboard').querySelector('.admin-search');
+      if (search) {
+        e.preventDefault();
+        search.focus();
+        search.select();
+        return;
+      }
+    }
     if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const t = e.target;
       const typing = t && (
@@ -4527,6 +4581,7 @@
       else if ($('quote-modal').classList.contains('open')) closeQuote();
       else if ($('post-modal').classList.contains('open')) closePost();
       else if ($('auth-modal').classList.contains('open')) closeAuth();
+      else if ($('toast')?.classList.contains('show')) hideToast();
       else if ($('dashboard').classList.contains('open')) closeDashFromButton();
     }
   });
@@ -4730,6 +4785,7 @@
   // ── BOOT ──
   $('boot-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
   $('boot-copy-founder-setup')?.addEventListener('click', () => copyFounderSetupCmd());
+  $('toast')?.addEventListener('click', hideToast);
 
   async function boot() {
     if (!window.supabase?.createClient) {

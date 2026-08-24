@@ -445,9 +445,9 @@ footer{
   transform:translateX(-50%) translateY(8px);z-index:9999;padding:12px 24px;border-radius:8px;
   color:#fff;font-size:14px;opacity:0;background:var(--ink);
   transition:opacity .3s,transform .3s var(--ease);pointer-events:none;
-  max-width:calc(100vw - 32px);text-align:center;
+  max-width:calc(100vw - 32px);text-align:center;cursor:pointer;
 }
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 
 @media(max-width:768px){
   .screen-body{grid-template-columns:1fr;padding:16px;gap:16px}
@@ -512,7 +512,7 @@ footer{
   <a href="founder-checklist.html">Setup checklist →</a>
 </div>
 <div id="offline-banner" role="status" aria-live="polite">You are offline — changes will sync when you reconnect.</div>
-<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true" title="Click to dismiss"></div>
 
 <nav>
   <a class="logo" href="#" data-action="home"><span>O</span>RVO</a>
@@ -861,6 +861,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=71"></script>
+<script src="app.js?v=72"></script>
 </body>
 </html>
