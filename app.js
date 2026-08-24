@@ -1185,7 +1185,7 @@
       postSignupIntent = 'client';
       showMsg('login-msg', 'Account created! Sign in to continue.', true);
     } catch (e) {
-      showMsg('signup-msg', e.message, false);
+      showMsg('signup-msg', userFacingErr(e?.message || String(e)), false);
     } finally {
       btn.disabled = false;
       btn.textContent = 'Create account';
@@ -1204,7 +1204,7 @@
       if (error) throw error;
       showMsg('login-msg', 'Password reset email sent — check your inbox', true);
     } catch (e) {
-      showMsg('login-msg', e.message, false);
+      showMsg('login-msg', userFacingErr(e?.message || String(e)), false);
     }
   }
 
@@ -1218,8 +1218,13 @@
       if (!email || !pass) throw new Error('Enter email and password');
       const { data, error } = await needDb().auth.signInWithPassword({ email, password: pass });
       if (error) {
-        if (/email not confirmed/i.test(error.message))
-          throw new Error('Turn OFF "Confirm email" in Supabase → Authentication → Email');
+        if (/email not confirmed/i.test(error.message)) {
+          const cfg = cfgAdminEmail();
+          const isFounderEmail = !!(cfg && email.toLowerCase() === cfg);
+          throw new Error(isFounderEmail
+            ? 'Email not confirmed — Supabase Auth → turn OFF Confirm email for MVP, or confirm via inbox'
+            : 'Confirm your email from the message we sent, then sign in again.');
+        }
         throw error;
       }
       if (!data.session) throw new Error('No session');
@@ -1228,7 +1233,7 @@
       routeAfterLogin();
       toast('Signed in!', true);
     } catch (e) {
-      showMsg('login-msg', e.message, false);
+      showMsg('login-msg', userFacingErr(e.message), false);
     } finally {
       btn.disabled = false;
       btn.textContent = 'Sign in';
@@ -2629,6 +2634,13 @@
     };
     chatInput?.addEventListener('input', updateCount);
     updateCount();
+    if (req?.status === 'cancelled') {
+      if (chatInput) {
+        chatInput.disabled = true;
+        chatInput.placeholder = 'Request cancelled — messaging closed';
+      }
+      $('chat-form')?.querySelector('button[type="submit"]')?.setAttribute('disabled', 'true');
+    }
     await renderMsgs();
     stopPayWatch();
     chatSub = needDb().channel('c-' + rid)
@@ -2676,7 +2688,15 @@
     box.innerHTML = (data || []).map(m => {
       const mine = m.sender_id === user.id;
       return `<div class="chat-bubble ${mine ? 'me' : 'them'}"><small>${mine ? 'You' : esc(names[m.sender_id] || 'User')}</small>${esc(m.body)}<span class="chat-time">${ago(m.created_at)}</span></div>`;
-    }).join('') || '<p class="empty" style="padding:20px">Start chatting...</p>';
+    }).join('') || (() => {
+      const st = chatRequestStatus || 'open';
+      let hint = 'Start chatting — keep scope, quotes, and delivery links on ORVO.';
+      if (st === 'open') hint = 'No messages yet. Clients: wait for quotes. Builders: message after you send a quote.';
+      else if (st === 'awaiting_payment') hint = 'No messages yet — finish checkout to hold funds, then align on delivery here.';
+      else if (st === 'cancelled') hint = 'This request was cancelled — messaging stays for history only.';
+      else if (st === 'disputed') hint = 'Dispute open — keep messages factual; ORVO admin is reviewing.';
+      return `<p class="empty" style="padding:20px">${esc(hint)}</p>`;
+    })();
     box.scrollTop = box.scrollHeight;
   }
 
@@ -2705,14 +2725,14 @@
       });
       if (error) {
         if (/row-level security|permission denied/i.test(error.message)) {
-          throw new Error(userFacingErr('Cannot send message right now. Please try again.'));
+          throw new Error('Cannot send message right now. Please try again.');
         }
         throw error;
       }
       await renderMsgs();
     } catch (err) {
       input.value = body;
-      toast(err.message, false);
+      toastSchemaErr(err?.message || String(err));
     }
   }
 

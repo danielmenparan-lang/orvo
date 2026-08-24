@@ -619,14 +619,14 @@ footer{
       <button class="tab" id="tab-signup" data-action="tab-signup">Create account</button>
     </div>
     <div id="panel-login">
-      <div id="login-msg" class="msg hidden"></div>
+      <div id="login-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
       <div class="field"><label>Email</label><input id="login-email" type="email" autocomplete="email"/></div>
       <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password"/></div>
       <p style="margin:-8px 0 16px;text-align:right"><button type="button" class="hero-secondary" id="forgot-btn" style="font-size:12px;color:var(--gray)">Forgot password?</button></p>
       <button class="btn-black" id="login-btn">Sign in</button>
     </div>
     <div id="panel-signup" class="hidden">
-      <div id="signup-msg" class="msg hidden"></div>
+      <div id="signup-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
       <div class="field"><label>Full name</label><input id="signup-name"/></div>
       <div class="field"><label>Email</label><input id="signup-email" type="email" autocomplete="email"/></div>
       <div class="field"><label>Password</label><input id="signup-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
@@ -647,7 +647,7 @@ footer{
     <button class="modal-close" data-action="close-reset" aria-label="Close">✕</button>
     <h2 id="reset-title">Set a new password</h2>
     <p class="sub">Choose a new password for your ORVO account</p>
-    <div id="reset-msg" class="msg hidden"></div>
+    <div id="reset-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="field"><label>New password</label><input id="reset-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
     <div class="field"><label>Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password"/></div>
     <button class="btn-black" id="reset-btn">Update password</button>
@@ -838,6 +838,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=55"></script>
+<script src="app.js?v=56"></script>
 </body>
 </html>

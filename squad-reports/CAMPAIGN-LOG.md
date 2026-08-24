@@ -414,3 +414,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Modal backdrop click** dismisses sheets; page `aria-hidden` while modal open
 - **toastSchemaErr** on resolve dispute + release payment
 - Judge gates synced for 03:30 + 04:00
+
+## 2026-08-24T04:30Z — pulse (post-finale)
+- **Auth errors** — userFacingErr; email-confirm copy honest (founder vs user)
+- **Chat empty** status-aware hints; composer disabled when cancelled
+- **sendMsg** toastSchemaErr; login/signup/reset msgs `role="alert"`
+- Judge gates for 04:00 + 04:30
