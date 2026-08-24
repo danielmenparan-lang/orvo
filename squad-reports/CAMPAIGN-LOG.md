@@ -473,3 +473,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Form labels** — `for=` on auth, post, quote, dispute, review, apply fields
 - Modal error msgs (`quote`/`pay`/`post`/`dispute`/`review`) get `role="alert"`
 - Status view title reflects pending/approved; admin uses shared Refresh
+
+## 2026-08-24T09:30Z — pulse (post-finale)
+- **Last dashboard view** restored from sessionStorage when reopening (role-guarded)
+- **Password min-6 live hint** on signup + reset; Show/Hide toggles on login/signup/reset
+- Browse jobs cards show **posted time** via timeAgoHtml

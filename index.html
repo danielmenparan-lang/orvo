@@ -395,6 +395,7 @@ footer{
 .field textarea{resize:vertical;min-height:88px}
 .field-hint{font-size:11px;color:var(--muted);margin-top:4px}
 .field-hint.warn{color:var(--o)}
+.pass-toggle{font-size:12px;color:var(--gray);margin-top:4px;display:inline-block}
 .msg{padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px}
 .msg.err{background:#FEE2E2;color:var(--red)}
 .msg.ok{background:#DCFCE7;color:var(--green)}
@@ -623,7 +624,9 @@ footer{
     <div id="panel-login">
       <div id="login-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
       <div class="field"><label for="login-email">Email</label><input id="login-email" type="email" autocomplete="email"/></div>
-      <div class="field"><label for="login-pass">Password</label><input id="login-pass" type="password" autocomplete="current-password"/></div>
+      <div class="field"><label for="login-pass">Password</label><input id="login-pass" type="password" autocomplete="current-password"/>
+        <button type="button" class="hero-secondary pass-toggle" data-pass-toggle="login-pass" aria-pressed="false">Show</button>
+      </div>
       <p style="margin:-8px 0 16px;text-align:right"><button type="button" class="hero-secondary" id="forgot-btn" style="font-size:12px;color:var(--gray)">Forgot password?</button></p>
       <button class="btn-black" id="login-btn">Sign in</button>
     </div>
@@ -631,7 +634,10 @@ footer{
       <div id="signup-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
       <div class="field"><label for="signup-name">Full name</label><input id="signup-name"/></div>
       <div class="field"><label for="signup-email">Email</label><input id="signup-email" type="email" autocomplete="email"/></div>
-      <div class="field"><label for="signup-pass">Password</label><input id="signup-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
+      <div class="field"><label for="signup-pass">Password</label><input id="signup-pass" type="password" autocomplete="new-password"/>
+        <p class="field-hint" id="signup-pass-hint">Min 6 characters</p>
+        <button type="button" class="hero-secondary pass-toggle" data-pass-toggle="signup-pass" aria-pressed="false">Show</button>
+      </div>
       <div class="field"><label for="signup-intent">I want to</label>
         <select id="signup-intent">
           <option value="client">Find a builder — post agent requests</option>
@@ -650,7 +656,10 @@ footer{
     <h2 id="reset-title">Set a new password</h2>
     <p class="sub">Choose a new password for your ORVO account</p>
     <div id="reset-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
-    <div class="field"><label for="reset-pass">New password</label><input id="reset-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
+    <div class="field"><label for="reset-pass">New password</label><input id="reset-pass" type="password" autocomplete="new-password"/>
+      <p class="field-hint" id="reset-pass-hint">Min 6 characters</p>
+      <button type="button" class="hero-secondary pass-toggle" data-pass-toggle="reset-pass" aria-pressed="false">Show</button>
+    </div>
     <div class="field"><label for="reset-pass2">Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password"/></div>
     <button class="btn-black" id="reset-btn">Update password</button>
   </div>
@@ -842,6 +851,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=62"></script>
+<script src="app.js?v=63"></script>
 </body>
 </html>

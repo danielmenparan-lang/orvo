@@ -1471,6 +1471,30 @@
     return 'requests';
   }
 
+  function rememberDashView(v, id) {
+    try {
+      sessionStorage.setItem('orvo_last_view', JSON.stringify({
+        v,
+        rid: v === 'chat' ? (id || chatRequestId || null) : null,
+      }));
+    } catch { /* private mode */ }
+  }
+
+  function restoreDashView() {
+    try {
+      const last = JSON.parse(sessionStorage.getItem('orvo_last_view') || 'null');
+      if (!last?.v) return go(homeViewForRole());
+      const v = last.v;
+      if ((v === 'all-requests' || v === 'admin' || v === 'disputes') && !isAdmin()) return go(homeViewForRole());
+      if ((v === 'jobs' || v === 'invites' || v === 'quotes') && !(isBuilder() || isAdmin())) return go(homeViewForRole());
+      if (v === 'apply' && isBuilder()) return go('jobs');
+      if (v === 'chat' && last.rid) return go('chat', last.rid);
+      return go(v);
+    } catch {
+      return go(homeViewForRole());
+    }
+  }
+
   function openDash(preferredView) {
     if (!user) { openAuth('login'); return; }
     const dash = $('dashboard');
@@ -1482,7 +1506,8 @@
     refreshFounderSetupBanner();
     refreshBuilderPayoutBanner();
     focusDashOpen();
-    go(preferredView || homeViewForRole());
+    if (preferredView) go(preferredView);
+    else restoreDashView();
   }
 
   function closeDash() {
@@ -1568,6 +1593,7 @@
     }
     view = v;
     chatRequestId = v === 'chat' ? id : null;
+    rememberDashView(v, chatRequestId);
     $('sidebar').querySelectorAll('.side-item[data-view]').forEach(el => {
       const on = el.dataset.view === v;
       el.classList.toggle('active', on);
@@ -2023,7 +2049,7 @@
         <span class="tag">${esc(r.category || 'Project')}</span>
         <h3>${title}</h3>
         <p>${esc(r.description)}</p>
-        <p>Budget: ${esc(r.budget || 'Not specified')}${r.location ? ' · ' + esc(r.location) : ''}</p>
+        <p>Budget: ${esc(r.budget || 'Not specified')}${r.location ? ' · ' + esc(r.location) : ''} · ${timeAgoHtml(r.created_at)}</p>
         <div class="row">
           ${already
             ? `<span class="badge">Quote pending</span><button class="btn btn-ghost btn-chat" data-rid="${r.id}">Message</button>`
@@ -4109,6 +4135,42 @@
   $('reset-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitPasswordReset(); });
   $('reset-btn')?.addEventListener('click', submitPasswordReset);
 
+  function wirePasswordHint(inputId, hintId, min) {
+    const input = $(inputId);
+    const hint = $(hintId);
+    if (!input || !hint) return;
+    const sync = () => {
+      const n = (input.value || '').length;
+      if (!n) {
+        hint.textContent = 'Min ' + min + ' characters';
+        hint.classList.remove('warn');
+        return;
+      }
+      if (n < min) {
+        hint.textContent = n + ' / ' + min + ' — need ' + (min - n) + ' more';
+        hint.classList.add('warn');
+      } else {
+        hint.textContent = 'Looks good (' + n + ' characters)';
+        hint.classList.remove('warn');
+      }
+    };
+    input.addEventListener('input', sync);
+    sync();
+  }
+
+  function wirePassToggles() {
+    document.querySelectorAll('[data-pass-toggle]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const input = $(btn.getAttribute('data-pass-toggle'));
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.textContent = show ? 'Hide' : 'Show';
+        btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+      });
+    });
+  }
+
   function wireLandingHonesty() {
     const live = !!window.ORVO_CHECKOUT_LIVE;
     const trust = $('trust-pay-copy');
@@ -4165,6 +4227,9 @@
     wireOfflineBanner();
     wireVisibilityRefresh();
     wireLandingHonesty();
+    wirePasswordHint('signup-pass', 'signup-pass-hint', 6);
+    wirePasswordHint('reset-pass', 'reset-pass-hint', 6);
+    wirePassToggles();
     track('app_boot', { authed: !!user });
   }
 
