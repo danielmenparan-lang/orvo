@@ -379,3 +379,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Notifications empty unified with **founderSchemaFixHtml**
 - **Messages/threads** schema errors + role-aware empty CTAs
 - Landing trust strip honesty; CAMPAIGN-FINALE-HE + EDGE-FUNCTIONS sync
+
+## 2026-08-24T01:30Z — pulse (post-finale)
+- **Apply + status** schema errors → founderSchemaFixHtml (probe on new apply too)
+- **Threads** try/catch errors, role-aware empty CTAs, keyboard nav (Enter/Space)
+- **Notifications** keyboard a11y on inbox cards
+- **TEN-HOUR-CAMPAIGN** post-finale note; card `:focus-visible` outline

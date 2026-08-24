@@ -29,3 +29,11 @@
 ## Honesty
 
 This is continuous agent waves on one Cloud Agent run, not 20 full-time humans. Goal: maximize shipped product quality across ~10 hours.
+
+## Post-finale (11:42 UTC Aug 23+)
+
+The original ~10h campaign **finished** at 11:42 UTC with the honest marketplace loop shipped. Recurring 30-minute pulses continue on **founder-unblock polish** only — schema-error CTAs, Stripe Edge scaffolding, admin UX, a11y — without reopening strategy locks in `docs/WINNING-PRODUCT.md`.
+
+**Repo code backlog:** all P0/P1/P2 items **DONE** (`squad-reports/20-ops-backlog.md`). Remaining work is **founder execution**: APPLY-ALL SQL, admin flag, Stripe secrets + deploy, smoke test, `ORVO_CHECKOUT_LIVE=true`.
+
+See `squad-reports/CAMPAIGN-FINALE-HE.md`, `JUDGE-WAVE-10h.md`, and `JUDGE-WAVE-POST-FINALE.md` for verdicts.

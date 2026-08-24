@@ -1336,14 +1336,14 @@
       }
       body.innerHTML = data.map((n) => {
         const unread = !n.read_at;
-        return `<div class="card ${unread ? 'notif-unread' : ''}" data-nid="${n.id}" data-link="${esc(n.link_path || '')}" style="cursor:pointer">
+        return `<div class="card ${unread ? 'notif-unread' : ''}" data-nid="${n.id}" data-link="${esc(n.link_path || '')}" tabindex="0" role="button" aria-label="${esc(n.title)}" style="cursor:pointer">
           <h3>${esc(n.title)}</h3>
           ${n.body ? `<p>${esc(n.body)}</p>` : ''}
           <span class="badge">${unread ? 'New · ' : ''}${ago(n.created_at)}</span>
         </div>`;
       }).join('');
       body.querySelectorAll('[data-nid]').forEach((el) => {
-        el.addEventListener('click', async () => {
+        const open = async () => {
           const id = el.dataset.nid;
           const link = el.dataset.link || '';
           try {
@@ -1357,6 +1357,10 @@
           if (link.includes('view=invites')) { go('invites'); return; }
           if (link.includes('view=messages')) { go('messages'); return; }
           loadNotifications();
+        };
+        el.addEventListener('click', open);
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
         });
       });
       refreshNotifBadge();
@@ -1734,12 +1738,19 @@
     if (isBuilder()) { go('jobs'); return; }
     const editing = isPending();
     let existing = null;
+    const applySchemaErr = (err) => {
+      $('view-title').textContent = editing ? 'Edit application' : 'Become a builder';
+      const body = $('view-body');
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(err.message))}</p>${founderSchemaFixHtml('Builder applications need APPLY-ALL SQL (001–020).')}`;
+      wireFounderSchemaFix(body);
+    };
     if (editing) {
       const { data, error } = await needDb().from('builder_applications').select('*').eq('user_id', user.id).maybeSingle();
-      if (error) {
-        toast(userFacingErr(error.message), false);
-      }
+      if (error) { applySchemaErr(error); return; }
       existing = data;
+    } else {
+      const { error: probeErr } = await needDb().from('builder_applications').select('id', { count: 'exact', head: true });
+      if (probeErr) { applySchemaErr(probeErr); return; }
     }
     $('view-title').textContent = editing ? 'Edit application' : 'Become a builder';
     const btnLabel = editing ? 'Save changes' : 'Submit application';
@@ -1812,7 +1823,13 @@
   }
 
   async function loadStatus() {
-    const { data: app } = await needDb().from('builder_applications').select('*').eq('user_id', user.id).maybeSingle();
+    const { data: app, error } = await needDb().from('builder_applications').select('*').eq('user_id', user.id).maybeSingle();
+    if (error) {
+      const body = $('view-body');
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(error.message))}</p>${founderSchemaFixHtml('Application status needs APPLY-ALL SQL.')}`;
+      wireFounderSchemaFix(body);
+      return;
+    }
     if (!app) {
       $('view-body').innerHTML = '<p class="empty">No application yet.</p><button class="btn btn-primary" style="margin-top:16px" data-goto="apply">Apply now</button>';
       return;
@@ -2549,32 +2566,40 @@
     const body = $('view-body');
     body.innerHTML = loadingSkeleton(4);
     const byId = new Map();
-    // Own requests (client relationship)
-    const { data: own } = await needDb().from('requests')
-      .select('id,title,created_at,status').eq('user_id', user.id);
-    (own || []).forEach(r => byId.set(r.id, { id: r.id, title: r.title, t: r.created_at, status: r.status }));
+    try {
+      const { data: own, error: ownErr } = await needDb().from('requests')
+        .select('id,title,created_at,status').eq('user_id', user.id);
+      if (ownErr) throw ownErr;
+      (own || []).forEach(r => byId.set(r.id, { id: r.id, title: r.title, t: r.created_at, status: r.status }));
 
-    if (isBuilder() || isAdmin()) {
-      const { data: quotes } = await needDb().from('quotes')
-        .select('request_id, requests(title,created_at,status)').eq('builder_id', user.id);
-      (quotes || []).forEach(q => {
-        if (!q.request_id || byId.has(q.request_id)) return;
-        byId.set(q.request_id, {
-          id: q.request_id,
-          title: q.requests?.title,
-          t: q.requests?.created_at,
-          status: q.requests?.status,
+      if (isBuilder() || isAdmin()) {
+        const { data: quotes, error: qErr } = await needDb().from('quotes')
+          .select('request_id, requests(title,created_at,status)').eq('builder_id', user.id);
+        if (qErr) throw qErr;
+        (quotes || []).forEach(q => {
+          if (!q.request_id || byId.has(q.request_id)) return;
+          byId.set(q.request_id, {
+            id: q.request_id,
+            title: q.requests?.title,
+            t: q.requests?.created_at,
+            status: q.requests?.status,
+          });
         });
-      });
-      const { data: assigned } = await needDb().from('requests')
-        .select('id,title,created_at,status').eq('assigned_builder_id', user.id);
-      (assigned || []).forEach(r => {
-        if (!byId.has(r.id)) byId.set(r.id, { id: r.id, title: r.title, t: r.created_at, status: r.status });
-        else {
-          const cur = byId.get(r.id);
-          cur.status = r.status;
-        }
-      });
+        const { data: assigned, error: aErr } = await needDb().from('requests')
+          .select('id,title,created_at,status').eq('assigned_builder_id', user.id);
+        if (aErr) throw aErr;
+        (assigned || []).forEach(r => {
+          if (!byId.has(r.id)) byId.set(r.id, { id: r.id, title: r.title, t: r.created_at, status: r.status });
+          else {
+            const cur = byId.get(r.id);
+            cur.status = r.status;
+          }
+        });
+      }
+    } catch (e) {
+      body.innerHTML = `<p class="empty err">${esc(userFacingErr(e.message))}</p>${founderSchemaFixHtml('Messages need APPLY-ALL SQL.')}`;
+      wireFounderSchemaFix(body);
+      return;
     }
 
     const list = [...byId.values()].sort((a, b) => new Date(b.t || 0) - new Date(a.t || 0));
@@ -2599,20 +2624,25 @@
       });
     } catch (_) { /* inbox optional */ }
     if (!list.length) {
-      $('view-body').innerHTML = `<p class="empty">No conversations yet.</p>
-        <p class="empty" style="padding-top:8px;font-size:13px">Post a request or send a quote to start messaging on ORVO.</p>`;
+      const emptyCta = isBuilder() || isAdmin()
+        ? '<button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-goto="jobs">Browse jobs</button>'
+        : '<button class="btn btn-primary" style="margin-top:16px;padding:12px 24px" data-action="post">Post a request</button>';
+      body.innerHTML = `<p class="empty">No conversations yet.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">${isBuilder() || isAdmin() ? 'Send a quote on an open job to start messaging on ORVO.' : 'Post a brief and accept a quote to unlock chat.'}</p>
+        ${emptyCta}`;
       return;
     }
-    $('view-body').innerHTML = list.map(r => {
+    body.innerHTML = list.map(r => {
       const prev = previews[r.id];
       const snippet = prev
         ? ((prev.sender_id === user.id ? 'You: ' : '') + prev.body).slice(0, 100) + (prev.body.length > 100 ? '…' : '')
         : 'No messages yet — open to chat';
       const t = prev?.created_at || r.t;
       const isUnread = unreadRids.has(r.id);
+      const label = esc(r.title || 'Chat');
       return `
-      <div class="card ${isUnread ? 'thread-unread' : ''}" data-click="${r.id}">
-        <h3>${esc(r.title || 'Chat')}</h3>
+      <div class="card ${isUnread ? 'thread-unread' : ''}" data-click="${r.id}" tabindex="0" role="button" aria-label="Open chat: ${label}">
+        <h3>${label}</h3>
         <p class="thread-snippet">${esc(snippet)}</p>
         <div class="thread-meta">
           ${isUnread ? '<span class="badge-new">New</span>' : ''}
@@ -2621,8 +2651,12 @@
         </div>
       </div>`;
     }).join('');
-    $('view-body').querySelectorAll('[data-click]').forEach(el => {
-      el.addEventListener('click', () => go('chat', el.dataset.click));
+    body.querySelectorAll('[data-click]').forEach(el => {
+      const open = () => go('chat', el.dataset.click);
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
     });
   }
 
@@ -3477,7 +3511,7 @@
     if (trust) {
       trust.textContent = live
         ? 'quote → Stripe Checkout (held) → release when done'
-        : 'quote → await Checkout → release when done';
+        : 'quote → try Checkout when configured → release when done';
     }
     const how = $('how-step3-copy');
     if (how) {
