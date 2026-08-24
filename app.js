@@ -1327,12 +1327,11 @@
         .order('created_at', { ascending: false }).limit(40);
       if (error) throw error;
       if (!(data || []).length) {
-        const founderHint = (isAdmin() || isConfiguredFounder())
-          ? `<p class="empty" style="padding-top:8px;font-size:13px">Inbox needs APPLY-ALL SQL (notifications 012–019). <button type="button" class="btn btn-ghost" id="btn-notif-copy-sql" style="padding:6px 10px;font-size:12px;margin-left:4px">Copy APPLY-ALL SQL</button></p>
-             <p class="empty" style="padding-top:4px;font-size:12px"><button type="button" class="btn btn-ghost" data-goto="profile" style="padding:6px 10px;font-size:12px">Setup health →</button></p>`
-          : `<p class="empty" style="padding-top:8px;font-size:13px">You’ll see quote and message alerts here once the marketplace inbox is live.</p>`;
-        body.innerHTML = `<p class="empty">No notifications yet.</p>${founderHint}`;
-        $('btn-notif-copy-sql')?.addEventListener('click', () => copyApplyAllSql());
+        const founderFix = founderSchemaFixHtml('Inbox needs APPLY-ALL SQL (notifications 012–019).');
+        body.innerHTML = `<p class="empty">No notifications yet.</p>${
+          founderFix || '<p class="empty" style="padding-top:8px;font-size:13px">You’ll see quote and message alerts here once the marketplace inbox is live.</p>'
+        }`;
+        wireFounderSchemaFix(body);
         return;
       }
       body.innerHTML = data.map((n) => {

@@ -374,3 +374,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **My quotes Connect nudge** — Set up payouts CTA (empty + list)
 - Clear search on My requests / Browse jobs empty match
 - `supabase-config.js` must-revalidate; smoke test admin funded deep-link tip
+
+## 2026-08-24T01:00Z — pulse (post-finale)
+- Notifications empty unified with **founderSchemaFixHtml**
+- **Messages/threads** schema errors + role-aware empty CTAs
+- Landing trust strip honesty; CAMPAIGN-FINALE-HE + EDGE-FUNCTIONS sync

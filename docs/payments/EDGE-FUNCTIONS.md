@@ -79,7 +79,7 @@ Client: Profile → **Set up payouts** → `tryCreateConnectAccount` (501 → to
 
 **Founder health probes:** Profile → Setup health pings each function (401/501 = deployed; 404 = run `scripts/deploy-stripe.sh`).
 
-Return URLs (when live): `?connect=success`, `?connect=refresh`, `?connect=cancel` — handled in `app.js` `handleConnectReturn`.
+Return URLs (when Edge deployed): `?connect=success`, `?connect=refresh`, `?connect=cancel` — handled in `app.js` `handleConnectReturn`.
 
 Schema: `sql/006_connect.sql` (`stripe_connect_account_id`).
 

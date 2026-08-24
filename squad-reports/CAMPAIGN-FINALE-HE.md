@@ -110,7 +110,7 @@ node tests/edge-auth.test.js
 
 10. פרסום מ-`docs/marketing/LAUNCH-KIT.md` — **מסר כנה**:
 
-> Post a brief · vetted builders quote worldwide · Checkout holds funds until delivery (when live)
+> Post a brief · vetted builders quote worldwide · Checkout holds funds until delivery (when configured)
 
 | סדר | ערוץ |
 |-----|------|
