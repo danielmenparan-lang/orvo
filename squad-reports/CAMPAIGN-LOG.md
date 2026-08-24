@@ -512,3 +512,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Busy fields** — disable inputs while auth/post/quote/reset submit
 - **Escape search** — clears dash search without closing dashboard
 - **Enter nav** — post title→desc, country→budget; reset pass→confirm; Ctrl/Cmd+Enter on post/quote/dispute
+
+## 2026-08-24T13:00Z — pulse (post-finale)
+- **Apply form** — inline apply-msg, URL live hints, years 0–50, aria-invalid + field disable, Enter nav / Ctrl+Enter
+- **Quote ETA** — live 1–180 hint and max validation
+- **Review** — 20-or-blank body; Ctrl+Enter on review/confirm-note
+- **Spellcheck** — post/quote/dispute/review/confirm/apply textareas

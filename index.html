@@ -699,7 +699,7 @@ footer{
         <button type="button" class="btn btn-ghost goal-chip" data-goal="Capture and qualify leads into my CRM" aria-pressed="false">Leads</button>
         <button type="button" class="btn btn-ghost goal-chip" data-goal="Automate internal ops workflows" aria-pressed="false">Ops</button>
       </div>
-      <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..." maxlength="4000"></textarea>
+      <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..." maxlength="4000" spellcheck="true"></textarea>
       <p class="chat-meta" id="post-count">0 / 4000 (min 40)</p>
     </div>
     <div class="field"><label for="post-cat">Category</label>
@@ -731,8 +731,11 @@ footer{
       <input id="quote-price" inputmode="decimal" placeholder="e.g. 1500" autocomplete="off" aria-describedby="quote-price-hint"/>
       <p class="field-hint" id="quote-price-hint">Minimum $50 · Global marketplace — quote in USD for now</p>
     </div>
-    <div class="field"><label for="quote-eta">Delivery estimate (days)</label><input id="quote-eta" type="number" min="1" max="180" placeholder="e.g. 14"/></div>
-    <div class="field"><label for="quote-text">Message</label><textarea id="quote-text" placeholder="Why you're the right builder..." maxlength="2000"></textarea>
+    <div class="field"><label for="quote-eta">Delivery estimate (days)</label>
+      <input id="quote-eta" type="number" min="1" max="180" placeholder="e.g. 14" aria-describedby="quote-eta-hint"/>
+      <p class="field-hint" id="quote-eta-hint">1–180 days</p>
+    </div>
+    <div class="field"><label for="quote-text">Message</label><textarea id="quote-text" placeholder="Why you're the right builder..." maxlength="2000" spellcheck="true"></textarea>
       <p class="chat-meta" id="quote-count">0 / 2000 (min 20)</p>
     </div>
     <button class="btn-black" id="quote-btn">Send quote</button>
@@ -774,7 +777,7 @@ footer{
     <div id="dispute-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="field">
       <label for="dispute-details">What went wrong?</label>
-      <textarea id="dispute-details" rows="5" placeholder="Describe the issue (at least 20 characters)…" maxlength="2000"></textarea>
+      <textarea id="dispute-details" rows="5" placeholder="Describe the issue (at least 20 characters)…" maxlength="2000" spellcheck="true"></textarea>
       <p class="chat-meta" id="dispute-count">0 / 2000</p>
     </div>
     <div class="pay-actions">
@@ -790,10 +793,10 @@ footer{
     <button class="modal-close" data-action="close-confirm" aria-label="Close">✕</button>
     <h2 id="confirm-title">Confirm</h2>
     <p class="sub" id="confirm-sub"></p>
-    <div id="confirm-msg" class="msg hidden"></div>
+    <div id="confirm-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="field hidden" id="confirm-note-wrap">
       <label for="confirm-note">Note (optional)</label>
-      <textarea id="confirm-note" rows="3" placeholder="Admin note…" maxlength="500"></textarea>
+      <textarea id="confirm-note" rows="3" placeholder="Admin note…" maxlength="500" spellcheck="true"></textarea>
       <p class="chat-meta" id="confirm-note-count">0 / 500</p>
     </div>
     <div class="pay-actions">
@@ -822,7 +825,7 @@ footer{
     </div>
     <div class="field">
       <label for="review-body">Short review <span style="font-weight:400;color:var(--gray)">(optional, 20+ chars)</span></label>
-      <textarea id="review-body" rows="3" placeholder="What went well?" maxlength="500"></textarea>
+      <textarea id="review-body" rows="3" placeholder="What went well?" maxlength="500" spellcheck="true"></textarea>
       <p class="chat-meta" id="review-count">0 / 500</p>
     </div>
     <div class="pay-actions">
@@ -858,6 +861,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=69"></script>
+<script src="app.js?v=70"></script>
 </body>
 </html>

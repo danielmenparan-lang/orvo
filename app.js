@@ -1178,6 +1178,7 @@
     $('quote-text').value = '';
     wireFieldCounter('quote-text', 'quote-count', 2000, { min: 20 });
     wireQuotePriceHint();
+    wireQuoteEtaHint();
     if ($('quote-heading')) $('quote-heading').textContent = 'Send quote';
     if ($('quote-sub')) $('quote-sub').textContent = 'Your price and pitch to the client';
     const el = $('quote-modal');
@@ -1220,6 +1221,33 @@
         hint.classList.add('warn');
       } else {
         hint.textContent = money(cents) + ' USD · founding fee 0% to the builder';
+        hint.classList.remove('warn');
+      }
+    };
+    input.oninput = sync;
+    sync();
+  }
+
+  function wireQuoteEtaHint() {
+    const input = $('quote-eta');
+    const hint = $('quote-eta-hint');
+    if (!input || !hint) return;
+    const sync = () => {
+      const raw = (input.value || '').trim();
+      if (!raw) {
+        hint.textContent = '1–180 days';
+        hint.classList.remove('warn');
+        return;
+      }
+      const n = parseInt(raw, 10);
+      if (!n || n < 1) {
+        hint.textContent = 'Enter at least 1 day';
+        hint.classList.add('warn');
+      } else if (n > 180) {
+        hint.textContent = 'Maximum is 180 days';
+        hint.classList.add('warn');
+      } else {
+        hint.textContent = n + ' day' + (n === 1 ? '' : 's');
         hint.classList.remove('warn');
       }
     };
@@ -2235,7 +2263,7 @@
     const eta = parseInt(($('quote-eta')?.value || '').trim(), 10);
     const msg = $('quote-text').value.trim();
     setFieldInvalid('quote-price', cents < 5000);
-    setFieldInvalid('quote-eta', !eta || eta < 1);
+    setFieldInvalid('quote-eta', !eta || eta < 1 || eta > 180);
     setFieldInvalid('quote-text', !msg || msg.length < 20);
     if (cents < 5000) {
       showSchemaMsg('quote-msg', 'Minimum quote is $50 USD', 'Quotes need APPLY-ALL SQL (001–020).');
@@ -2244,6 +2272,11 @@
     }
     if (!eta || eta < 1) {
       showSchemaMsg('quote-msg', 'Add delivery estimate in days', 'Quotes need APPLY-ALL SQL (001–020).');
+      focusFirstInvalid(fieldIds);
+      return;
+    }
+    if (eta > 180) {
+      showSchemaMsg('quote-msg', 'Delivery estimate max is 180 days', 'Quotes need APPLY-ALL SQL (001–020).');
       focusFirstInvalid(fieldIds);
       return;
     }
@@ -2413,11 +2446,20 @@
       <p style="color:var(--gray);font-size:14px;margin-bottom:20px">${editing
         ? 'Update your application below. Status stays pending until ORVO reviews.'
         : 'ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.'}</p>
-      <div class="field"><label for="apply-bio">Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..." maxlength="2000"></textarea><p class="chat-meta" id="apply-bio-count">0 / 2000 (min 50)</p></div>
-      <div class="field"><label for="apply-skills">Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
-      <div class="field"><label for="apply-portfolio">Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" type="url" inputmode="url" placeholder="https://github.com/you or your site"/></div>
-      <div class="field"><label for="apply-linkedin">LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" type="url" inputmode="url" placeholder="https://linkedin.com/in/..."/></div>
-      <div class="field"><label for="apply-years">Years of experience</label><input id="apply-years" type="number" min="0" value="0"/></div>
+      <div id="apply-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
+      <div class="field"><label for="apply-bio">Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..." maxlength="2000" spellcheck="true"></textarea><p class="chat-meta" id="apply-bio-count">0 / 2000 (min 50)</p></div>
+      <div class="field"><label for="apply-skills">Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/>
+        <p class="field-hint" id="apply-skills-hint">At least one skill</p>
+      </div>
+      <div class="field"><label for="apply-portfolio">Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" type="url" inputmode="url" placeholder="https://github.com/you or your site" autocomplete="url"/>
+        <p class="field-hint" id="apply-portfolio-hint">Optional · must start with http:// or https://</p>
+      </div>
+      <div class="field"><label for="apply-linkedin">LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" type="url" inputmode="url" placeholder="https://linkedin.com/in/..." autocomplete="url"/>
+        <p class="field-hint" id="apply-linkedin-hint">Optional · must start with http:// or https://</p>
+      </div>
+      <div class="field"><label for="apply-years">Years of experience</label><input id="apply-years" type="number" min="0" max="50" value="0"/>
+        <p class="field-hint" id="apply-years-hint">0–50 years</p>
+      </div>
       <button class="btn-black" id="apply-btn">${btnLabel}</button>
       ${editing ? '<button class="btn btn-ghost" id="apply-cancel" style="margin-top:10px;width:100%;padding:12px">Back to status</button>' : ''}`;
     if (existing) {
@@ -2432,6 +2474,24 @@
     $('apply-btn').addEventListener('click', doApply);
     $('apply-cancel')?.addEventListener('click', () => go('status'));
     wireFieldCounter('apply-bio', 'apply-bio-count', 2000, { min: 50 });
+    wireOptionalUrlHint('apply-portfolio', 'apply-portfolio-hint');
+    wireOptionalUrlHint('apply-linkedin', 'apply-linkedin-hint');
+    wireNonemptyHint('apply-skills', 'apply-skills-hint', 'At least one skill', 'Looks good');
+    $('apply-bio')?.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doApply(); }
+    });
+    $('apply-skills')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); $('apply-portfolio')?.focus(); }
+    });
+    $('apply-portfolio')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); $('apply-linkedin')?.focus(); }
+    });
+    $('apply-linkedin')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); $('apply-years')?.focus(); }
+    });
+    $('apply-years')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doApply(); }
+    });
   }
 
   function optionalHttpUrl(raw, label) {
@@ -2445,22 +2505,55 @@
 
   async function doApply() {
     const bio = $('apply-bio').value.trim();
-    if (bio.length < 50) { toast('Bio must be at least 50 characters', false); return; }
     const skills = $('apply-skills').value.trim();
-    if (!skills) { toast('Add at least one skill', false); return; }
+    const years = parseInt($('apply-years')?.value, 10);
+    const fieldIds = ['apply-bio', 'apply-skills', 'apply-portfolio', 'apply-linkedin', 'apply-years'];
+    hideMsg('apply-msg');
+    setFieldInvalid('apply-bio', bio.length < 50);
+    setFieldInvalid('apply-skills', !skills);
+    setFieldInvalid('apply-years', Number.isNaN(years) || years < 0 || years > 50);
     let portfolio_url;
     let linkedin_url;
+    let urlErr = '';
     try {
       portfolio_url = optionalHttpUrl($('apply-portfolio')?.value, 'Portfolio URL');
-      linkedin_url = optionalHttpUrl($('apply-linkedin')?.value, 'LinkedIn URL');
+      setFieldInvalid('apply-portfolio', false);
     } catch (e) {
-      toast(e.message, false);
+      setFieldInvalid('apply-portfolio', true);
+      urlErr = e.message;
+    }
+    try {
+      linkedin_url = optionalHttpUrl($('apply-linkedin')?.value, 'LinkedIn URL');
+      if (!urlErr) setFieldInvalid('apply-linkedin', false);
+    } catch (e) {
+      setFieldInvalid('apply-linkedin', true);
+      if (!urlErr) urlErr = e.message;
+    }
+    if (bio.length < 50) {
+      showMsg('apply-msg', 'Bio must be at least 50 characters', false);
+      focusFirstInvalid(fieldIds);
+      return;
+    }
+    if (!skills) {
+      showMsg('apply-msg', 'Add at least one skill', false);
+      focusFirstInvalid(fieldIds);
+      return;
+    }
+    if (urlErr) {
+      showMsg('apply-msg', urlErr, false);
+      focusFirstInvalid(fieldIds);
+      return;
+    }
+    if (Number.isNaN(years) || years < 0 || years > 50) {
+      showMsg('apply-msg', 'Years of experience must be 0–50', false);
+      focusFirstInvalid(fieldIds);
       return;
     }
     const btn = $('apply-btn');
     const wasPending = isPending();
     btn.disabled = true;
     btn.textContent = wasPending ? 'Saving…' : 'Submitting…';
+    setFieldsDisabled(fieldIds, true);
     try {
       const row = {
         user_id: user.id,
@@ -2470,7 +2563,7 @@
         skills,
         portfolio_url,
         linkedin_url,
-        experience_years: parseInt($('apply-years').value, 10) || 0,
+        experience_years: years || 0,
         status: 'pending',
       };
       const { data: saved, error: e1 } = await needDb().from('builder_applications')
@@ -2491,11 +2584,12 @@
         body.innerHTML = `<p class="empty err">${esc(userFacingErr(msg))}</p>${founderSchemaFixHtml('Builder applications need APPLY-ALL SQL (001–020).')}`;
         wireFounderSchemaFix(body);
       } else {
-        toast(userFacingErr(msg), false);
+        showMsg('apply-msg', userFacingErr(msg), false);
       }
     } finally {
       btn.disabled = false;
       btn.textContent = wasPending ? 'Save changes' : 'Submit application';
+      setFieldsDisabled(fieldIds, false);
     }
   }
 
@@ -3478,6 +3572,7 @@
     pendingReview = { rid, builderId, rating: 0 };
     hideMsg('review-msg');
     if ($('review-body')) $('review-body').value = '';
+    clearFieldInvalid(['review-body']);
     wireFieldCounter('review-body', 'review-count', 500, { min: 20, optional: true });
     document.querySelectorAll('.star-btn').forEach((b) => {
       b.classList.remove('on');
@@ -3508,11 +3603,20 @@
     const { rid, builderId, rating } = pendingReview;
     if (!(rating >= 1 && rating <= 5)) {
       showMsg('review-msg', 'Choose a rating from 1 to 5 stars', false);
+      document.querySelector('.star-btn[data-rating="1"]')?.focus();
       return;
     }
     const body = ($('review-body')?.value || '').trim();
+    if (body && body.length < 20) {
+      setFieldInvalid('review-body', true);
+      showMsg('review-msg', 'Review text needs at least 20 characters (or leave it blank)', false);
+      $('review-body')?.focus();
+      return;
+    }
+    setFieldInvalid('review-body', false);
     const btn = $('review-confirm-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+    setFieldsDisabled(['review-body'], true);
     try {
       const row = {
         request_id: rid,
@@ -3532,6 +3636,7 @@
       if (!isDbSchemaErr(msg)) toast(userFacingErr(msg), false);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Submit review'; }
+      setFieldsDisabled(['review-body'], false);
     }
   }
 
@@ -4444,6 +4549,12 @@
   $('dispute-details')?.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitDispute(); }
   });
+  $('review-body')?.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitReview(); }
+  });
+  $('confirm-note')?.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); closeConfirm(true); }
+  });
 
   function wirePasswordHint(inputId, hintId, min) {
     const input = $(inputId);
@@ -4491,6 +4602,50 @@
     };
     p1.addEventListener('input', sync);
     p2.addEventListener('input', sync);
+    sync();
+  }
+
+  function wireOptionalUrlHint(inputId, hintId) {
+    const input = $(inputId);
+    const hint = $(hintId);
+    if (!input || !hint) return;
+    const sync = () => {
+      const v = (input.value || '').trim();
+      if (!v) {
+        hint.textContent = 'Optional · must start with http:// or https://';
+        hint.classList.remove('warn');
+        setFieldInvalid(inputId, false);
+        return;
+      }
+      if (!/^https?:\/\/\S+/i.test(v)) {
+        hint.textContent = 'Must start with http:// or https://';
+        hint.classList.add('warn');
+        setFieldInvalid(inputId, true);
+      } else {
+        hint.textContent = 'Looks like a URL';
+        hint.classList.remove('warn');
+        setFieldInvalid(inputId, false);
+      }
+    };
+    input.addEventListener('input', sync);
+    sync();
+  }
+
+  function wireNonemptyHint(inputId, hintId, emptyText, okText) {
+    const input = $(inputId);
+    const hint = $(hintId);
+    if (!input || !hint) return;
+    const sync = () => {
+      const v = (input.value || '').trim();
+      if (!v) {
+        hint.textContent = emptyText || 'Required';
+        hint.classList.remove('warn');
+      } else {
+        hint.textContent = okText || 'Looks good';
+        hint.classList.remove('warn');
+      }
+    };
+    input.addEventListener('input', sync);
     sync();
   }
 
