@@ -1447,6 +1447,7 @@
       if (!data.session) throw new Error('No session');
       await refreshUser();
       closeAuth();
+      if ($('login-pass')) $('login-pass').value = '';
       routeAfterLogin();
       toast('Signed in!', true);
     } catch (e) {
@@ -1466,6 +1467,12 @@
     if (!ans.ok) return;
     await needDb().auth.signOut();
     user = null; profile = null;
+    try { sessionStorage.removeItem('orvo_last_view'); } catch { /* private mode */ }
+    __orvoLastNav = { v: null, rid: null };
+    __orvoUnread = 0;
+    syncDocTitle(null);
+    if ($('login-pass')) $('login-pass').value = '';
+    if ($('signup-pass')) $('signup-pass').value = '';
     closeDash();
     updateNav();
     toast('Signed out', true);
@@ -2921,7 +2928,11 @@
       if (isAssigned && req.status === 'funded') {
         escrowHtml = `<div class="card" style="cursor:default;margin-bottom:16px"><b>Delivery</b>
           <p>Share a demo link (optional) and mark delivered when the client can test.</p>
-          <div class="field" style="margin:12px 0"><input id="deliver-url" placeholder="https://demo.example.com"/></div>
+          <div class="field" style="margin:12px 0">
+            <label for="deliver-url">Demo URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label>
+            <input id="deliver-url" type="url" inputmode="url" placeholder="https://demo.example.com" autocomplete="off"/>
+            <p class="field-hint" id="deliver-url-hint">https://… preferred — GitHub, Vercel, Loom, or n8n links OK</p>
+          </div>
           <button class="btn btn-primary" id="btn-mark-delivered" data-rid="${rid}">Mark delivered</button></div>`;
       }
       if (isClient && (req.status === 'funded' || req.status === 'delivered')) {
@@ -3341,12 +3352,19 @@
 
   async function markDelivered(rid) {
     const url = ($('deliver-url')?.value || '').trim();
+    if (url && !/^https?:\/\/\S+/i.test(url)) {
+      toast('Demo link must start with http:// or https://', false);
+      $('deliver-url')?.focus();
+      return;
+    }
     const ans = await askConfirm({
       title: 'Mark as delivered?',
       sub: 'The client will review your delivery and can release payment when funds are held.',
       okLabel: 'Mark delivered',
     });
     if (!ans.ok) return;
+    const btn = $('btn-mark-delivered');
+    if (btn) { btn.disabled = true; btn.textContent = 'Marking…'; }
     try {
       const { error } = await needDb().from('requests').update({ status: 'delivered' }).eq('id', rid);
       if (error) throw error;
@@ -3367,7 +3385,10 @@
       }
       toast('Marked delivered — waiting for client release', true);
       loadChat();
-    } catch (e) { toastSchemaErr(e?.message || String(e)); }
+    } catch (e) {
+      toastSchemaErr(e?.message || String(e));
+      if (btn) { btn.disabled = false; btn.textContent = 'Mark delivered'; }
+    }
   }
 
   let pendingDisputeRid = null;
@@ -3473,6 +3494,10 @@
       okLabel: 'Complete project',
     });
     if (!ans.ok) return;
+    const btn = $('btn-release-pay');
+    const disputeBtn = $('btn-open-dispute');
+    if (btn) { btn.disabled = true; btn.textContent = 'Releasing…'; }
+    if (disputeBtn) disputeBtn.disabled = true;
     try {
       const { data: req } = await needDb().from('requests').select('status').eq('id', rid).single();
       if (req?.status === 'disputed') throw new Error('Dispute open — release is frozen');
@@ -3520,7 +3545,11 @@
       if (e1) throw e1;
       toast('Project completed', true);
       loadChat();
-    } catch (e) { toastSchemaErr(e?.message || String(e)); }
+    } catch (e) {
+      toastSchemaErr(e?.message || String(e));
+      if (btn) { btn.disabled = false; btn.textContent = 'Release payment to builder'; }
+      if (disputeBtn) disputeBtn.disabled = false;
+    }
   }
 
   async function acceptQuote(qid, rid) {

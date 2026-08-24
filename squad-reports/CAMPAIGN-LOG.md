@@ -483,3 +483,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Post mins** — title ≥8 / description ≥40 with live counters; form clears after success
 - **Quote + dispute** message counters show remaining to min 20
 - **Chat send busy** — disables input/button while Sending… (no double-send)
+
+## 2026-08-24T10:30Z — pulse (post-finale)
+- **Deliver/release busy** — Mark delivered / Release disable while working
+- **Demo URL** validation (http/https) + labelled field on delivery card
+- **Logout cleanup** — clears last-view session, unread title, password fields
+- Login success clears password input
