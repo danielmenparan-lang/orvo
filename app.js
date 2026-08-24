@@ -364,14 +364,15 @@
     syncPageAriaHidden();
   }
 
-  function trapDashTab(e) {
-    if (e.key !== 'Tab') return;
-    if (document.querySelector('.modal-bg.open')) return;
-    const dash = $('dashboard');
-    if (!dash?.classList.contains('open')) return;
-    const nodes = [...dash.querySelectorAll(
+  function focusableIn(root) {
+    if (!root) return [];
+    return [...root.querySelectorAll(
       'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )].filter((el) => el.offsetParent !== null);
+  }
+
+  function trapFocusCycle(e, root) {
+    const nodes = focusableIn(root);
     if (nodes.length < 2) return;
     const first = nodes[0];
     const last = nodes[nodes.length - 1];
@@ -382,6 +383,38 @@
       e.preventDefault();
       first.focus();
     }
+  }
+
+  function trapModalTab(e) {
+    if (e.key !== 'Tab') return;
+    const modal = document.querySelector('.modal-bg.open');
+    if (!modal) return;
+    trapFocusCycle(e, modal);
+  }
+
+  function trapDashTab(e) {
+    if (e.key !== 'Tab') return;
+    if (document.querySelector('.modal-bg.open')) return;
+    const dash = $('dashboard');
+    if (!dash?.classList.contains('open')) return;
+    trapFocusCycle(e, dash);
+  }
+
+  function setViewTitle(label) {
+    const text = label || 'Dashboard';
+    if ($('view-title')) $('view-title').textContent = text;
+    syncDocTitle(text);
+  }
+
+  function refreshViewBtnHtml() {
+    return '<button type="button" class="btn btn-ghost" id="btn-refresh-view" style="padding:8px 12px;font-size:12px" title="Refresh this view">Refresh</button>';
+  }
+
+  function wireRefreshView() {
+    $('btn-refresh-view')?.addEventListener('click', () => {
+      refreshActiveDashView({ reason: 'manual' });
+      toast('Refreshed', true);
+    });
   }
 
   function followNotificationLink(link) {
@@ -990,6 +1023,7 @@
     if (view === 'invites') return loadInvites();
     if (view === 'quotes') return loadQuotes();
     if (view === 'status') return loadStatus();
+    if (view === 'apply') return loadApply();
     if (view === 'profile') return loadProfileView();
     if (view === 'admin') return loadAdmin();
     if (view === 'all-requests') return loadAllRequests();
@@ -1027,14 +1061,20 @@
     $('panel-login').classList.toggle('hidden', !login);
     $('panel-signup').classList.toggle('hidden', login);
   }
-  function wireFieldCounter(inputId, metaId, max) {
+  function wireFieldCounter(inputId, metaId, max, opts) {
     const input = $(inputId);
     const meta = $(metaId);
     if (!input || !meta) return;
+    const min = opts?.min || 0;
     const sync = () => {
       const n = (input.value || '').length;
-      meta.textContent = n + ' / ' + max;
-      meta.classList.toggle('warn', n > max * 0.9);
+      if (min > 0 && n < min) {
+        meta.textContent = n + ' / ' + max + ' (need ' + (min - n) + ' more)';
+        meta.classList.add('warn');
+      } else {
+        meta.textContent = n + ' / ' + max + (min > 0 ? ' ✓' : '');
+        meta.classList.toggle('warn', n > max * 0.9);
+      }
     };
     input.addEventListener('input', sync);
     sync();
@@ -1509,30 +1549,33 @@
     syncDashUrl();
 
     if (v === 'requests') {
-      $('view-action').innerHTML = `<button class="btn btn-primary" data-action="post">+ Post request</button>${copyViewBtnHtml()}`;
+      $('view-action').innerHTML = `<button class="btn btn-primary" data-action="post">+ Post request</button>${refreshViewBtnHtml()}${copyViewBtnHtml()}`;
+      wireRefreshView();
       loadRequests();
     }
-    else if (v === 'jobs') { $('view-action').innerHTML = copyViewBtnHtml(); loadJobs(); }
-    else if (v === 'invites') { $('view-action').innerHTML = copyViewBtnHtml(); loadInvites(); }
-    else if (v === 'quotes') { $('view-action').innerHTML = copyViewBtnHtml(); loadQuotes(); }
-    else if (v === 'messages') { $('view-action').innerHTML = copyViewBtnHtml(); loadThreads(); }
+    else if (v === 'jobs') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadJobs(); }
+    else if (v === 'invites') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadInvites(); }
+    else if (v === 'quotes') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadQuotes(); }
+    else if (v === 'messages') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadThreads(); }
     else if (v === 'chat') {
-      $('view-action').innerHTML = `<button type="button" class="btn btn-ghost" id="btn-chat-back" style="padding:8px 12px;font-size:12px">← Messages</button>${copyViewBtnHtml()}`;
+      $('view-action').innerHTML = `<button type="button" class="btn btn-ghost" id="btn-chat-back" style="padding:8px 12px;font-size:12px">← Messages</button>${refreshViewBtnHtml()}${copyViewBtnHtml()}`;
       wireCopyViewLink();
+      wireRefreshView();
       $('btn-chat-back')?.addEventListener('click', () => go('messages'));
       loadChat();
     }
     else if (v === 'apply') { $('view-action').innerHTML = copyViewBtnHtml(); loadApply(); }
-    else if (v === 'status') { $('view-action').innerHTML = copyViewBtnHtml(); loadStatus(); }
-    else if (v === 'profile') { $('view-action').innerHTML = copyViewBtnHtml(); loadProfileView(); }
+    else if (v === 'status') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadStatus(); }
+    else if (v === 'profile') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadProfileView(); }
     else if (v === 'admin') {
       // loadAdmin sets its own view-action (events + refresh)
       loadAdmin();
     }
-    else if (v === 'all-requests') { $('view-action').innerHTML = copyViewBtnHtml(); loadAllRequests(); }
-    else if (v === 'disputes') { $('view-action').innerHTML = copyViewBtnHtml(); loadDisputes(); }
+    else if (v === 'all-requests') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadAllRequests(); }
+    else if (v === 'disputes') { $('view-action').innerHTML = `${refreshViewBtnHtml()}${copyViewBtnHtml()}`; wireRefreshView(); loadDisputes(); }
     else if (v === 'notifications') {
-      $('view-action').innerHTML = `<button class="btn btn-ghost" id="btn-mark-all-read" style="padding:8px 12px;font-size:12px">Mark all read</button>${copyViewBtnHtml()}`;
+      $('view-action').innerHTML = `<button class="btn btn-ghost" id="btn-mark-all-read" style="padding:8px 12px;font-size:12px">Mark all read</button>${refreshViewBtnHtml()}${copyViewBtnHtml()}`;
+      wireRefreshView();
       $('btn-mark-all-read')?.addEventListener('click', async () => {
         try {
           await needDb().from('notifications').update({ read_at: new Date().toISOString() })
@@ -2098,7 +2141,7 @@
     const editing = isPending();
     let existing = null;
     const applySchemaErr = (err) => {
-      $('view-title').textContent = editing ? 'Edit application' : 'Become a builder';
+      setViewTitle(editing ? 'Edit application' : 'Become a builder');
       const body = $('view-body');
       body.innerHTML = `<p class="empty err">${esc(userFacingErr(err.message))}</p>${founderSchemaFixHtml('Builder applications need APPLY-ALL SQL (001–020).')}`;
       wireFounderSchemaFix(body);
@@ -2111,7 +2154,7 @@
       const { error: probeErr } = await needDb().from('builder_applications').select('id', { count: 'exact', head: true });
       if (probeErr) { applySchemaErr(probeErr); return; }
     }
-    $('view-title').textContent = editing ? 'Edit application' : 'Become a builder';
+    setViewTitle(editing ? 'Edit application' : 'Become a builder');
     const btnLabel = editing ? 'Save changes' : 'Submit application';
     const skillsStr = Array.isArray(existing?.skills)
       ? existing.skills.join(', ')
@@ -2138,7 +2181,7 @@
     }
     $('apply-btn').addEventListener('click', doApply);
     $('apply-cancel')?.addEventListener('click', () => go('status'));
-    wireFieldCounter('apply-bio', 'apply-bio-count', 2000);
+    wireFieldCounter('apply-bio', 'apply-bio-count', 2000, { min: 50 });
   }
 
   async function doApply() {
@@ -2718,8 +2761,7 @@
     }
     markThreadNotificationsRead(rid);
     chatRequestStatus = req?.status || 'open';
-    $('view-title').textContent = (req.title || 'Chat').slice(0, 48);
-    syncDocTitle($('view-title').textContent);
+    setViewTitle((req.title || 'Chat').slice(0, 48));
 
     const { data: payRow } = await needDb().from('payments').select('*').eq('request_id', rid).maybeSingle();
 
@@ -3981,7 +4023,11 @@
   document.querySelector('.channel-chip[data-channel="WhatsApp / Chat"]')?.classList.add('on');
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') { trapDashTab(e); return; }
+    if (e.key === 'Tab') {
+      if (document.querySelector('.modal-bg.open')) trapModalTab(e);
+      else trapDashTab(e);
+      return;
+    }
     if (e.key !== 'Escape') return;
     if ($('confirm-modal')?.classList.contains('open')) closeConfirm(false);
     else if ($('reset-modal')?.classList.contains('open')) closePasswordReset();

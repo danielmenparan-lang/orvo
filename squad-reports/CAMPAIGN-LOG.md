@@ -461,3 +461,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Reconnect refresh** — `refreshActiveDashView()` reloads the open dashboard view after coming back online
 - **Visibility refresh** now updates list views too (requests/jobs/messages/quotes/profile/admin)
 - Chat **browser title** now uses the request title instead of generic `Chat`
+
+## 2026-08-24T08:30Z — pulse (post-finale)
+- **Modal Tab trap** — focus cycles inside open sheets (shared with dashboard trap)
+- **Refresh** button on list/chat/profile/status/admin panels
+- **`setViewTitle`** keeps apply edit + chat titles in sync with `document.title`
+- Apply bio counter shows **min 50** remaining until eligible
