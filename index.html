@@ -632,7 +632,9 @@ footer{
     </div>
     <div id="panel-signup" class="hidden">
       <div id="signup-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
-      <div class="field"><label for="signup-name">Full name</label><input id="signup-name"/></div>
+      <div class="field"><label for="signup-name">Full name</label><input id="signup-name" maxlength="80" autocomplete="name"/>
+        <p class="field-hint" id="signup-name-hint">At least 2 characters</p>
+      </div>
       <div class="field"><label for="signup-email">Email</label><input id="signup-email" type="email" autocomplete="email"/></div>
       <div class="field"><label for="signup-pass">Password</label><input id="signup-pass" type="password" autocomplete="new-password"/>
         <p class="field-hint" id="signup-pass-hint">Min 6 characters</p>
@@ -679,20 +681,20 @@ footer{
     </div>
     <div class="field"><label>Primary channel</label>
       <div class="row" style="margin:0 0 8px">
-        <button type="button" class="btn btn-ghost channel-chip" data-channel="WhatsApp / Chat">WhatsApp</button>
-        <button type="button" class="btn btn-ghost channel-chip" data-channel="Voice / Phone">Voice</button>
-        <button type="button" class="btn btn-ghost channel-chip" data-channel="Automation">Automation</button>
-        <button type="button" class="btn btn-ghost channel-chip" data-channel="CRM / Email">CRM</button>
-        <button type="button" class="btn btn-ghost channel-chip" data-channel="Other">Other</button>
+        <button type="button" class="btn btn-ghost channel-chip" data-channel="WhatsApp / Chat" aria-pressed="false">WhatsApp</button>
+        <button type="button" class="btn btn-ghost channel-chip" data-channel="Voice / Phone" aria-pressed="false">Voice</button>
+        <button type="button" class="btn btn-ghost channel-chip" data-channel="Automation" aria-pressed="false">Automation</button>
+        <button type="button" class="btn btn-ghost channel-chip" data-channel="CRM / Email" aria-pressed="false">CRM</button>
+        <button type="button" class="btn btn-ghost channel-chip" data-channel="Other" aria-pressed="false">Other</button>
       </div>
     </div>
     <div class="field">
       <label for="post-desc">What do you need?</label>
       <div class="row" style="margin:0 0 8px">
-        <button type="button" class="btn btn-ghost goal-chip" data-goal="Take orders / bookings automatically">Orders</button>
-        <button type="button" class="btn btn-ghost goal-chip" data-goal="Answer FAQs 24/7 from my knowledge base">FAQ</button>
-        <button type="button" class="btn btn-ghost goal-chip" data-goal="Capture and qualify leads into my CRM">Leads</button>
-        <button type="button" class="btn btn-ghost goal-chip" data-goal="Automate internal ops workflows">Ops</button>
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Take orders / bookings automatically" aria-pressed="false">Orders</button>
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Answer FAQs 24/7 from my knowledge base" aria-pressed="false">FAQ</button>
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Capture and qualify leads into my CRM" aria-pressed="false">Leads</button>
+        <button type="button" class="btn btn-ghost goal-chip" data-goal="Automate internal ops workflows" aria-pressed="false">Ops</button>
       </div>
       <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..." maxlength="4000"></textarea>
       <p class="chat-meta" id="post-count">0 / 4000 (min 40)</p>
@@ -703,10 +705,10 @@ footer{
     <div class="field"><label for="post-country">Country (optional)</label><input id="post-country" placeholder="e.g. United States, Germany, Brazil" maxlength="80"/><p class="field-hint">Where the business operates — helps builders quote timezone &amp; language.</p></div>
     <div class="field"><label for="post-budget">Budget hint (optional)</label>
       <div class="row" style="margin:0 0 8px">
-        <button type="button" class="btn btn-ghost budget-chip" data-budget="$500–$1,500">$500–1.5k</button>
-        <button type="button" class="btn btn-ghost budget-chip" data-budget="$1,500–$5,000">$1.5k–5k</button>
-        <button type="button" class="btn btn-ghost budget-chip" data-budget="$5,000–$15,000">$5k–15k</button>
-        <button type="button" class="btn btn-ghost budget-chip" data-budget="Custom / TBD">Custom</button>
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="$500–$1,500" aria-pressed="false">$500–1.5k</button>
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="$1,500–$5,000" aria-pressed="false">$1.5k–5k</button>
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="$5,000–$15,000" aria-pressed="false">$5k–15k</button>
+        <button type="button" class="btn btn-ghost budget-chip" data-budget="Custom / TBD" aria-pressed="false">Custom</button>
       </div>
       <input id="post-budget" placeholder="$500–$2000 (USD)"/>
     </div>
@@ -853,6 +855,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=67"></script>
+<script src="app.js?v=68"></script>
 </body>
 </html>

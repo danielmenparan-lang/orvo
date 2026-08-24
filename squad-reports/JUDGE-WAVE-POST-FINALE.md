@@ -1,9 +1,9 @@
-# JUDGE — Post-finale pulses (~11:42→11:30 UTC Aug 24)
+# JUDGE — Post-finale pulses (~11:42→12:00 UTC Aug 24)
 
 ## Verdict
 **Integrity PASS · Stripe IMPLEMENTED (founder deploy pending)**
 
-Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pulses (12:00→11:30 Aug 24) added founder onboarding, full Stripe Edge handlers, client polish, admin KPI filters, and ops scripts — without reopening strategy locks.
+Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pulses through 12:00 Aug 24 added founder onboarding, full Stripe Edge handlers, client polish, admin KPI filters, and ops scripts — without reopening strategy locks.
 
 ## Gates (updated)
 
@@ -103,6 +103,11 @@ Campaign finale at 11:42 UTC shipped the honest marketplace loop. Post-finale pu
 | Review min + stars | PASS | optional 20+ counter; aria-pressed |
 | Quote Sending… | PASS | busy label while insert |
 | Footer year | PASS | dynamic getFullYear |
+| Post Posting… | PASS | busy label while insert |
+| Auth email/name | PASS | looksLikeEmail + name ≥2 |
+| Forgot Sending… | PASS | busy on reset email |
+| Chip aria-pressed | PASS | channel/goal/budget |
+| Auth Enter nav | PASS | email→pass field advance |
 
 ## Founder execution (only remaining)
 
@@ -120,4 +125,4 @@ bash scripts/founder-setup.sh   # ordered steps
 - STRIPE_PAYMENT_LINK  
 - Client-written held/funded  
 
-— ORVO Judge · post-finale summary 2026-08-24T11:30Z
+— ORVO Judge · post-finale summary 2026-08-24T12:00Z

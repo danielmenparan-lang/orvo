@@ -500,3 +500,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Review polish** — optional min-20 counter; star buttons aria-pressed
 - **Quote Sending…** — busy label while inserting
 - **Footer year** — dynamic getFullYear()
+
+## 2026-08-24T12:00Z — pulse (post-finale)
+- **Post Posting…** — busy label while insert
+- **Auth polish** — email format check; signup name ≥2 live hint; Forgot Sending…
+- **Chip aria-pressed** — channel/goal/budget; reset on clearPostForm
+- **Enter nav** — login/signup email advances to password

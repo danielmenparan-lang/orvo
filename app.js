@@ -1065,8 +1065,18 @@
     const login = t === 'login';
     $('tab-login').classList.toggle('active', login);
     $('tab-signup').classList.toggle('active', !login);
+    $('tab-login')?.setAttribute('aria-selected', login ? 'true' : 'false');
+    $('tab-signup')?.setAttribute('aria-selected', login ? 'false' : 'true');
     $('panel-login').classList.toggle('hidden', !login);
     $('panel-signup').classList.toggle('hidden', login);
+  }
+  function looksLikeEmail(s) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+  }
+  function syncChipPressed(selector) {
+    document.querySelectorAll(selector).forEach((x) => {
+      x.setAttribute('aria-pressed', x.classList.contains('on') ? 'true' : 'false');
+    });
   }
   function wireFieldCounter(inputId, metaId, max, opts) {
     const input = $(inputId);
@@ -1115,6 +1125,12 @@
     if ($('post-budget')) $('post-budget').value = '';
     document.querySelectorAll('.budget-chip').forEach((x) => x.classList.remove('on'));
     document.querySelectorAll('.goal-chip').forEach((x) => x.classList.remove('on'));
+    document.querySelectorAll('.channel-chip').forEach((x) => x.classList.remove('on'));
+    document.querySelector('.channel-chip[data-channel="WhatsApp / Chat"]')?.classList.add('on');
+    if ($('post-cat')) $('post-cat').value = 'WhatsApp / Chat';
+    syncChipPressed('.budget-chip');
+    syncChipPressed('.goal-chip');
+    syncChipPressed('.channel-chip');
   }
   function openQuoteModal(reqId) {
     quoteRequestId = reqId;
@@ -1391,15 +1407,17 @@
   async function doSignup() {
     const btn = $('signup-btn');
     btn.disabled = true;
-    btn.textContent = 'Creating...';
+    btn.textContent = 'Creating…';
     try {
       const email = $('signup-email').value.trim();
       const pass = $('signup-pass').value;
       const name = $('signup-name').value.trim();
-      if (!email || pass.length < 6) throw new Error('Email + password (6+ chars) required');
+      if (!name || name.length < 2) throw new Error('Enter your full name (at least 2 characters)');
+      if (!looksLikeEmail(email)) throw new Error('Enter a valid email address');
+      if (pass.length < 6) throw new Error('Password must be at least 6 characters');
       const { data, error } = await needDb().auth.signUp({
         email, password: pass,
-        options: { data: { full_name: name } },
+        options: { data: { full_name: name.slice(0, 80) } },
       });
       if (error) throw error;
       if (data.session) {
@@ -1430,6 +1448,12 @@
       showMsg('login-msg', 'Enter your email above, then click Forgot password', false);
       return;
     }
+    if (!looksLikeEmail(email)) {
+      showMsg('login-msg', 'Enter a valid email address', false);
+      return;
+    }
+    const btn = $('forgot-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
     try {
       const redirectTo = window.location.origin + window.location.pathname;
       const { error } = await needDb().auth.resetPasswordForEmail(email, { redirectTo });
@@ -1437,17 +1461,19 @@
       showMsg('login-msg', 'Password reset email sent — check your inbox', true);
     } catch (e) {
       showMsg('login-msg', userFacingErr(e?.message || String(e)), false);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Forgot password?'; }
     }
   }
 
   async function doLogin() {
     const btn = $('login-btn');
     btn.disabled = true;
-    btn.textContent = 'Signing in...';
+    btn.textContent = 'Signing in…';
     try {
       const email = $('login-email').value.trim();
       const pass = $('login-pass').value;
-      if (!email || !pass) throw new Error('Enter email and password');
+      if (!looksLikeEmail(email) || !pass) throw new Error('Enter a valid email and password');
       const { data, error } = await needDb().auth.signInWithPassword({ email, password: pass });
       if (error) {
         if (/email not confirmed/i.test(error.message)) {
@@ -1700,7 +1726,8 @@
   // ── CLIENT ──
   async function doPost() {
     const btn = $('post-btn');
-    btn.disabled = true;
+    const prevLabel = btn?.textContent || 'Post request';
+    if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
     try {
       const title = ($('post-title')?.value || '').trim();
       const desc = $('post-desc').value.trim();
@@ -1734,7 +1761,9 @@
       toast('Request posted!', true);
     } catch (e) {
       showSchemaMsg('post-msg', e?.message || String(e), 'Requests need APPLY-ALL SQL (001–020).');
-    } finally { btn.disabled = false; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
+    }
   }
 
   async function loadNotifications() {
@@ -2321,7 +2350,7 @@
     const btn = $('apply-btn');
     const wasPending = isPending();
     btn.disabled = true;
-    btn.textContent = wasPending ? 'Saving...' : 'Submitting...';
+    btn.textContent = wasPending ? 'Saving…' : 'Submitting…';
     try {
       const row = {
         user_id: user.id,
@@ -4191,6 +4220,7 @@
       const budget = btn.getAttribute('data-budget') || '';
       if ($('post-budget')) $('post-budget').value = budget === 'Custom / TBD' ? '' : budget;
       document.querySelectorAll('.budget-chip').forEach((x) => x.classList.toggle('on', x === btn));
+      syncChipPressed('.budget-chip');
     });
   });
   document.querySelectorAll('.goal-chip').forEach((btn) => {
@@ -4202,6 +4232,7 @@
       ta.value = cur ? (cur.endsWith(goal) ? cur : cur + '\n\nGoal: ' + goal) : ('Goal: ' + goal + '\n\n');
       ta.focus();
       document.querySelectorAll('.goal-chip').forEach((x) => x.classList.toggle('on', x === btn));
+      syncChipPressed('.goal-chip');
     });
   });
   document.querySelectorAll('.channel-chip').forEach((btn) => {
@@ -4209,10 +4240,14 @@
       const ch = btn.getAttribute('data-channel') || '';
       if ($('post-cat') && ch) $('post-cat').value = ch;
       document.querySelectorAll('.channel-chip').forEach((x) => x.classList.toggle('on', x === btn));
+      syncChipPressed('.channel-chip');
     });
   });
   // Default channel highlight
   document.querySelector('.channel-chip[data-channel="WhatsApp / Chat"]')?.classList.add('on');
+  syncChipPressed('.channel-chip');
+  syncChipPressed('.goal-chip');
+  syncChipPressed('.budget-chip');
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Tab') {
@@ -4253,8 +4288,17 @@
     if (hasDashParams) consumeViewDeepLink();
   });
 
-  // Enter key on login
+  // Enter key on login / signup fields
+  $('login-email')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('login-pass')?.focus(); }
+  });
   $('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('signup-name')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('signup-email')?.focus(); }
+  });
+  $('signup-email')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('signup-pass')?.focus(); }
+  });
   $('signup-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
   $('reset-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitPasswordReset(); });
   $('reset-btn')?.addEventListener('click', submitPasswordReset);
@@ -4383,6 +4427,7 @@
     wireVisibilityRefresh();
     wireLandingHonesty();
     wirePasswordHint('signup-pass', 'signup-pass-hint', 6);
+    wirePasswordHint('signup-name', 'signup-name-hint', 2);
     wirePasswordHint('reset-pass', 'reset-pass-hint', 6);
     wirePasswordMatchHint('reset-pass', 'reset-pass2', 'reset-pass2-hint');
     wirePassToggles();
