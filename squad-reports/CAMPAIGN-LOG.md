@@ -364,3 +364,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - Schema-error APPLY-ALL on requests/jobs/quotes/admin/chat message errors
 - Admin All requests **Clear filters** empty state; pay awaiting honesty + resume focus
 - Pay sheet done title accent; WINNING-PRODUCT post-finale pointer
+
+## 2026-08-24T00:00Z — pulse (post-finale)
+- Admin **status deep link** `?view=all-requests&status=` + Copy filtered link
+- Netlify **HTML must-revalidate**; confirming payment `aria-live`
+- Pay awaiting note polish (not funded)

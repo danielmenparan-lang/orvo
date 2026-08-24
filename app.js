@@ -747,21 +747,38 @@
       go('chat', rid);
       params.delete('rid');
       params.delete('view');
+      params.delete('status');
       const u = new URL(window.location.href);
       u.search = params.toString();
       window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
       return;
     }
-    const v = params.get('view');
-    if (!v) return;
+    const status = params.get('status');
+    const allowedStatus = new Set(['open', 'awaiting_payment', 'funded', 'delivered', 'completed', 'disputed']);
+    if (status && allowedStatus.has(status)) {
+      window.__orvoAllReqsStatus = status;
+    }
+    let v = params.get('view');
+    if (!v && status && allowedStatus.has(status) && isAdmin()) v = 'all-requests';
+    if (!v) {
+      if (status) {
+        params.delete('status');
+        const u = new URL(window.location.href);
+        u.search = params.toString();
+        window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
+      }
+      return;
+    }
     const allowed = new Set([
       'requests', 'jobs', 'invites', 'quotes', 'messages', 'apply', 'status',
       'profile', 'admin', 'all-requests', 'disputes', 'notifications',
     ]);
     if (!allowed.has(v)) return;
+    if (v === 'all-requests' && !isAdmin()) return;
     ensureDashOpen();
     go(v);
     params.delete('view');
+    params.delete('status');
     const u = new URL(window.location.href);
     u.search = params.toString();
     window.history.replaceState({}, '', u.pathname + (u.search ? '?' + u.search : '') + u.hash);
