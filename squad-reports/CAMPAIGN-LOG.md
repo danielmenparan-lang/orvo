@@ -408,3 +408,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Dialog aria** on auth/reset/post/quote/dispute/confirm/review
 - **Admin All requests** cards click-to-open (select/buttons still work)
 - **toastSchemaErr** on cancel request, withdraw quote, mark delivered
+
+## 2026-08-24T04:00Z — pulse (post-finale)
+- **Chat a11y** — role=log, labelled input, sr-only label, aria-describedby
+- **Modal backdrop click** dismisses sheets; page `aria-hidden` while modal open
+- **toastSchemaErr** on resolve dispute + release payment
+- Judge gates synced for 03:30 + 04:00

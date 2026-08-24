@@ -317,6 +317,7 @@
       ? modalEl.querySelector(focusSel)
       : modalEl.querySelector('input:not([type=hidden]), textarea, select, button.btn-black, button:not(.modal-close)');
     setTimeout(() => target?.focus?.(), 40);
+    syncPageAriaHidden();
   }
   function blurModal(modalEl) {
     if (!modalEl) return;
@@ -325,6 +326,15 @@
     if (ret && typeof ret.focus === 'function' && document.contains(ret)) {
       setTimeout(() => ret.focus(), 0);
     }
+    setTimeout(syncPageAriaHidden, 0);
+  }
+  function syncPageAriaHidden() {
+    const open = !!document.querySelector('.modal-bg.open');
+    document.querySelectorAll('main, nav, #dashboard, footer, #boot-error').forEach((el) => {
+      if (!el) return;
+      if (open) el.setAttribute('aria-hidden', 'true');
+      else el.removeAttribute('aria-hidden');
+    });
   }
 
   function isConfiguredFounder() {
@@ -2359,7 +2369,7 @@
       await needDb().from('requests').update({ status: 'delivered' }).eq('id', requestId);
       toast('Dispute resolved', true);
       loadDisputes();
-    } catch (e) { toast(userFacingErr(e.message), false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   // ── CHAT ──
@@ -2563,14 +2573,15 @@
       </div>
       ${req?.user_id === user.id ? `<div style="margin-bottom:16px"><b>Quotes</b>${quotesHtml}</div>` : ''}
       ${escrowHtml}
-      <p class="chat-hint">No emails or phone numbers. Off-platform contact links blocked. Agent/demo links (GitHub, Vercel, n8n…) are OK.</p>
+      <p class="chat-hint" id="chat-hint">No emails or phone numbers. Off-platform contact links blocked. Agent/demo links (GitHub, Vercel, n8n…) are OK.</p>
       <div class="chat">
-        <div class="chat-msgs" id="chat-msgs"></div>
+        <div class="chat-msgs" id="chat-msgs" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div>
         <form class="chat-send" id="chat-form">
-          <input id="chat-input" placeholder="Type a message..." autocomplete="off" maxlength="2000"/>
+          <label class="sr-only" for="chat-input">Message</label>
+          <input id="chat-input" placeholder="Type a message..." autocomplete="off" maxlength="2000" aria-describedby="chat-count chat-hint"/>
           <button class="btn btn-primary" type="submit">Send</button>
         </form>
-        <p class="chat-meta" id="chat-count">0 / 2000</p>
+        <p class="chat-meta" id="chat-count" aria-live="polite">0 / 2000</p>
       </div>`;
 
     $('view-body').querySelectorAll('.btn-pay').forEach(b => {
@@ -3069,7 +3080,7 @@
       if (e1) throw e1;
       toast('Project completed', true);
       loadChat();
-    } catch (e) { toast(userFacingErr(e.message), false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   async function acceptQuote(qid, rid) {
@@ -3596,6 +3607,21 @@
     else if (a === 'close-dispute') closeDispute();
     else if (a === 'close-review') closeReview();
     else if (a === 'close-confirm') closeConfirm(false);
+  });
+
+  document.querySelectorAll('.modal-bg').forEach((bg) => {
+    bg.addEventListener('click', (e) => {
+      if (e.target !== bg) return;
+      const id = bg.id;
+      if (id === 'auth-modal') closeAuth();
+      else if (id === 'reset-modal') closePasswordReset();
+      else if (id === 'post-modal') closePost();
+      else if (id === 'quote-modal') closeQuote();
+      else if (id === 'pay-modal') closePay();
+      else if (id === 'dispute-modal') closeDispute();
+      else if (id === 'review-modal') closeReview();
+      else if (id === 'confirm-modal') closeConfirm(false);
+    });
   });
 
   $('login-btn').addEventListener('click', doLogin);
