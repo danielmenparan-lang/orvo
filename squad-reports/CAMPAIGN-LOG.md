@@ -489,3 +489,8 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Demo URL** validation (http/https) + labelled field on delivery card
 - **Logout cleanup** — clears last-view session, unread title, password fields
 - Login success clears password input
+
+## 2026-08-24T11:00Z — pulse (post-finale)
+- **Apply URL check** — optional portfolio/LinkedIn must be http(s)
+- **Busy states** — cancel request, withdraw quote, approve/reject, invite
+- Signup clears password after account create

@@ -1393,6 +1393,7 @@
         const intent = $('signup-intent')?.value || 'client';
         postSignupIntent = 'client';
         await refreshUser();
+        if ($('signup-pass')) $('signup-pass').value = '';
         closeAuth();
         routeAfterSignup(intent);
         toast('Welcome!', true);
@@ -1400,6 +1401,7 @@
       }
       setAuthTab('login');
       postSignupIntent = 'client';
+      if ($('signup-pass')) $('signup-pass').value = '';
       showMsg('login-msg', 'Account created! Sign in to continue.', true);
     } catch (e) {
       showMsg('signup-msg', userFacingErr(e?.message || String(e)), false);
@@ -1952,6 +1954,8 @@
       okLabel: 'Cancel request',
     });
     if (!ans.ok) return;
+    const btn = document.querySelector(`.btn-cancel-req[data-rid="${rid}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Cancelling…'; }
     try {
       const { data: req, error } = await needDb().from('requests').select('status,user_id').eq('id', rid).single();
       if (error) throw error;
@@ -1963,7 +1967,10 @@
       track('request_cancelled', { request_id: rid });
       toast('Request cancelled', true);
       loadRequests();
-    } catch (e) { toastSchemaErr(e?.message || String(e)); }
+    } catch (e) {
+      toastSchemaErr(e?.message || String(e));
+      if (btn) { btn.disabled = false; btn.textContent = 'Cancel'; }
+    }
   }
 
   // ── BUILDER ──
@@ -2205,6 +2212,8 @@
       okLabel: 'Withdraw quote',
     });
     if (!ans.ok) return;
+    const btn = document.querySelector(`.btn-withdraw-quote[data-qid="${qid}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Withdrawing…'; }
     try {
       const { data: q, error } = await needDb().from('quotes').select('id,builder_id,status').eq('id', qid).single();
       if (error) throw error;
@@ -2215,7 +2224,10 @@
       track('quote_withdrawn', { quote_id: qid });
       toast('Quote withdrawn', true);
       loadQuotes();
-    } catch (e) { toastSchemaErr(e?.message || String(e)); }
+    } catch (e) {
+      toastSchemaErr(e?.message || String(e));
+      if (btn) { btn.disabled = false; btn.textContent = 'Withdraw'; }
+    }
   }
 
   async function loadApply() {
@@ -2248,8 +2260,8 @@
         : 'ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.'}</p>
       <div class="field"><label for="apply-bio">Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..." maxlength="2000"></textarea><p class="chat-meta" id="apply-bio-count">0 / 2000 (min 50)</p></div>
       <div class="field"><label for="apply-skills">Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
-      <div class="field"><label for="apply-portfolio">Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" placeholder="GitHub, website, or leave empty"/></div>
-      <div class="field"><label for="apply-linkedin">LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" placeholder="https://linkedin.com/in/..."/></div>
+      <div class="field"><label for="apply-portfolio">Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" type="url" inputmode="url" placeholder="https://github.com/you or your site"/></div>
+      <div class="field"><label for="apply-linkedin">LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" type="url" inputmode="url" placeholder="https://linkedin.com/in/..."/></div>
       <div class="field"><label for="apply-years">Years of experience</label><input id="apply-years" type="number" min="0" value="0"/></div>
       <button class="btn-black" id="apply-btn">${btnLabel}</button>
       ${editing ? '<button class="btn btn-ghost" id="apply-cancel" style="margin-top:10px;width:100%;padding:12px">Back to status</button>' : ''}`;
@@ -2267,11 +2279,29 @@
     wireFieldCounter('apply-bio', 'apply-bio-count', 2000, { min: 50 });
   }
 
+  function optionalHttpUrl(raw, label) {
+    const v = (raw || '').trim();
+    if (!v) return null;
+    if (!/^https?:\/\/\S+/i.test(v)) {
+      throw new Error(label + ' must start with http:// or https://');
+    }
+    return v;
+  }
+
   async function doApply() {
     const bio = $('apply-bio').value.trim();
     if (bio.length < 50) { toast('Bio must be at least 50 characters', false); return; }
     const skills = $('apply-skills').value.trim();
     if (!skills) { toast('Add at least one skill', false); return; }
+    let portfolio_url;
+    let linkedin_url;
+    try {
+      portfolio_url = optionalHttpUrl($('apply-portfolio')?.value, 'Portfolio URL');
+      linkedin_url = optionalHttpUrl($('apply-linkedin')?.value, 'LinkedIn URL');
+    } catch (e) {
+      toast(e.message, false);
+      return;
+    }
     const btn = $('apply-btn');
     const wasPending = isPending();
     btn.disabled = true;
@@ -2283,8 +2313,8 @@
         email: user.email || profile?.email || '',
         bio,
         skills,
-        portfolio_url: $('apply-portfolio').value.trim() || null,
-        linkedin_url: $('apply-linkedin').value.trim() || null,
+        portfolio_url,
+        linkedin_url,
         experience_years: parseInt($('apply-years').value, 10) || 0,
         status: 'pending',
       };
@@ -2460,6 +2490,10 @@
       okLabel: 'Approve builder',
     });
     if (!ans.ok) return;
+    const approveBtn = document.querySelector(`.btn-approve[data-uid="${uid}"]`);
+    const rejectBtn = document.querySelector(`.btn-reject[data-uid="${uid}"]`);
+    if (approveBtn) { approveBtn.disabled = true; approveBtn.textContent = 'Approving…'; }
+    if (rejectBtn) rejectBtn.disabled = true;
     try {
       const { error: e1 } = await needDb().from('builder_applications')
         .update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
@@ -2471,7 +2505,11 @@
       toast('Builder approved!', true);
       track('builder_approved', { user_id: uid });
       loadAdmin();
-    } catch (e) { toastSchemaErr(e?.message || String(e)); }
+    } catch (e) {
+      toastSchemaErr(e?.message || String(e));
+      if (approveBtn) { approveBtn.disabled = false; approveBtn.textContent = 'Approve'; }
+      if (rejectBtn) rejectBtn.disabled = false;
+    }
   }
 
   async function rejectBuilder(uid) {
@@ -2481,6 +2519,10 @@
       okLabel: 'Reject application',
     });
     if (!ans.ok) return;
+    const approveBtn = document.querySelector(`.btn-approve[data-uid="${uid}"]`);
+    const rejectBtn = document.querySelector(`.btn-reject[data-uid="${uid}"]`);
+    if (rejectBtn) { rejectBtn.disabled = true; rejectBtn.textContent = 'Rejecting…'; }
+    if (approveBtn) approveBtn.disabled = true;
     try {
       const { error: e1 } = await needDb().from('builder_applications')
         .update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
@@ -2490,7 +2532,11 @@
       if (e2) throw e2;
       toast('Rejected', true);
       loadAdmin();
-    } catch (e) { toastSchemaErr(e?.message || String(e)); }
+    } catch (e) {
+      toastSchemaErr(e?.message || String(e));
+      if (rejectBtn) { rejectBtn.disabled = false; rejectBtn.textContent = 'Reject'; }
+      if (approveBtn) approveBtn.disabled = false;
+    }
   }
 
   async function loadInvites() {
@@ -2676,6 +2722,8 @@
       okLabel: 'Send invite',
     });
     if (!ans.ok) return;
+    const btn = document.querySelector(`.btn-invite[data-rid="${requestId}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Inviting…'; }
     try {
       const { error } = await needDb().from('request_invites').insert({
         request_id: requestId,
@@ -2685,7 +2733,11 @@
       });
       if (error) throw error;
       toast('Builder invited', true);
-    } catch (e) { toastSchemaErr(e?.message || String(e)); }
+      if (btn) { btn.disabled = false; btn.textContent = 'Invite'; }
+    } catch (e) {
+      toastSchemaErr(e?.message || String(e));
+      if (btn) { btn.disabled = false; btn.textContent = 'Invite'; }
+    }
   }
 
   async function loadDisputes() {
