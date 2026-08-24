@@ -1102,15 +1102,54 @@
     if ($('quote-eta')) $('quote-eta').value = '';
     $('quote-text').value = '';
     wireFieldCounter('quote-text', 'quote-count', 2000);
+    wireQuotePriceHint();
+    if ($('quote-heading')) $('quote-heading').textContent = 'Send quote';
+    if ($('quote-sub')) $('quote-sub').textContent = 'Your price and pitch to the client';
     const el = $('quote-modal');
     el.classList.add('open');
     focusModal(el, '#quote-price');
+    if (reqId) {
+      needDb().from('requests').select('title').eq('id', reqId).maybeSingle()
+        .then(({ data }) => {
+          if (!data?.title || quoteRequestId !== reqId) return;
+          const t = String(data.title).slice(0, 64);
+          if ($('quote-heading')) $('quote-heading').textContent = 'Quote this job';
+          if ($('quote-sub')) $('quote-sub').textContent = '“' + t + '”';
+        })
+        .catch(() => { /* title optional */ });
+    }
   }
   function closeQuote() {
     const el = $('quote-modal');
     el.classList.remove('open');
     quoteRequestId = null;
+    if ($('quote-heading')) $('quote-heading').textContent = 'Send quote';
+    if ($('quote-sub')) $('quote-sub').textContent = 'Your price and pitch to the client';
     blurModal(el);
+  }
+
+  function wireQuotePriceHint() {
+    const input = $('quote-price');
+    const hint = $('quote-price-hint');
+    if (!input || !hint) return;
+    const sync = () => {
+      const raw = (input.value || '').trim();
+      if (!raw) {
+        hint.textContent = 'Minimum $50 · Global marketplace — quote in USD for now';
+        hint.classList.remove('warn');
+        return;
+      }
+      const cents = parseMoney(raw);
+      if (cents < 5000) {
+        hint.textContent = (cents ? money(cents) + ' — ' : '') + 'minimum is $50 USD';
+        hint.classList.add('warn');
+      } else {
+        hint.textContent = money(cents) + ' USD · founding fee 0% to the builder';
+        hint.classList.remove('warn');
+      }
+    };
+    input.oninput = sync;
+    sync();
   }
 
   function openPaySheet({ qid, rid, amountCents, fee, builderNet, builderName, etaDays, requestTitle }) {
@@ -2163,11 +2202,11 @@
       <p style="color:var(--gray);font-size:14px;margin-bottom:20px">${editing
         ? 'Update your application below. Status stays pending until ORVO reviews.'
         : 'ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.'}</p>
-      <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..." maxlength="2000"></textarea><p class="chat-meta" id="apply-bio-count">0 / 2000 (min 50)</p></div>
-      <div class="field"><label>Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
-      <div class="field"><label>Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" placeholder="GitHub, website, or leave empty"/></div>
-      <div class="field"><label>LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" placeholder="https://linkedin.com/in/..."/></div>
-      <div class="field"><label>Years of experience</label><input id="apply-years" type="number" min="0" value="0"/></div>
+      <div class="field"><label for="apply-bio">Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..." maxlength="2000"></textarea><p class="chat-meta" id="apply-bio-count">0 / 2000 (min 50)</p></div>
+      <div class="field"><label for="apply-skills">Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
+      <div class="field"><label for="apply-portfolio">Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" placeholder="GitHub, website, or leave empty"/></div>
+      <div class="field"><label for="apply-linkedin">LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" placeholder="https://linkedin.com/in/..."/></div>
+      <div class="field"><label for="apply-years">Years of experience</label><input id="apply-years" type="number" min="0" value="0"/></div>
       <button class="btn-black" id="apply-btn">${btnLabel}</button>
       ${editing ? '<button class="btn btn-ghost" id="apply-cancel" style="margin-top:10px;width:100%;padding:12px">Back to status</button>' : ''}`;
     if (existing) {
@@ -2248,6 +2287,7 @@
       approved: 'You are approved! Browse open jobs and send quotes to clients.',
       rejected: 'Your application was not approved. Contact support if you believe this is an error.',
     };
+    setViewTitle(app.status === 'pending' ? 'Application pending' : app.status === 'approved' ? 'You are approved' : 'Application status');
     $('view-body').innerHTML = `
       <p><strong>Status:</strong> <span class="badge">${esc(statusLabel(app.status))}</span></p>
       <p style="color:var(--gray);margin:12px 0 20px;font-size:14px">${msgs[app.status] || ''}</p>
@@ -2265,10 +2305,10 @@
     refreshAdminBadge();
     $('view-action').innerHTML = `
       <button class="btn btn-ghost" id="admin-events" title="Copy client analytics buffer">Copy events</button>
-      <button class="btn btn-ghost" id="admin-refresh">Refresh</button>
+      ${refreshViewBtnHtml()}
       ${copyViewBtnHtml()}`;
     wireCopyViewLink();
-    $('admin-refresh')?.addEventListener('click', loadAdmin);
+    wireRefreshView();
     $('admin-events')?.addEventListener('click', async () => {
       const rows = window.ORVO_EVENTS?.dump?.() || [];
       const text = JSON.stringify(rows, null, 2);
@@ -3984,6 +4024,8 @@
   $('forgot-btn')?.addEventListener('click', doForgotPassword);
   $('signup-btn').addEventListener('click', doSignup);
   $('quote-btn').addEventListener('click', doQuote);
+  $('quote-price')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doQuote(); } });
+  $('quote-eta')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doQuote(); } });
   $('post-btn').addEventListener('click', doPost);
   $('pay-confirm-btn').addEventListener('click', confirmAcceptPay);
   $('pay-resume-btn')?.addEventListener('click', resumeCheckoutFromSheet);

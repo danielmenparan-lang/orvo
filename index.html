@@ -394,6 +394,7 @@ footer{
 }
 .field textarea{resize:vertical;min-height:88px}
 .field-hint{font-size:11px;color:var(--muted);margin-top:4px}
+.field-hint.warn{color:var(--o)}
 .msg{padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:16px}
 .msg.err{background:#FEE2E2;color:var(--red)}
 .msg.ok{background:#DCFCE7;color:var(--green)}
@@ -621,17 +622,17 @@ footer{
     </div>
     <div id="panel-login">
       <div id="login-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
-      <div class="field"><label>Email</label><input id="login-email" type="email" autocomplete="email"/></div>
-      <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password"/></div>
+      <div class="field"><label for="login-email">Email</label><input id="login-email" type="email" autocomplete="email"/></div>
+      <div class="field"><label for="login-pass">Password</label><input id="login-pass" type="password" autocomplete="current-password"/></div>
       <p style="margin:-8px 0 16px;text-align:right"><button type="button" class="hero-secondary" id="forgot-btn" style="font-size:12px;color:var(--gray)">Forgot password?</button></p>
       <button class="btn-black" id="login-btn">Sign in</button>
     </div>
     <div id="panel-signup" class="hidden">
       <div id="signup-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
-      <div class="field"><label>Full name</label><input id="signup-name"/></div>
-      <div class="field"><label>Email</label><input id="signup-email" type="email" autocomplete="email"/></div>
-      <div class="field"><label>Password</label><input id="signup-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
-      <div class="field"><label>I want to</label>
+      <div class="field"><label for="signup-name">Full name</label><input id="signup-name"/></div>
+      <div class="field"><label for="signup-email">Email</label><input id="signup-email" type="email" autocomplete="email"/></div>
+      <div class="field"><label for="signup-pass">Password</label><input id="signup-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
+      <div class="field"><label for="signup-intent">I want to</label>
         <select id="signup-intent">
           <option value="client">Find a builder — post agent requests</option>
           <option value="builder">Build agents — apply as a vetted builder</option>
@@ -649,8 +650,8 @@ footer{
     <h2 id="reset-title">Set a new password</h2>
     <p class="sub">Choose a new password for your ORVO account</p>
     <div id="reset-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
-    <div class="field"><label>New password</label><input id="reset-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
-    <div class="field"><label>Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password"/></div>
+    <div class="field"><label for="reset-pass">New password</label><input id="reset-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
+    <div class="field"><label for="reset-pass2">Confirm password</label><input id="reset-pass2" type="password" autocomplete="new-password"/></div>
     <button class="btn-black" id="reset-btn">Update password</button>
   </div>
 </div>
@@ -661,8 +662,8 @@ footer{
     <button class="modal-close" data-action="close-post" aria-label="Close">✕</button>
     <h2 id="post-heading">Post a request</h2>
     <p class="sub">Only approved builders will see this</p>
-    <div id="post-msg" class="msg hidden"></div>
-    <div class="field"><label>Title</label><input id="post-title" placeholder="e.g. WhatsApp order bot for my restaurant" maxlength="80"/>
+    <div id="post-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
+    <div class="field"><label for="post-title">Title</label><input id="post-title" placeholder="e.g. WhatsApp order bot for my restaurant" maxlength="80"/>
       <p class="chat-meta" id="post-title-count">0 / 80</p>
     </div>
     <div class="field"><label>Primary channel</label>
@@ -674,7 +675,8 @@ footer{
         <button type="button" class="btn btn-ghost channel-chip" data-channel="Other">Other</button>
       </div>
     </div>
-    <div class="field"><label>What do you need?</label>
+    <div class="field">
+      <label for="post-desc">What do you need?</label>
       <div class="row" style="margin:0 0 8px">
         <button type="button" class="btn btn-ghost goal-chip" data-goal="Take orders / bookings automatically">Orders</button>
         <button type="button" class="btn btn-ghost goal-chip" data-goal="Answer FAQs 24/7 from my knowledge base">FAQ</button>
@@ -684,11 +686,11 @@ footer{
       <textarea id="post-desc" placeholder="Describe the AI agent, channels, integrations, and success criteria..." maxlength="4000"></textarea>
       <p class="chat-meta" id="post-count">0 / 4000</p>
     </div>
-    <div class="field"><label>Category</label>
+    <div class="field"><label for="post-cat">Category</label>
       <select id="post-cat"><option>WhatsApp / Chat</option><option>Voice / Phone</option><option>Automation</option><option>CRM / Email</option><option>Other</option></select>
     </div>
-    <div class="field"><label>Country (optional)</label><input id="post-country" placeholder="e.g. United States, Germany, Brazil" maxlength="80"/><p class="field-hint">Where the business operates — helps builders quote timezone &amp; language.</p></div>
-    <div class="field"><label>Budget hint (optional)</label>
+    <div class="field"><label for="post-country">Country (optional)</label><input id="post-country" placeholder="e.g. United States, Germany, Brazil" maxlength="80"/><p class="field-hint">Where the business operates — helps builders quote timezone &amp; language.</p></div>
+    <div class="field"><label for="post-budget">Budget hint (optional)</label>
       <div class="row" style="margin:0 0 8px">
         <button type="button" class="btn btn-ghost budget-chip" data-budget="$500–$1,500">$500–1.5k</button>
         <button type="button" class="btn btn-ghost budget-chip" data-budget="$1,500–$5,000">$1.5k–5k</button>
@@ -706,15 +708,15 @@ footer{
   <div class="modal-box">
     <button class="modal-close" data-action="close-quote" aria-label="Close">✕</button>
     <h2 id="quote-heading">Send quote</h2>
-    <p class="sub">Your price and pitch to the client</p>
-    <div id="quote-msg" class="msg hidden"></div>
+    <p class="sub" id="quote-sub">Your price and pitch to the client</p>
+    <div id="quote-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="field">
-      <label>Price (USD)</label>
-      <input id="quote-price" placeholder="e.g. 1500"/>
-      <p class="field-hint">Minimum $50 · Global marketplace — quote in USD for now</p>
+      <label for="quote-price">Price (USD)</label>
+      <input id="quote-price" inputmode="decimal" placeholder="e.g. 1500" aria-describedby="quote-price-hint"/>
+      <p class="field-hint" id="quote-price-hint">Minimum $50 · Global marketplace — quote in USD for now</p>
     </div>
-    <div class="field"><label>Delivery estimate (days)</label><input id="quote-eta" type="number" min="1" max="180" placeholder="e.g. 14"/></div>
-    <div class="field"><label>Message</label><textarea id="quote-text" placeholder="Why you're the right builder..." maxlength="2000"></textarea>
+    <div class="field"><label for="quote-eta">Delivery estimate (days)</label><input id="quote-eta" type="number" min="1" max="180" placeholder="e.g. 14"/></div>
+    <div class="field"><label for="quote-text">Message</label><textarea id="quote-text" placeholder="Why you're the right builder..." maxlength="2000"></textarea>
       <p class="chat-meta" id="quote-count">0 / 2000</p>
     </div>
     <button class="btn-black" id="quote-btn">Send quote</button>
@@ -728,7 +730,7 @@ footer{
     <h2 id="pay-title">Accept &amp; pay</h2>
     <p class="sub" id="pay-sub">Review the quote before locking in this builder</p>
     <p id="pay-builder-line" class="field-hint" style="margin:-8px 0 14px"></p>
-    <div id="pay-msg" class="msg hidden"></div>
+    <div id="pay-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="pay-rows" id="pay-breakdown">
       <div class="pay-row"><span>Quote amount</span><strong id="pay-amount">—</strong></div>
       <div class="pay-row"><span id="pay-fee-label">ORVO fee</span><strong id="pay-fee">—</strong></div>
@@ -753,9 +755,9 @@ footer{
     <button class="modal-close" data-action="close-dispute" aria-label="Close">✕</button>
     <h2 id="dispute-heading">Open a dispute</h2>
     <p class="sub">This freezes release until ORVO admin reviews. Keep details factual.</p>
-    <div id="dispute-msg" class="msg hidden"></div>
+    <div id="dispute-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="field">
-      <label>What went wrong?</label>
+      <label for="dispute-details">What went wrong?</label>
       <textarea id="dispute-details" rows="5" placeholder="Describe the issue (at least 20 characters)…" maxlength="2000"></textarea>
       <p class="chat-meta" id="dispute-count">0 / 2000</p>
     </div>
@@ -774,7 +776,7 @@ footer{
     <p class="sub" id="confirm-sub"></p>
     <div id="confirm-msg" class="msg hidden"></div>
     <div class="field hidden" id="confirm-note-wrap">
-      <label>Note (optional)</label>
+      <label for="confirm-note">Note (optional)</label>
       <textarea id="confirm-note" rows="3" placeholder="Admin note…" maxlength="500"></textarea>
       <p class="chat-meta" id="confirm-note-count">0 / 500</p>
     </div>
@@ -791,7 +793,7 @@ footer{
     <button class="modal-close" data-action="close-review" aria-label="Close">✕</button>
     <h2 id="review-heading">Rate this builder</h2>
     <p class="sub">One review per completed project</p>
-    <div id="review-msg" class="msg hidden"></div>
+    <div id="review-msg" class="msg hidden" role="alert" aria-live="assertive"></div>
     <div class="field">
       <label>Stars</label>
       <div class="star-row" id="review-stars" role="group" aria-label="Rating">
@@ -803,7 +805,7 @@ footer{
       </div>
     </div>
     <div class="field">
-      <label>Short review <span style="font-weight:400;color:var(--gray)">(optional, 20+ chars)</span></label>
+      <label for="review-body">Short review <span style="font-weight:400;color:var(--gray)">(optional, 20+ chars)</span></label>
       <textarea id="review-body" rows="3" placeholder="What went well?" maxlength="500"></textarea>
       <p class="chat-meta" id="review-count">0 / 500</p>
     </div>
@@ -840,6 +842,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=61"></script>
+<script src="app.js?v=62"></script>
 </body>
 </html>

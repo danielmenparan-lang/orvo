@@ -467,3 +467,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Refresh** button on list/chat/profile/status/admin panels
 - **`setViewTitle`** keeps apply edit + chat titles in sync with `document.title`
 - Apply bio counter shows **min 50** remaining until eligible
+
+## 2026-08-24T09:00Z — pulse (post-finale)
+- **Quote sheet** — job title in heading; live $50 min preview; Enter submits from price/ETA
+- **Form labels** — `for=` on auth, post, quote, dispute, review, apply fields
+- Modal error msgs (`quote`/`pay`/`post`/`dispute`/`review`) get `role="alert"`
+- Status view title reflects pending/approved; admin uses shared Refresh
