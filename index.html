@@ -605,10 +605,10 @@ footer{
 </main>
 
 <!-- AUTH -->
-<div class="modal-bg" id="auth-modal">
+<div class="modal-bg" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" aria-describedby="auth-sub">
   <div class="modal-box">
-    <button class="modal-close" data-action="close-auth">✕</button>
-    <h2>Welcome to ORVO</h2>
+    <button class="modal-close" data-action="close-auth" aria-label="Close">✕</button>
+    <h2 id="auth-title">Welcome to ORVO</h2>
     <p class="sub" id="auth-sub">Sign in or create your account</p>
     <div class="tabs">
       <button class="tab active" id="tab-login" data-action="tab-login">Sign in</button>
@@ -638,10 +638,10 @@ footer{
 </div>
 
 <!-- PASSWORD RESET (from email recovery link) -->
-<div class="modal-bg" id="reset-modal">
+<div class="modal-bg" id="reset-modal" role="dialog" aria-modal="true" aria-labelledby="reset-title">
   <div class="modal-box">
-    <button class="modal-close" data-action="close-reset">✕</button>
-    <h2>Set a new password</h2>
+    <button class="modal-close" data-action="close-reset" aria-label="Close">✕</button>
+    <h2 id="reset-title">Set a new password</h2>
     <p class="sub">Choose a new password for your ORVO account</p>
     <div id="reset-msg" class="msg hidden"></div>
     <div class="field"><label>New password</label><input id="reset-pass" type="password" autocomplete="new-password"/><p class="field-hint">Min 6 characters</p></div>
@@ -651,10 +651,10 @@ footer{
 </div>
 
 <!-- POST -->
-<div class="modal-bg" id="post-modal">
+<div class="modal-bg" id="post-modal" role="dialog" aria-modal="true" aria-labelledby="post-heading">
   <div class="modal-box">
-    <button class="modal-close" data-action="close-post">✕</button>
-    <h2>Post a request</h2>
+    <button class="modal-close" data-action="close-post" aria-label="Close">✕</button>
+    <h2 id="post-heading">Post a request</h2>
     <p class="sub">Only approved builders will see this</p>
     <div id="post-msg" class="msg hidden"></div>
     <div class="field"><label>Title</label><input id="post-title" placeholder="e.g. WhatsApp order bot for my restaurant" maxlength="80"/>
@@ -697,10 +697,10 @@ footer{
 </div>
 
 <!-- QUOTE -->
-<div class="modal-bg" id="quote-modal">
+<div class="modal-bg" id="quote-modal" role="dialog" aria-modal="true" aria-labelledby="quote-heading">
   <div class="modal-box">
-    <button class="modal-close" data-action="close-quote">✕</button>
-    <h2>Send quote</h2>
+    <button class="modal-close" data-action="close-quote" aria-label="Close">✕</button>
+    <h2 id="quote-heading">Send quote</h2>
     <p class="sub">Your price and pitch to the client</p>
     <div id="quote-msg" class="msg hidden"></div>
     <div class="field">
@@ -719,7 +719,7 @@ footer{
 <!-- ACCEPT & PAY -->
 <div class="modal-bg" id="pay-modal" role="dialog" aria-modal="true" aria-labelledby="pay-title" aria-describedby="pay-note">
   <div class="modal-box pay-sheet" id="pay-sheet">
-    <button class="modal-close" data-action="close-pay">✕</button>
+    <button class="modal-close" data-action="close-pay" aria-label="Close">✕</button>
     <h2 id="pay-title">Accept &amp; pay</h2>
     <p class="sub" id="pay-sub">Review the quote before locking in this builder</p>
     <p id="pay-builder-line" class="field-hint" style="margin:-8px 0 14px"></p>
@@ -743,10 +743,10 @@ footer{
 </div>
 
 <!-- DISPUTE -->
-<div class="modal-bg" id="dispute-modal">
+<div class="modal-bg" id="dispute-modal" role="dialog" aria-modal="true" aria-labelledby="dispute-heading">
   <div class="modal-box">
-    <button class="modal-close" data-action="close-dispute">✕</button>
-    <h2>Open a dispute</h2>
+    <button class="modal-close" data-action="close-dispute" aria-label="Close">✕</button>
+    <h2 id="dispute-heading">Open a dispute</h2>
     <p class="sub">This freezes release until ORVO admin reviews. Keep details factual.</p>
     <div id="dispute-msg" class="msg hidden"></div>
     <div class="field">
@@ -762,9 +762,9 @@ footer{
 </div>
 
 <!-- CONFIRM (deliver / release / admin resolve) -->
-<div class="modal-bg" id="confirm-modal">
+<div class="modal-bg" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-sub">
   <div class="modal-box">
-    <button class="modal-close" data-action="close-confirm">✕</button>
+    <button class="modal-close" data-action="close-confirm" aria-label="Close">✕</button>
     <h2 id="confirm-title">Confirm</h2>
     <p class="sub" id="confirm-sub"></p>
     <div id="confirm-msg" class="msg hidden"></div>
@@ -781,10 +781,10 @@ footer{
 </div>
 
 <!-- REVIEW -->
-<div class="modal-bg" id="review-modal">
+<div class="modal-bg" id="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-heading">
   <div class="modal-box">
-    <button class="modal-close" data-action="close-review">✕</button>
-    <h2>Rate this builder</h2>
+    <button class="modal-close" data-action="close-review" aria-label="Close">✕</button>
+    <h2 id="review-heading">Rate this builder</h2>
     <p class="sub">One review per completed project</p>
     <div id="review-msg" class="msg hidden"></div>
     <div class="field">
@@ -834,6 +834,6 @@ footer{
 <script src="js/events.js?v=42"></script>
 <script src="js/status-spine.js?v=42"></script>
 <script src="supabase-config.js?v=42"></script>
-<script src="app.js?v=53"></script>
+<script src="app.js?v=54"></script>
 </body>
 </html>

@@ -309,6 +309,24 @@
     }
   }
 
+  let modalFocusReturn = null;
+  function focusModal(modalEl, focusSel) {
+    if (!modalEl) return;
+    modalFocusReturn = document.activeElement;
+    const target = focusSel
+      ? modalEl.querySelector(focusSel)
+      : modalEl.querySelector('input:not([type=hidden]), textarea, select, button.btn-black, button:not(.modal-close)');
+    setTimeout(() => target?.focus?.(), 40);
+  }
+  function blurModal(modalEl) {
+    if (!modalEl) return;
+    const ret = modalFocusReturn;
+    modalFocusReturn = null;
+    if (ret && typeof ret.focus === 'function' && document.contains(ret)) {
+      setTimeout(() => ret.focus(), 0);
+    }
+  }
+
   function isConfiguredFounder() {
     const logged = myEmail();
     const cfg = cfgAdminEmail();
@@ -740,10 +758,14 @@
     hideMsg('reset-msg');
     if ($('reset-pass')) $('reset-pass').value = '';
     if ($('reset-pass2')) $('reset-pass2').value = '';
-    $('reset-modal')?.classList.add('open');
+    const el = $('reset-modal');
+    el?.classList.add('open');
+    focusModal(el, '#reset-pass');
   }
   function closePasswordReset() {
-    $('reset-modal')?.classList.remove('open');
+    const el = $('reset-modal');
+    el?.classList.remove('open');
+    blurModal(el);
   }
   async function submitPasswordReset() {
     const p1 = ($('reset-pass')?.value || '');
@@ -842,7 +864,8 @@
   }
   function openAuth(tab) {
     hideMsg('login-msg'); hideMsg('signup-msg');
-    $('auth-modal').classList.add('open');
+    const el = $('auth-modal');
+    el.classList.add('open');
     setAuthTab(tab || 'login');
     const sub = $('auth-sub');
     if (sub) {
@@ -850,8 +873,13 @@
         ? 'Sign in or create an account to post your agent brief.'
         : 'Sign in or create your account';
     }
+    focusModal(el, tab === 'signup' ? '#signup-name' : '#login-email');
   }
-  function closeAuth() { $('auth-modal').classList.remove('open'); }
+  function closeAuth() {
+    const el = $('auth-modal');
+    el.classList.remove('open');
+    blurModal(el);
+  }
   function setAuthTab(t) {
     const login = t === 'login';
     $('tab-login').classList.toggle('active', login);
@@ -878,9 +906,15 @@
     wireFieldCounter('post-desc', 'post-count', 4000);
     wireFieldCounter('post-title', 'post-title-count', 80);
     track('post_modal_open', {});
-    $('post-modal').classList.add('open');
+    const el = $('post-modal');
+    el.classList.add('open');
+    focusModal(el, '#post-title');
   }
-  function closePost() { $('post-modal').classList.remove('open'); }
+  function closePost() {
+    const el = $('post-modal');
+    el.classList.remove('open');
+    blurModal(el);
+  }
   function openQuoteModal(reqId) {
     quoteRequestId = reqId;
     hideMsg('quote-msg');
@@ -888,9 +922,16 @@
     if ($('quote-eta')) $('quote-eta').value = '';
     $('quote-text').value = '';
     wireFieldCounter('quote-text', 'quote-count', 2000);
-    $('quote-modal').classList.add('open');
+    const el = $('quote-modal');
+    el.classList.add('open');
+    focusModal(el, '#quote-price');
   }
-  function closeQuote() { $('quote-modal').classList.remove('open'); quoteRequestId = null; }
+  function closeQuote() {
+    const el = $('quote-modal');
+    el.classList.remove('open');
+    quoteRequestId = null;
+    blurModal(el);
+  }
 
   function openPaySheet({ qid, rid, amountCents, fee, builderNet, builderName, etaDays, requestTitle }) {
     pendingPay = { qid, rid, amountCents, fee, builderNet };
@@ -935,16 +976,20 @@
     msg.textContent = '';
     $('pay-confirm-btn').disabled = false;
     $('pay-cancel-btn').textContent = 'Cancel';
-    $('pay-modal').classList.add('open');
+    const payEl = $('pay-modal');
+    payEl.classList.add('open');
+    focusModal(payEl, '#pay-confirm-btn');
   }
 
   function closePay() {
-    $('pay-modal').classList.remove('open');
+    const payEl = $('pay-modal');
+    payEl.classList.remove('open');
     pendingPay = null;
     awaitingPayContext = null;
     const sheet = $('pay-sheet');
     if (sheet) sheet.classList.remove('done');
     $('pay-resume-btn')?.classList.add('hidden');
+    blurModal(payEl);
   }
 
   function showPayAwaitingState(opts) {
@@ -1565,7 +1610,7 @@
       track('request_cancelled', { request_id: rid });
       toast('Request cancelled', true);
       loadRequests();
-    } catch (e) { toast(userFacingErr(e.message), false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   // ── BUILDER ──
@@ -1800,7 +1845,7 @@
       track('quote_withdrawn', { quote_id: qid });
       toast('Quote withdrawn', true);
       loadQuotes();
-    } catch (e) { toast(userFacingErr(e.message), false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   async function loadApply() {
@@ -2178,9 +2223,10 @@
     $('view-body').innerHTML = searchHtml + ((rows || []).map(r => {
       const pay = payMap[r.id];
       const payLine = pay ? ` · Pay: ${statusLabel(pay.status)}${pay.amount_cents ? ' ' + money(pay.amount_cents) : ''}` : '';
+      const title = esc(r.title || 'Request');
       return `
-      <div class="card" style="cursor:default">
-        <h3>${esc(r.title)}</h3>
+      <div class="card" data-click="${r.id}" tabindex="0" role="button" aria-label="Open request: ${title}">
+        <h3>${title}</h3>
         <p>${esc(statusLabel(r.status))}${payLine} · ${ago(r.created_at)}${r.location ? ' · ' + esc(r.location) : ''}</p>
         <p style="font-size:13px;color:var(--gray);margin:8px 0">${esc((r.description || '').slice(0, 140))}</p>
         <div class="row" style="align-items:center">
@@ -2193,6 +2239,12 @@
         </div>
       </div>`;
     }).join('') || emptyMsg);
+    $('view-body').querySelectorAll('[data-click]').forEach((el) => {
+      wireActivate(el, (e) => {
+        if (e?.target?.closest?.('button, select')) return;
+        go('chat', el.dataset.click);
+      });
+    });
     $('btn-clear-all-reqs-filter')?.addEventListener('click', () => {
       window.__orvoAllReqsStatus = '';
       window.__orvoAllReqsQuery = '';
@@ -2759,11 +2811,15 @@
     if ($('review-body')) $('review-body').value = '';
     wireFieldCounter('review-body', 'review-count', 500);
     document.querySelectorAll('.star-btn').forEach((b) => b.classList.remove('on'));
-    $('review-modal')?.classList.add('open');
+    const el = $('review-modal');
+    el?.classList.add('open');
+    focusModal(el, '.star-btn[data-rating="1"]');
   }
   function closeReview() {
-    $('review-modal')?.classList.remove('open');
+    const el = $('review-modal');
+    el?.classList.remove('open');
     pendingReview = null;
+    blurModal(el);
   }
   function setReviewRating(n) {
     if (!pendingReview) return;
@@ -2817,12 +2873,16 @@
       if (wrap) wrap.classList.toggle('hidden', !withNote);
       if ($('confirm-note')) $('confirm-note').value = '';
       if (withNote) wireFieldCounter('confirm-note', 'confirm-note-count', 500);
-      $('confirm-modal')?.classList.add('open');
+      const el = $('confirm-modal');
+      el?.classList.add('open');
+      focusModal(el, withNote ? '#confirm-note' : '#confirm-ok-btn');
     });
   }
   function closeConfirm(ok) {
     const note = ($('confirm-note')?.value || '').trim();
-    $('confirm-modal')?.classList.remove('open');
+    const el = $('confirm-modal');
+    el?.classList.remove('open');
+    blurModal(el);
     const r = confirmResolver;
     confirmResolver = null;
     if (r) r(ok ? { ok: true, note } : { ok: false });
@@ -2856,7 +2916,7 @@
       }
       toast('Marked delivered — waiting for client release', true);
       loadChat();
-    } catch (e) { toast(userFacingErr(e.message), false); }
+    } catch (e) { toastSchemaErr(e?.message || String(e)); }
   }
 
   let pendingDisputeRid = null;
@@ -2866,12 +2926,16 @@
     hideMsg('dispute-msg');
     if ($('dispute-details')) $('dispute-details').value = '';
     wireFieldCounter('dispute-details', 'dispute-count', 2000);
-    $('dispute-modal')?.classList.add('open');
+    const el = $('dispute-modal');
+    el?.classList.add('open');
+    focusModal(el, '#dispute-details');
   }
 
   function closeDispute() {
-    $('dispute-modal')?.classList.remove('open');
+    const el = $('dispute-modal');
+    el?.classList.remove('open');
     pendingDisputeRid = null;
+    blurModal(el);
   }
 
   async function submitDispute() {

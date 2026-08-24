@@ -402,3 +402,9 @@ Next: Wire `create-checkout-session` when Stripe secrets exist; continue remaini
 - **Browse jobs** cards click-to-quote or open chat (keyboard nav)
 - **toastSchemaErr** on admin approve/reject/invite schema failures
 - Dashboard **nav/main** landmarks + side-item focus outline
+
+## 2026-08-24T03:30Z — pulse (post-finale)
+- **Modal focus** — focus first field on open, restore on close (all sheets)
+- **Dialog aria** on auth/reset/post/quote/dispute/confirm/review
+- **Admin All requests** cards click-to-open (select/buttons still work)
+- **toastSchemaErr** on cancel request, withdraw quote, mark delivered
