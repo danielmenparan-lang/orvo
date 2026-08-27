@@ -5,6 +5,7 @@
   "scripts": {
     "render": "node render-video.mjs",
     "render:pro": "node compose-ad.mjs",
+    "render:ai": "node compose-ad-ai.mjs",
     "voice": "bash generate-voice.sh"
   },
   "devDependencies": {
