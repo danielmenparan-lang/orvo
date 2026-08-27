@@ -1,2 +1,11 @@
 node_modules/
 output/
+stock/clip1.mp4
+stock/clip2.mp4
+stock/walk*.mp4
+stock/happy*.mp4
+stock/phone.mp4
+stock/man*.mp4
+stock/office-team.mp4
+stock/bgm.mp3
+output/tmp/
