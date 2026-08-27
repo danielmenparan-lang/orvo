@@ -1,0 +1,11 @@
+{
+  "name": "orvo-meta-ad-render",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render-video.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

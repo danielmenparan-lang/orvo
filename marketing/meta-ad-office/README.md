@@ -2,6 +2,17 @@
 
 **Preview:** open `index.html` in Chrome full screen.
 
+## Automated render (MP4)
+
+```bash
+cd marketing/meta-ad-office
+npm install
+npx playwright install chromium
+npm run render
+```
+
+Output: `output/orvo24-meta-ad-18s.mp4` (1080×1920, ~18s). Uses the **2D CSS demo** (`index.html?render=1`) — reliable in headless CI. The Three.js demo (`gta-style-3d.html`) needs a real browser with WebGL for recording.
+
 ## Record (Mac)
 
 1. Open `marketing/meta-ad-office/index.html`

@@ -44,6 +44,7 @@ body{overflow:hidden;background:#0a0a0a;font-family:system-ui,sans-serif}
   border-radius:8px;background:#FF6B35;color:#fff;cursor:pointer;font-weight:600;
 }
 #canvas{display:block;width:100vw;height:100vh}
+.brand.render-hide,.ui.render-hide{display:none!important}
 .loading{
   position:fixed;inset:0;z-index:100;background:#0B1220;color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:18px;
@@ -52,8 +53,8 @@ body{overflow:hidden;background:#0a0a0a;font-family:system-ui,sans-serif}
 </head>
 <body>
 <div class="loading" id="loading">טוען סצנה 3D…</div>
-<div class="brand">ORVO24 · DEMO · NOT GTA</div>
-<div class="ui">
+<div class="brand render-hide" id="brand">ORVO24 · DEMO · NOT GTA</div>
+<div class="ui render-hide" id="ui">
   <button type="button" id="btn-play">▶ Play</button>
   <button type="button" id="btn-restart">↺</button>
 </div>
@@ -342,6 +343,10 @@ document.getElementById('btn-play').addEventListener('click', play);
 document.getElementById('btn-restart').addEventListener('click', play);
 
 loading.style.display = 'none';
+if (new URLSearchParams(location.search).get('render') === '1') {
+  document.getElementById('brand')?.classList.add('render-hide');
+  document.getElementById('ui')?.classList.add('render-hide');
+}
 play();
 animate();
 </script>
