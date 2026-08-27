@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ORVO24 — Meta ad demo (18s)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:#111;font-family:Manrope,system-ui,sans-serif;overflow:hidden;
+}
+.controls{
+  position:fixed;top:12px;left:12px;z-index:100;display:flex;gap:8px;
+}
+.controls button{
+  font:inherit;font-size:12px;font-weight:600;padding:8px 14px;border:none;border-radius:8px;
+  background:#FF6B35;color:#fff;cursor:pointer;
+}
+.controls button.secondary{background:#333;color:#eee}
+.controls span{font-size:11px;color:#888;align-self:center}
+
+/* 9:16 stage — logical 1080×1920, scaled to viewport */
+.ad-wrap{
+  width:min(100vw, calc(100vh * 9 / 16));
+  aspect-ratio:9/16;
+  max-height:100vh;
+  position:relative;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+}
+.ad-stage{
+  width:100%;height:100%;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#E8EDF5 0%,#DDE4EF 45%,#D4DCE8 100%);
+  font-size:calc(100vw / 36);
+}
+@media(min-aspect-ratio:9/16){
+  .ad-stage{font-size:calc(100vh / 64)}
+}
+
+.office-bg{position:absolute;inset:0}
+.window{
+  position:absolute;top:8%;left:50%;transform:translateX(-50%);
+  width:72%;height:22%;border-radius:12px;
+  background:linear-gradient(180deg,#B8D4F0 0%,#9EC5E8 100%);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.6);
+}
+.window::after{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent,transparent 48%,rgba(255,255,255,.35) 48%,rgba(255,255,255,.35) 52%);
+}
+.plant{
+  position:absolute;bottom:28%;right:6%;width:14%;height:18%;
+  background:#4ADE80;border-radius:50% 50% 20% 20%;
+  box-shadow:inset -8px -8px 0 #22C55E;
+}
+.plant::before{
+  content:"";position:absolute;bottom:-30%;left:30%;width:40%;height:35%;
+  background:#78716C;border-radius:4px;
+}
+.floor{
+  position:absolute;bottom:0;left:0;right:0;height:32%;
+  background:linear-gradient(180deg,#E2E8F0 0%,#CBD5E1 100%);
+}
+.desk-row{
+  position:absolute;bottom:22%;left:5%;right:5%;height:28%;
+  display:flex;justify-content:space-around;align-items:flex-end;
+}
+.desk{
+  width:38%;height:55%;background:#F8FAFC;border-radius:8px 8px 4px 4px;
+  box-shadow:0 4px 12px rgba(11,18,32,.08),inset 0 -4px 0 #E2E8F0;
+  position:relative;
+}
+.desk::before{
+  content:"";position:absolute;top:18%;left:8%;right:8%;height:35%;
+  background:#1A2438;border-radius:4px;opacity:.85;
+}
+.desk-screen{
+  position:absolute;top:22%;left:12%;right:12%;height:22%;
+  background:linear-gradient(135deg,#FF6B35 0%,#FF8C5A 100%);
+  border-radius:2px;opacity:.9;
+}
+.door{
+  position:absolute;bottom:32%;left:4%;width:18%;height:42%;
+  background:#F1F5F9;border:3px solid #94A3B8;border-radius:4px 4px 0 0;
+  transform-origin:bottom right;
+}
+.door.open{transform:perspective(400px) rotateY(-75deg)}
+
+/* Characters — SVG wrappers */
+.char{
+  position:absolute;bottom:24%;width:22%;height:38%;
+  transition:transform .6s cubic-bezier(.22,1,.36,1),opacity .4s;
+  z-index:10;
+}
+.char svg{width:100%;height:100%;overflow:visible}
+.char-guy{right:28%;z-index:12}
+.char-woman{right:52%;z-index:11}
+.char-bg1{right:8%;opacity:.7;transform:scale(.88);z-index:5}
+.char-bg2{right:68%;opacity:.65;transform:scale(.85);z-index:5}
+
+.char.walk-out{
+  animation:walkOut 2.2s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes walkOut{
+  0%{transform:translateX(0) translateY(0)}
+  40%{transform:translateX(-35%) translateY(-2%)}
+  100%{transform:translateX(-180%) translateY(0);opacity:.3}
+}
+.char-guy.look{animation:headTurn .5s ease forwards}
+@keyframes headTurn{
+  0%{transform:rotate(0)}
+  100%{transform:rotate(-8deg) scale(1.02)}
+}
+
+.leg-walk .leg-l{animation:legL .35s ease infinite alternate}
+.leg-walk .leg-r{animation:legR .35s ease infinite alternate}
+@keyframes legL{from{transform:rotate(-12deg)}to{transform:rotate(8deg)}}
+@keyframes legR{from{transform:rotate(8deg)}to{transform:rotate(-12deg)}}
+
+.bubble-wrap{
+  position:absolute;z-index:50;opacity:0;transform:scale(.92) translateY(8px);
+  transition:opacity .35s,transform .35s cubic-bezier(.22,1,.36,1);
+  max-width:78%;pointer-events:none;
+}
+.bubble-wrap.show{opacity:1;transform:scale(1) translateY(0)}
+.bubble{
+  background:#fff;border-radius:16px;padding:.55em .75em;
+  font-size:1.05em;font-weight:700;color:#0B1220;line-height:1.35;
+  box-shadow:0 8px 32px rgba(11,18,32,.12);
+  border:2px solid rgba(255,107,53,.25);
+}
+.bubble.guy{border-color:rgba(11,18,32,.12)}
+.bubble-tail{
+  position:absolute;width:0;height:0;border:10px solid transparent;
+}
+.bubble-wrap.guy .bubble-tail{
+  bottom:-8px;right:24px;border-top-color:#fff;
+}
+.bubble-wrap.her .bubble-tail{
+  bottom:-8px;left:24px;border-top-color:#fff;
+}
+.bubble-wrap.guy{right:8%;bottom:58%}
+.bubble-wrap.her{left:8%;bottom:52%}
+
+.subs{
+  position:absolute;bottom:6%;left:5%;right:5%;text-align:center;
+  font-size:.95em;font-weight:800;color:#0B1220;
+  text-shadow:0 1px 0 #fff,0 2px 12px rgba(255,255,255,.8);
+  opacity:0;transition:opacity .3s;z-index:60;
+}
+.subs.show{opacity:1}
+
+.phone-scene{
+  position:absolute;inset:0;z-index:70;opacity:0;pointer-events:none;
+  background:linear-gradient(165deg,#0B1220 0%,#1A2438 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8%;transition:opacity .6s;
+}
+.phone-scene.show{opacity:1}
+.phone{
+  width:72%;aspect-ratio:9/19;background:#111;border-radius:28px;
+  padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 0 0 2px #333;
+  transform:scale(.85);animation:phoneIn .7s cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes phoneIn{to{transform:scale(1)}}
+.phone-screen{
+  width:100%;height:100%;border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg,#F3F5F8 0%,#fff 100%);
+  display:flex;flex-direction:column;padding:6%;
+}
+.phone-logo{
+  font-size:1.4em;font-weight:800;color:#0B1220;margin-bottom:.3em;
+}
+.phone-logo span{color:#FF6B35}
+.phone-tag{
+  font-size:.75em;color:#5C6578;line-height:1.45;margin-bottom:.8em;
+}
+.phone-card{
+  background:#fff;border:1px solid rgba(11,18,32,.08);border-radius:10px;
+  padding:.6em;margin-bottom:.5em;font-size:.65em;
+}
+.phone-card b{display:block;color:#0B1220;margin-bottom:.2em}
+.phone-card span{color:#5C6578}
+.phone-cta{
+  margin-top:auto;background:#FF6B35;color:#fff;text-align:center;
+  padding:.65em;border-radius:10px;font-weight:700;font-size:.8em;
+}
+.end-line{
+  margin-top:1em;font-size:1em;font-weight:800;color:#F7F4EE;text-align:center;
+  opacity:0;animation:fadeUp .6s .4s forwards;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.progress{
+  position:absolute;top:0;left:0;right:0;height:3px;background:rgba(11,18,32,.08);z-index:90;
+}
+.progress-bar{height:100%;width:0;background:#FF6B35;transition:width .1s linear}
+
+.vignette{
+  position:absolute;inset:0;pointer-events:none;z-index:80;
+  box-shadow:inset 0 0 80px rgba(11,18,32,.08);
+}
+</style>
+</head>
+<body>
+<div class="controls">
+  <button type="button" id="btn-play">▶ Play</button>
+  <button type="button" class="secondary" id="btn-restart">↺</button>
+  <span id="time">0.0s</span>
+</div>
+
+<div class="ad-wrap">
+  <div class="ad-stage" id="stage">
+    <div class="progress"><div class="progress-bar" id="progress"></div></div>
+    <div class="office-bg">
+      <div class="window"></div>
+      <div class="plant"></div>
+      <div class="floor"></div>
+      <div class="door" id="door"></div>
+      <div class="desk-row">
+        <div class="desk"><div class="desk-screen"></div></div>
+        <div class="desk"><div class="desk-screen"></div></div>
+      </div>
+    </div>
+
+    <!-- background coworkers -->
+    <div class="char char-bg1" aria-hidden="true">
+      <svg viewBox="0 0 100 140"><ellipse cx="50" cy="28" rx="22" ry="24" fill="#FCD9BD"/><rect x="28" y="50" width="44" height="55" rx="8" fill="#64748B"/><rect x="22" y="100" width="18" height="35" rx="6" fill="#334155"/><rect x="60" y="100" width="18" height="35" rx="6" fill="#334155"/></svg>
+    </div>
+    <div class="char char-bg2" aria-hidden="true">
+      <svg viewBox="0 0 100 140"><ellipse cx="50" cy="28" rx="22" ry="24" fill="#E8B896"/><rect x="28" y="50" width="44" height="55" rx="8" fill="#475569"/><rect x="22" y="100" width="18" height="35" rx="6" fill="#1E293B"/><rect x="60" y="100" width="18" height="35" rx="6" fill="#1E293B"/></svg>
+    </div>
+
+    <!-- Guy -->
+    <div class="char char-guy" id="guy">
+      <svg viewBox="0 0 100 140">
+        <g class="leg-r"><rect x="58" y="98" width="16" height="38" rx="6" fill="#1E293B"/></g>
+        <g class="leg-l"><rect x="26" y="98" width="16" height="38" rx="6" fill="#1E293B"/></g>
+        <rect x="22" y="52" width="56" height="52" rx="10" fill="#3B82F6"/>
+        <ellipse cx="50" cy="26" rx="24" ry="26" fill="#FCD9BD"/>
+        <path d="M30 18 Q50 8 70 18" fill="#1E293B"/>
+        <ellipse cx="42" cy="26" rx="3" ry="4" fill="#0B1220"/>
+        <ellipse cx="58" cy="26" rx="3" ry="4" fill="#0B1220"/>
+      </svg>
+    </div>
+
+    <!-- Woman (Noa) -->
+    <div class="char char-woman" id="woman">
+      <svg viewBox="0 0 100 140" class="leg-walk" id="womanSvg">
+        <g class="leg-r"><rect x="58" y="98" width="16" height="38" rx="6" fill="#334155"/></g>
+        <g class="leg-l"><rect x="26" y="98" width="16" height="38" rx="6" fill="#334155"/></g>
+        <rect x="24" y="52" width="52" height="52" rx="10" fill="#FF6B35"/>
+        <ellipse cx="50" cy="26" rx="24" ry="26" fill="#FCD9BD"/>
+        <ellipse cx="50" cy="14" rx="26" ry="16" fill="#1E293B"/>
+        <ellipse cx="42" cy="26" rx="3" ry="4" fill="#0B1220"/>
+        <ellipse cx="58" cy="26" rx="3" ry="4" fill="#0B1220"/>
+        <path d="M44 32 Q50 38 56 32" stroke="#0B1220" stroke-width="2" fill="none" opacity="0"/>
+      </svg>
+    </div>
+
+    <div class="bubble-wrap guy" id="bubbleGuy">
+      <div class="bubble guy" id="textGuy"></div>
+      <div class="bubble-tail"></div>
+    </div>
+    <div class="bubble-wrap her" id="bubbleHer">
+      <div class="bubble" id="textHer"></div>
+      <div class="bubble-tail"></div>
+    </div>
+    <div class="subs" id="subs"></div>
+
+    <div class="phone-scene" id="phoneScene">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-logo"><span>O</span>RVO · orvo24.com</div>
+          <p class="phone-tag">מרקטפלייס לסוכני AI — אתה מפרסם מה צריך, בונים מאומתים שולחים הצעה.</p>
+          <div class="phone-card"><b>פוסט בקשה</b><span>WhatsApp · Voice · CRM · Automation</span></div>
+          <div class="phone-card"><b>הצעות מבונים</b><span>צ'אט ותשלום בפלטפורמה</span></div>
+          <div class="phone-cta">התחל ב-orvo24.com</div>
+        </div>
+      </div>
+      <p class="end-line">בונים מאומתים · אתה לא חייב לבנות סוכן לבד</p>
+    </div>
+    <div class="vignette"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const DURATION = 18;
+  const $ = (id) => document.getElementById(id);
+  const guy = $('guy');
+  const woman = $('woman');
+  const door = $('door');
+  const bubbleGuy = $('bubbleGuy');
+  const bubbleHer = $('bubbleHer');
+  const textGuy = $('textGuy');
+  const textHer = $('textHer');
+  const subs = $('subs');
+  const phoneScene = $('phoneScene');
+  const progress = $('progress');
+  const timeEl = $('time');
+  const womanSvg = $('womanSvg');
+
+  const LINES = {
+    g1: { bubble: 'רגע, לא מוקדם?', sub: 'רגע, לא מוקדם?' },
+    h1: { bubble: 'הסוכן שלי סיים לי את המשימות.', sub: 'הסוכן שלי סיים לי את המשימות' },
+    g2: { bubble: 'אבל את לא יודעת לבנות סוכן…', sub: 'אבל את לא יודעת לבנות סוכן…' },
+    h2: { bubble: 'orvo24.com', sub: 'orvo24.com' },
+  };
+
+  let raf = null;
+  let startTs = null;
+  let running = false;
+  let fired = new Set();
+
+  function reset() {
+    if (raf) cancelAnimationFrame(raf);
+    startTs = null;
+    running = false;
+    fired.clear();
+    guy.classList.remove('look');
+    woman.classList.remove('walk-out');
+    womanSvg.classList.remove('leg-walk');
+    door.classList.remove('open');
+    bubbleGuy.classList.remove('show');
+    bubbleHer.classList.remove('show');
+    subs.classList.remove('show');
+    phoneScene.classList.remove('show');
+    progress.style.width = '0%';
+    timeEl.textContent = '0.0s';
+    // smile path hidden
+    const smile = woman.querySelector('path');
+    if (smile) smile.setAttribute('opacity', '0');
+  }
+
+  function showBubble(who, lineKey) {
+    const L = LINES[lineKey];
+    bubbleGuy.classList.remove('show');
+    bubbleHer.classList.remove('show');
+    if (who === 'guy') {
+      textGuy.textContent = L.bubble;
+      bubbleGuy.classList.add('show');
+    } else {
+      textHer.textContent = L.bubble;
+      bubbleHer.classList.add('show');
+    }
+    subs.textContent = L.sub;
+    subs.classList.add('show');
+  }
+
+  function hideBubbles() {
+    bubbleGuy.classList.remove('show');
+    bubbleHer.classList.remove('show');
+    subs.classList.remove('show');
+  }
+
+  function tick(ts) {
+    if (!startTs) startTs = ts;
+    const t = (ts - startTs) / 1000;
+    timeEl.textContent = t.toFixed(1) + 's';
+    progress.style.width = Math.min(100, (t / DURATION) * 100) + '%';
+
+    if (t >= 2 && !fired.has('stand')) {
+      fired.add('stand');
+      woman.style.transform = 'translateY(-3%)';
+    }
+    if (t >= 3.2 && !fired.has('walk')) {
+      fired.add('walk');
+      door.classList.add('open');
+      woman.classList.add('walk-out');
+      womanSvg.classList.add('leg-walk');
+      const smile = woman.querySelector('path');
+      if (smile) smile.setAttribute('opacity', '1');
+    }
+    if (t >= 5.2 && t < 7.2 && !fired.has('g1')) {
+      fired.add('g1');
+      guy.classList.add('look');
+      showBubble('guy', 'g1');
+    }
+    if (t >= 7.2 && t < 9.8 && !fired.has('h1')) {
+      if (!fired.has('h1')) { fired.add('h1'); hideBubbles(); showBubble('her', 'h1'); }
+    }
+    if (t >= 9.8 && t < 11.8 && !fired.has('g2')) {
+      if (!fired.has('g2')) { fired.add('g2'); hideBubbles(); showBubble('guy', 'g2'); }
+    }
+    if (t >= 11.8 && t < 13.8 && !fired.has('h2')) {
+      if (!fired.has('h2')) { fired.add('h2'); hideBubbles(); showBubble('her', 'h2'); }
+    }
+    if (t >= 13.5 && !fired.has('phone')) {
+      fired.add('phone');
+      hideBubbles();
+      phoneScene.classList.add('show');
+    }
+
+    if (t < DURATION) {
+      raf = requestAnimationFrame(tick);
+    } else {
+      running = false;
+    }
+  }
+
+  function play() {
+    reset();
+    running = true;
+    raf = requestAnimationFrame(tick);
+  }
+
+  $('btn-play').addEventListener('click', play);
+  $('btn-restart').addEventListener('click', () => { reset(); play(); });
+
+  // Auto-play for recording
+  setTimeout(play, 400);
+})();
+</script>
+</body>
+</html>
