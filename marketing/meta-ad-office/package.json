@@ -6,6 +6,8 @@
     "render": "node render-video.mjs",
     "render:pro": "node compose-ad.mjs",
     "render:ai": "node compose-ad-ai.mjs",
+    "render:premium": "node compose-ad-premium.mjs",
+    "voice:en": "bash generate-voice-en.sh",
     "voice": "bash generate-voice.sh"
   },
   "devDependencies": {
