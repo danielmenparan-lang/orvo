@@ -4,14 +4,29 @@
 
 ## Automated render (MP4)
 
+### Pro version (recommended for Meta)
+
+Photoreal office scenes + Hebrew TTS voices + real site scroll:
+
 ```bash
 cd marketing/meta-ad-office
-npm install
-npx playwright install chromium
+pip install edge-tts
+npm install && npx playwright install chromium
+npm run voice
+npm run render:pro
+```
+
+Output: `output/orvo24-meta-ad-pro-18s.mp4` (1080×1920, ~18s, with audio).
+
+Set `SITE_URL=https://orvo24.com` when recording locally if DNS resolves.
+
+### Draft CSS version
+
+```bash
 npm run render
 ```
 
-Output: `output/orvo24-meta-ad-18s.mp4` (1080×1920, ~18s). Uses the **2D CSS demo** (`index.html?render=1`) — reliable in headless CI. The Three.js demo (`gta-style-3d.html`) needs a real browser with WebGL for recording.
+Flat 2D storyboard only — not recommended for Meta upload.
 
 ## Record (Mac)
 

@@ -50,13 +50,25 @@
 
 ## איך להפיק (רמות)
 
-### A — מה שיש ב-repo (היום)
+### A — Pro render (recommended)
 
-1. פתח `marketing/meta-ad-office/index.html` בדפדפן מלא מסך.
-2. הקלט 18 שניות ב-1080×1920 (OBS / QuickTime / ShareX).
-3. הוסף קול ב-CapCut / Premiere:
-   - 2 קולות (גיא + נועה) או קריינות אחת + כתוביות.
-   - מוזיקה: lo-fi office, `-18 LUFS` approx, duck מתחת לדיאלוג.
+```bash
+cd marketing/meta-ad-office
+pip install edge-tts   # once
+npm install && npx playwright install chromium
+npm run voice          # Hebrew TTS (guy + woman)
+npm run render:pro     # photoreal scenes + site scroll + MP4
+# Use orvo24.com when DNS resolves locally:
+SITE_URL=https://orvo24.com npm run render:pro
+```
+
+Output: `output/orvo24-meta-ad-pro-18s.mp4` — photoreal office scenes, Hebrew VO, real site at end.
+
+### B — CSS storyboard (draft only)
+
+```bash
+npm run render   # flat 2D demo — not for Meta upload
+```
 
 ### B — רמה גבוהה (מומלץ ל-Meta)
 

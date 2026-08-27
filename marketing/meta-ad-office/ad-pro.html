@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1080, height=1920"/>
+<title>ORVO24 Meta Ad Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0B1220;font-family:Heebo,system-ui,sans-serif}
+.stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.scene{
+  position:absolute;inset:0;background-size:cover;background-position:center;
+  opacity:0;transition:opacity .55s ease;transform:scale(1);
+}
+.scene.active{opacity:1;animation:ken 3s ease-out forwards}
+@keyframes ken{from{transform:scale(1)}to{transform:scale(1.07)}}
+.grade{
+  position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:linear-gradient(180deg,rgba(11,18,32,.08) 0%,rgba(11,18,32,.35) 100%);
+}
+.vignette{
+  position:absolute;inset:0;pointer-events:none;z-index:3;
+  box-shadow:inset 0 0 120px rgba(0,0,0,.35);
+}
+.sub-wrap{
+  position:absolute;left:48px;right:48px;bottom:180px;z-index:10;
+  display:flex;justify-content:center;
+}
+.sub{
+  max-width:920px;text-align:center;color:#fff;font-weight:700;
+  font-size:52px;line-height:1.25;
+  text-shadow:0 4px 24px rgba(0,0,0,.65),0 2px 4px rgba(0,0,0,.8);
+  opacity:0;transform:translateY(16px);
+  transition:opacity .35s,transform .35s;
+  padding:20px 28px;border-radius:16px;
+  background:rgba(0,0,0,.28);backdrop-filter:blur(8px);
+  border-bottom:4px solid #FF6B35;
+}
+.sub.show{opacity:1;transform:none}
+.badge{
+  position:absolute;top:48px;left:50%;transform:translateX(-50%);z-index:12;
+  background:rgba(255,255,255,.12);backdrop-filter:blur(10px);
+  color:rgba(255,255,255,.85);font-size:22px;font-weight:600;
+  letter-spacing:.08em;padding:10px 22px;border-radius:999px;
+}
+body.render-mode .badge{display:none}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="scene" id="s1" style="background-image:url('assets/office_wide.png')"></div>
+  <div class="scene" id="s2" style="background-image:url('assets/woman_leaving.png')"></div>
+  <div class="scene" id="s3" style="background-image:url('assets/guy_surprised.png')"></div>
+  <div class="scene" id="s4" style="background-image:url('assets/woman_leaving.png')"></div>
+  <div class="scene" id="s5" style="background-image:url('assets/guy_surprised.png')"></div>
+  <div class="scene" id="s6" style="background-image:url('assets/woman_phone.png')"></div>
+  <div class="grade"></div>
+  <div class="vignette"></div>
+  <div class="badge">ORVO · orvo24.com</div>
+  <div class="sub-wrap"><div class="sub" id="sub"></div></div>
+</div>
+<script>
+const DURATION = 14;
+const sub = document.getElementById('sub');
+const scenes = ['s1','s2','s3','s4','s5','s6'].map(id => document.getElementById(id));
+
+const TIMELINE = [
+  { t: 0, scene: 0, text: '' },
+  { t: 2, scene: 1, text: '' },
+  { t: 5, scene: 2, text: 'רגע, לא מוקדם?' },
+  { t: 7.8, scene: 3, text: 'הסוכן שלי סיים לי את המשימות.' },
+  { t: 10.85, scene: 4, text: 'אבל את לא יודעת לבנות סוכן…' },
+  { t: 13.83, scene: 5, text: 'נכנסתי ל-orvo24.com' },
+];
+
+let start = null;
+let fired = new Set();
+let activeScene = -1;
+
+function setScene(i) {
+  if (i === activeScene) return;
+  activeScene = i;
+  scenes.forEach((el, j) => el.classList.toggle('active', j === i));
+}
+
+function setSub(text) {
+  if (!text) { sub.classList.remove('show'); sub.textContent = ''; return; }
+  sub.textContent = text;
+  sub.classList.add('show');
+}
+
+function tick(ts) {
+  if (!start) start = ts;
+  const t = (ts - start) / 1000;
+  for (const ev of TIMELINE) {
+    if (t >= ev.t && !fired.has(ev.t)) {
+      fired.add(ev.t);
+      setScene(ev.scene);
+      setSub(ev.text);
+    }
+  }
+  if (t < DURATION) requestAnimationFrame(tick);
+}
+
+if (new URLSearchParams(location.search).get('render') === '1') {
+  document.body.classList.add('render-mode');
+}
+setScene(0);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
