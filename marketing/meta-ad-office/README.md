@@ -29,4 +29,10 @@ Script: `docs/marketing/META-AD-OFFICE-18S.md`
 
 ## Upgrade path
 
-For broadcast-quality 3D: Remotion + illustrated assets, or hire motion studio. This file is a **code timeline prototype**, not a game engine.
+| Level | What |
+|-------|------|
+| **CSS demo** | `index.html` — flat illustrated scene |
+| **3D demo (GTA-inspired)** | `gta-style-3d.html` — Three.js, third-person camera, walk cycle, office — **not Rockstar GTA** |
+| **Broadcast** | Remotion export, or motion studio / real actors |
+
+For broadcast-quality AAA 3D: Blender + mocap + Unreal — weeks of work, not one HTML file.

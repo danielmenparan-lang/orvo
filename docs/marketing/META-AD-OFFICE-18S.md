@@ -66,7 +66,14 @@
 
 ### C — מה *לא* realistic בבקשה אחת
 
-"GTA בקוד" = מנוע 3D + rigging + mocap + VO studio. זה פרויקט משחק, לא פרסומת 18 שניות. הדמו ב-repo הוא **סצנה מונפשת בקוד** (CSS/SVG timeline) — בסגנון SaaS / explainer, לא AAA.
+"GTA אמיתי" = מנוע AAA (Rockstar) · rigging · mocap · VO · shaders · physics.  
+**מה שיש ב-repo:** `gta-style-3d.html` = סצנה Three.js low-poly בסגנון third-person — דמו טכני, לא משחק.
+
+| רמה | דוגמה |
+|-----|--------|
+| CSS 2D | `index.html` |
+| 3D web (GTA-*inspired*) | `gta-style-3d.html` |
+| AAA GTA | לא — צוות + חודשים + Unreal/Custom engine |
 
 ---
 
