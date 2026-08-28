@@ -3,49 +3,42 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ORVO24 — דמויות</title>
+<title>ORVO24 — דמויות v2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,system-ui,sans-serif;background:#F9F9F7;color:#0A0A0A;padding:40px 24px}
-h1{font-size:28px;margin-bottom:8px}
-.sub{color:#6B6B6B;margin-bottom:32px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:24px;max-width:1100px;margin:0 auto}
-.card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px;overflow:hidden}
-.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;cursor:pointer}
-.card-info{padding:14px}
-.card-info h3{font-size:15px;margin-bottom:4px}
-.card-info p{font-size:12px;color:#6B6B6B}
-.tag{display:inline-block;font-size:11px;background:rgba(255,107,53,.1);color:#FF6B35;padding:2px 8px;border-radius:4px;margin-top:6px}
-a.back,a.dl{display:inline-block;margin-top:32px;color:#FF6B35;font-size:14px;margin-left:16px}
+body{font-family:Inter,system-ui,sans-serif;background:#0A0A0A;color:#fff;padding:32px 20px}
+h1{font-size:26px;margin-bottom:6px}
+.sub{color:rgba(255,255,255,.5);margin-bottom:28px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;max-width:1200px;margin:0 auto}
+.card{background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.card-info{padding:12px 14px}
+.card-info h3{font-size:14px;margin-bottom:3px}
+.card-info p{font-size:12px;color:rgba(255,255,255,.45)}
+a.back{display:block;text-align:center;margin-top:28px;color:#FF6B35;font-size:14px}
 </style>
 </head>
 <body>
-<h1>ORVO24 — 8 דמויות</h1>
-<p class="sub">לחץ על תמונה לפתיחה בגודל מלא · flux-dev · פוטוריאליסטי</p>
+<h1>ORVO24 — 8 דמויות (v2)</h1>
+<p class="sub">ideogram · photojournalism · לחץ לפתיחה בגודל מלא</p>
 <div class="grid" id="grid"></div>
 <a class="back" href="/">← חזרה לאתר</a>
 <script>
-const CDN = 'https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main/assets/characters';
+const CDN = 'https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main/assets/characters/v2';
 const chars = [
-  {id:"01_hero_woman", name:"Maya", role:"הגיבורה — יוצאת מוקדם"},
-  {id:"02_guy_asks", name:"Tom", role:"שואל: למה את הולכת?"},
+  {id:"01_hero_woman", name:"Maya", role:"הגיבורה"},
+  {id:"02_guy_asks", name:"Tom", role:"שואל למה הולכת"},
   {id:"03_skeptic", name:"Alex", role:"הספקן"},
-  {id:"04_woman_laptop", name:"Sarah", role:"עובדת על לפטופ"},
-  {id:"05_man_laptop", name:"David", role:"עובד על לפטופ"},
-  {id:"06_woman_notes", name:"Lina", role:"רושמת בישיבה"},
-  {id:"07_man_senior", name:"Omer", role:"מנהל הצוות"},
-  {id:"08_woman_junior", name:"Noa", role:"ג'וניור בצוות"},
+  {id:"04_woman_laptop", name:"Sarah", role:"בלפטופ"},
+  {id:"05_man_laptop", name:"David", role:"בלפטופ"},
+  {id:"06_woman_notes", name:"Lina", role:"רושמת"},
+  {id:"07_man_senior", name:"Omer", role:"מנהל"},
+  {id:"08_woman_junior", name:"Noa", role:"ג'וניור"},
 ];
 document.getElementById('grid').innerHTML = chars.map(c => {
-  const src = `${CDN}/${c.id}.jpg`;
-  return `<div class="card">
-    <a href="${src}" target="_blank"><img src="${src}" alt="${c.name}"/></a>
-    <div class="card-info">
-      <h3>${c.name}</h3>
-      <p>${c.role}</p>
-      <span class="tag">${c.id}</span>
-    </div>
-  </div>`;
+  const s = `${CDN}/${c.id}.jpg`;
+  return `<div class="card"><a href="${s}" target="_blank"><img src="${s}" alt="${c.name}"/></a>
+    <div class="card-info"><h3>${c.name}</h3><p>${c.role}</p></div></div>`;
 }).join('');
 </script>
 </body>

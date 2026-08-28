@@ -1,0 +1,54 @@
+{
+  "model": "ideogram-ai/ideogram-v3-quality",
+  "version": "v2-ideogram",
+  "characters": [
+    {
+      "id": "01_hero_woman",
+      "name": "Maya",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, Israeli woman 28 leaving startup office, dark ponytail, white shirt, confident tired smile, holding bag",
+      "file": "/workspace/assets/characters/v2/01_hero_woman.jpg"
+    },
+    {
+      "id": "02_guy_asks",
+      "name": "Tom",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, Israeli man 31 at conference table, surprised expression asking question, blue shirt, stubble, leaning forward",
+      "file": "/workspace/assets/characters/v2/02_guy_asks.jpg"
+    },
+    {
+      "id": "03_skeptic",
+      "name": "Alex",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, man 33 with glasses skeptical expression, grey t-shirt, startup meeting, arms crossed",
+      "file": "/workspace/assets/characters/v2/03_skeptic.jpg"
+    },
+    {
+      "id": "04_woman_laptop",
+      "name": "Sarah",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, Black woman 27 working on laptop in meeting, natural hair, cream sweater, focused",
+      "file": "/workspace/assets/characters/v2/04_woman_laptop.jpg"
+    },
+    {
+      "id": "05_man_laptop",
+      "name": "David",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, East Asian man 29 typing laptop, black t-shirt, side profile, office",
+      "file": "/workspace/assets/characters/v2/05_man_laptop.jpg"
+    },
+    {
+      "id": "06_woman_notes",
+      "name": "Lina",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, Latina woman 30 taking notes in meeting, minimal makeup, blazer, pen and notebook",
+      "file": "/workspace/assets/characters/v2/06_woman_notes.jpg"
+    },
+    {
+      "id": "07_man_senior",
+      "name": "Omer",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, Israeli man 40 team lead, grey hair stubble, navy polo, calm expression, wrinkles",
+      "file": "/workspace/assets/characters/v2/07_man_senior.jpg"
+    },
+    {
+      "id": "08_woman_junior",
+      "name": "Noa",
+      "prompt": "Documentary photojournalism photograph, Magnum Photos style, real unretouched person, harsh mixed office lighting, slight grain, natural skin with pores and imperfections, candid not posed, NOT illustration NOT CGI NOT 3D NOT anime NOT beauty filter, Israeli woman 24 junior employee, brown hair brown eyes, black top, shy smile, freckles",
+      "file": "/workspace/assets/characters/v2/08_woman_junior.jpg"
+    }
+  ]
+}
