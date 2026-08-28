@@ -1,0 +1,6 @@
+file '/workspace/assets/orvo24/01_office.mp4'
+file '/workspace/assets/orvo24/02_packing.mp4'
+file '/workspace/assets/orvo24/03_guy_asks.mp4'
+file '/workspace/assets/orvo24/04_hero_reply.mp4'
+file '/workspace/assets/orvo24/05_skeptic.mp4'
+file '/workspace/assets/orvo24/06_phone.mp4'

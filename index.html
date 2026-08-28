@@ -230,29 +230,18 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
   </div>
 
   <section class="demo-section" id="demo">
-    <div class="demo-inner" id="cinematic-demo">
-      <div class="demo-copy">
-        <p class="section-label">Product story</p>
-        <h2>See how teams discover ORVO</h2>
-        <p>Five cinematic moments — from the meeting room to the phone demo — showing why clients post requests and vetted builders quote on ORVO.</p>
-        <div class="demo-controls">
-          <button class="btn btn-primary btn-lg" id="demo-play" type="button">Play story</button>
-          <button class="btn btn-ghost" id="demo-mute" type="button" aria-pressed="false">Mute</button>
-          <a class="btn btn-ghost" href="https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main/assets/videos/orvo-story.mp4" download="orvo-story.mp4">Download full video</a>
+    <div class="demo-inner" style="grid-template-columns:1fr;max-width:900px;text-align:center">
+      <div class="demo-copy" style="margin:0 auto">
+        <p class="section-label">ORVO24</p>
+        <h2>הסוכן שלי מסיים לי את העבודה</h2>
+        <p>סרטון קולנועי עם דמויות AI — משרד סטארטאפ כתום, 8 אנשים, והיא יוצאת ב-4:30 כי נכנסה ל-orvo24.com</p>
+        <div class="demo-controls" style="justify-content:center;margin-bottom:24px">
+          <a class="btn btn-primary btn-lg" href="video.html">צפה בסרטון</a>
+          <a class="btn btn-ghost" href="assets/orvo24/orvo24-story.mp4" download="orvo24-story.mp4">הורד MP4</a>
         </div>
-        <div class="demo-scene-meta">
-          <h3 id="demo-scene-title">The pitch</h3>
-          <p id="demo-scene-caption">Your team needs an AI agent. Where do you start?</p>
-        </div>
-        <div class="demo-progress-track"><div class="demo-progress-bar" id="demo-progress"></div></div>
-        <div class="demo-dots" id="demo-dots" role="tablist" aria-label="Demo scenes"></div>
       </div>
-      <div class="demo-stage">
-        <video id="demo-video" playsinline preload="metadata" muted poster=""></video>
-        <div class="demo-phone-frame" id="demo-phone-frame" aria-hidden="true">
-          <div class="demo-phone-notch"></div>
-          <iframe src="https://fantastic-eclair-0b2c66.netlify.app/" title="ORVO website preview"></iframe>
-        </div>
+      <div class="demo-stage" style="max-width:900px;margin:0 auto;width:100%">
+        <video src="assets/orvo24/orvo24-story.mp4" controls playsinline preload="metadata" poster="assets/orvo24/01_office_frame.jpg" style="width:100%"></video>
       </div>
     </div>
   </section>

@@ -15,8 +15,8 @@ API = os.environ["Daniel"]
 OUT = Path("/workspace/assets/orvo24")
 OUT.mkdir(parents=True, exist_ok=True)
 
-FLUX_VER = "c846a69991daf4c0e5d016514849d14ee5b2e6846ce6b9d6f21369e564cfe51e"
-VIDEO_VER = "5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912"
+FLUX_MODEL = "black-forest-labs/flux-schnell"
+VIDEO_MODEL = "minimax/video-01"
 
 STYLE = (
     "GTA V cinematic game cutscene style, photorealistic 3D render, warm orange ambient lighting, "
@@ -41,7 +41,7 @@ SCENES = [
     {
         "id": "02_packing",
         "image_prompt": (
-            f"{STYLE}, medium shot, confident young Israeli woman late 20s, dark hair ponytail, "
+            f"{STYLE}, medium shot, same woman as reference — confident young Israeli woman late 20s, dark hair ponytail, "
             "white blouse, packing laptop and notebook into bag at conference table, orange startup office, "
             "coworkers blurred in background"
         ),
@@ -66,7 +66,7 @@ SCENES = [
     {
         "id": "04_hero_reply",
         "image_prompt": (
-            f"{STYLE}, close-up, confident young Israeli woman smiling, holding bag, turning to camera, "
+            f"{STYLE}, close-up, same woman — confident young Israeli woman smiling, holding bag, turning to camera, "
             "orange warm office bokeh background, proud expression"
         ),
         "video_prompt": (
@@ -90,7 +90,7 @@ SCENES = [
     {
         "id": "06_phone",
         "image_prompt": (
-            f"{STYLE}, close-up, woman holds smartphone toward camera, screen shows ORVO24 website "
+            f"{STYLE}, close-up, same woman holds smartphone toward camera, screen shows ORVO24 website "
             "with orange branding and 'AI Agent Marketplace' text, confident smile, office background"
         ),
         "video_prompt": (
@@ -111,19 +111,40 @@ SUBTITLES = [
 ]
 
 
-def api(method, url, data=None):
+def api(method, url, data=None, retries=5):
     body = json.dumps(data).encode() if data is not None else None
-    req = urllib.request.Request(
-        url, data=body, method=method,
-        headers={"Authorization": f"Bearer {API}", "Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(req, timeout=180) as r:
-        return json.loads(r.read())
+    for attempt in range(retries):
+        req = urllib.request.Request(
+            url, data=body, method=method,
+            headers={"Authorization": f"Bearer {API}", "Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=180) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            if e.code in (502, 503, 504) and attempt < retries - 1:
+                print(f"  api retry {attempt+1} ({e.code})", flush=True)
+                time.sleep(15 * (attempt + 1))
+                continue
+            raise
+
+
+def create_prediction(model, inp):
+    return api("POST", f"https://api.replicate.com/v1/models/{model}/predictions", {"input": inp})
 
 
 def poll(url, label=""):
     while True:
-        p = api("GET", url)
+        for attempt in range(5):
+            try:
+                p = api("GET", url)
+                break
+            except urllib.error.HTTPError as e:
+                if e.code in (502, 503, 504) and attempt < 4:
+                    print(f"  [{label}] retry {attempt+1} ({e.code})", flush=True)
+                    time.sleep(15 * (attempt + 1))
+                    continue
+                raise
         s = p["status"]
         print(f"  [{label}] {s}", flush=True)
         if s == "succeeded":
@@ -139,14 +160,18 @@ def download(url, path):
         path.write_bytes(r.read())
 
 
+def local_image_url(path):
+    import base64
+    data = Path(path).read_bytes()
+    mime = "image/jpeg" if path.suffix.lower() in (".jpg", ".jpeg") else "image/png"
+    return f"data:{mime};base64,{base64.b64encode(data).decode()}"
+
+
 def generate_image(prompt, out_path):
     if out_path.exists():
-        print(f"  skip image {out_path.name}", flush=True)
-        return None
-    pred = api("POST", "https://api.replicate.com/v1/predictions", {
-        "version": FLUX_VER,
-        "input": {"prompt": prompt, "aspect_ratio": "16:9", "num_outputs": 1},
-    })
+        print(f"  reuse image {out_path.name}", flush=True)
+        return local_image_url(out_path)
+    pred = create_prediction(FLUX_MODEL, {"prompt": prompt, "aspect_ratio": "16:9", "num_outputs": 1})
     url = poll(pred["urls"]["get"], out_path.stem)
     img_url = url[0] if isinstance(url, list) else url
     download(img_url, out_path)
@@ -154,7 +179,7 @@ def generate_image(prompt, out_path):
     return img_url
 
 
-def generate_video(scene, image_url, subject_url=None):
+def generate_video(scene, image_url):
     vid_path = OUT / f"{scene['id']}.mp4"
     if vid_path.exists():
         print(f"  skip video {vid_path.name}", flush=True)
@@ -165,13 +190,9 @@ def generate_video(scene, image_url, subject_url=None):
         "first_frame_image": image_url,
         "prompt_optimizer": True,
     }
-    if scene.get("use_subject") and subject_url:
-        inp["subject_reference"] = subject_url
+    # minimax: cannot combine first_frame_image + subject_reference
 
-    pred = api("POST", "https://api.replicate.com/v1/predictions", {
-        "version": VIDEO_VER,
-        "input": inp,
-    })
+    pred = create_prediction(VIDEO_MODEL, inp)
     url = poll(pred["urls"]["get"], scene["id"])
     download(url, vid_path)
     print(f"  saved {vid_path}", flush=True)
@@ -183,25 +204,28 @@ def main():
 
     # Step 1: hero character reference
     hero_path = OUT / "hero_ref.jpg"
-    hero_url = generate_image(
-        f"{STYLE}, character reference portrait, confident young Israeli woman late 20s, "
-        "dark hair ponytail, white blouse, friendly smile, neutral background, full upper body",
-        hero_path,
-    )
-    if not hero_url and hero_path.exists():
-        # re-upload via local server fallback handled below
-        hero_url = None
+    if not hero_path.exists():
+        generate_image(
+            f"{STYLE}, character reference portrait, confident young Israeli woman late 20s, "
+            "dark hair ponytail, white blouse, friendly smile, neutral background, full upper body",
+            hero_path,
+        )
+    else:
+        print("  skip hero_ref (exists)", flush=True)
     manifest["hero_ref"] = str(hero_path)
 
     videos = []
     for scene in SCENES:
         print(f"\n=== {scene['id']} ===", flush=True)
         img_path = OUT / f"{scene['id']}_frame.jpg"
+        vid_path = OUT / f"{scene['id']}.mp4"
+        if vid_path.exists():
+            print(f"  skip video {vid_path.name}", flush=True)
+            videos.append(vid_path)
+            manifest["scenes"].append({"id": scene["id"], "image": str(img_path), "video": str(vid_path)})
+            continue
         img_url = generate_image(scene["image_prompt"], img_path)
-        if not img_url:
-            raise RuntimeError(f"Need image URL for {scene['id']} — delete cached file and retry")
-        subj = hero_url if scene.get("use_subject") else None
-        vid = generate_video(scene, img_url, subj)
+        vid = generate_video(scene, img_url)
         videos.append(vid)
         manifest["scenes"].append({"id": scene["id"], "image": str(img_path), "video": str(vid)})
 

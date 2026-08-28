@@ -1,0 +1,37 @@
+{
+  "scenes": [
+    {
+      "id": "01_office",
+      "image": "/workspace/assets/orvo24/01_office_frame.jpg",
+      "video": "/workspace/assets/orvo24/01_office.mp4"
+    },
+    {
+      "id": "02_packing",
+      "image": "/workspace/assets/orvo24/02_packing_frame.jpg",
+      "video": "/workspace/assets/orvo24/02_packing.mp4"
+    },
+    {
+      "id": "03_guy_asks",
+      "image": "/workspace/assets/orvo24/03_guy_asks_frame.jpg",
+      "video": "/workspace/assets/orvo24/03_guy_asks.mp4"
+    },
+    {
+      "id": "04_hero_reply",
+      "image": "/workspace/assets/orvo24/04_hero_reply_frame.jpg",
+      "video": "/workspace/assets/orvo24/04_hero_reply.mp4"
+    },
+    {
+      "id": "05_skeptic",
+      "image": "/workspace/assets/orvo24/05_skeptic_frame.jpg",
+      "video": "/workspace/assets/orvo24/05_skeptic.mp4"
+    },
+    {
+      "id": "06_phone",
+      "image": "/workspace/assets/orvo24/06_phone_frame.jpg",
+      "video": "/workspace/assets/orvo24/06_phone.mp4"
+    }
+  ],
+  "style": "GTA V cinematic game cutscene style, photorealistic 3D render, warm orange ambient lighting, modern futuristic startup office, shallow depth of field, film grain, dramatic camera, hyperreal human skin, natural motion blur, 4K quality",
+  "hero_ref": "/workspace/assets/orvo24/hero_ref.jpg",
+  "final": "/workspace/assets/orvo24/orvo24-story.mp4"
+}
