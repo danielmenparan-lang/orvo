@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ORVO24 — דמויות</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:#F9F9F7;color:#0A0A0A;padding:40px 24px}
+h1{font-size:28px;margin-bottom:8px}
+.sub{color:#6B6B6B;margin-bottom:32px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:24px;max-width:1100px;margin:0 auto}
+.card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px;overflow:hidden}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.card-info{padding:14px}
+.card-info h3{font-size:15px;margin-bottom:4px}
+.card-info p{font-size:12px;color:#6B6B6B}
+.tag{display:inline-block;font-size:11px;background:rgba(255,107,53,.1);color:#FF6B35;padding:2px 8px;border-radius:4px;margin-top:6px}
+a.back{display:inline-block;margin-top:32px;color:#FF6B35;font-size:14px}
+</style>
+</head>
+<body>
+<h1>ORVO24 — 8 דמויות</h1>
+<p class="sub">פוטוריאליסטיות · flux-dev · מוכנות לשלב הבא (סצנות וידאו)</p>
+<div class="grid" id="grid"></div>
+<a class="back" href="/">← חזרה לאתר</a>
+<script>
+const chars = [
+  {id:"01_hero_woman", name:"Maya", role:"הגיבורה — יוצאת מוקדם"},
+  {id:"02_guy_asks", name:"Tom", role:"שואל: למה את הולכת?"},
+  {id:"03_skeptic", name:"Alex", role:"הספקן"},
+  {id:"04_woman_laptop", name:"Sarah", role:"עובדת על לפטופ"},
+  {id:"05_man_laptop", name:"David", role:"עובד על לפטופ"},
+  {id:"06_woman_notes", name:"Lina", role:"רושמת בישיבה"},
+  {id:"07_man_senior", name:"Omer", role:"מנהל הצוות"},
+  {id:"08_woman_junior", name:"Noa", role:"ג'וניור בצוות"},
+];
+document.getElementById('grid').innerHTML = chars.map(c => `
+  <div class="card">
+    <img src="assets/characters/${c.id}.jpg" alt="${c.name}"/>
+    <div class="card-info">
+      <h3>${c.name}</h3>
+      <p>${c.role}</p>
+      <span class="tag">${c.id}</span>
+    </div>
+  </div>`).join('');
+</script>
+</body>
+</html>

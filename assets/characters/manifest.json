@@ -1,0 +1,69 @@
+{
+  "characters": [
+    {
+      "id": "01_hero_woman",
+      "name": "Maya — הגיבורה",
+      "role": "Professional woman leaving early, confident and warm",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, Israeli woman age 28, dark brown hair in low ponytail, warm brown eyes, subtle natural makeup, white linen blouse, gentle confident smile, startup office background blurred, approachable and smart, looks like a real person not a model",
+      "file": "/workspace/assets/characters/01_hero_woman.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/69f7826f47cdd4f5be299fac4f96bb0d45fa48b40af2f8f163d5419c67837b16/cf4adeec-247c-4e99-bfda-bc5833b1b5f4?X-Amz-Expires=86400&X-Amz-Date=20260828T150701Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=339951c8f6c97fc4350ee7f8c5b4e23c6a32b8e796133c75dd3ac54e89917fb1"
+    },
+    {
+      "id": "02_guy_asks",
+      "name": "Tom — שואל למה הולכת",
+      "role": "Curious coworker, surprised expression",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, man age 30, light stubble, short dark hair, casual blue button-down shirt, slightly surprised curious expression, raised eyebrow, sitting at meeting table, natural office lighting, looks like real coworker",
+      "file": "/workspace/assets/characters/02_guy_asks.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/34c2928eb2d2baca30a28f6e274a72788d0987d88a0ced174051fb8d60bd05e8/00c9266a-1d71-4344-ad88-2210a1dcaba9?X-Amz-Expires=86400&X-Amz-Date=20260828T150716Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=8059b2a4f87220c2820b62b5245cb3e04a50fff181743a99e2dda3fed59ef916"
+    },
+    {
+      "id": "03_skeptic",
+      "name": "Alex — הספקן",
+      "role": "Skeptical team member",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, man age 32, glasses, neat short hair, grey t-shirt under blazer, skeptical but friendly expression, arms relaxed, modern office background, real person candid photo style",
+      "file": "/workspace/assets/characters/03_skeptic.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/e264d3d64123c5587789acee9a2f6308cf758fba1a6505edd9eac2eb24340fa8/46b11ec3-0114-463a-a614-4a3a35322a96?X-Amz-Expires=86400&X-Amz-Date=20260828T150730Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=83ee888c98fd05eba1781d9428c6f5f97a4e36eb4012e3ea39cd5b257a7d3810"
+    },
+    {
+      "id": "04_woman_laptop",
+      "name": "Sarah — בלפטופ",
+      "role": "Team member at laptop",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, Black woman age 27, natural curly hair, focused on laptop screen glow, cream sweater, conference room setting, authentic workplace moment",
+      "file": "/workspace/assets/characters/04_woman_laptop.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/58173418bd1a211a9b524ad7e45fd740882af39f98dee91eb28dd650197689fe/1b0a960d-3765-431e-86a6-ea15882272ee?X-Amz-Expires=86400&X-Amz-Date=20260828T150745Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=83b64a0838e533d5bfd1a78bf7eb32efb0c956c3fa04e1bcd990d804ae815795"
+    },
+    {
+      "id": "05_man_laptop",
+      "name": "David — בלפטופ",
+      "role": "Team member at laptop",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, Asian man age 29, clean look, black t-shirt, typing on laptop, slight concentration, modern startup office, realistic candid photo",
+      "file": "/workspace/assets/characters/05_man_laptop.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/6cf68a6581794fe3e5408f7a01cf5ffb53243a3920451baee110d9edb31d65a8/640d9817-3416-4888-82ee-72f200a25fb8?X-Amz-Expires=86400&X-Amz-Date=20260828T150800Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=ebd6001382f036c8812de3d4c5ed7ff0632c7b239b9d9929f7353b990ce3b465"
+    },
+    {
+      "id": "06_woman_notes",
+      "name": "Lina — רושמת",
+      "role": "Taking notes in meeting",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, Latina woman age 31, dark hair shoulder length, holding pen near notebook, listening attentively, soft smile, business casual, natural meeting room light",
+      "file": "/workspace/assets/characters/06_woman_notes.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/83a80fb9a7c9e8d43a6df4c7e001b28432662927a829e0142e73b902bd435f3e/b4e4b4e3-4fd5-4102-a3f1-7caf5ecab498?X-Amz-Expires=86400&X-Amz-Date=20260828T150814Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=73f22cbafdbc1f90f1a40b1f435bcc583d68c87aa8bcc4d75400988d2f7c6adc"
+    },
+    {
+      "id": "07_man_senior",
+      "name": "Omer — מנהל",
+      "role": "Senior team lead",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, Israeli man age 38, salt and pepper short hair, navy polo, calm leadership presence, slight smile, experienced professional, real executive photo",
+      "file": "/workspace/assets/characters/07_man_senior.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/787507333a0e8a741dba0c850e24da3786e57d94cf6cae9bb942f62616272631/f1ca41fd-05ef-4c2a-ac5d-2f29d422badf?X-Amz-Expires=86400&X-Amz-Date=20260828T150828Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=5bc4d73d566195abf68105b5412a88ea14ea591f2762ed37bc7a8bd7141e53dd"
+    },
+    {
+      "id": "08_woman_junior",
+      "name": "Noa — ג'וניור",
+      "role": "Junior team member",
+      "prompt": "Ultra photorealistic professional headshot, natural skin texture with pores and subtle imperfections, real human photograph, shot on Sony A7IV 85mm f/1.8, soft window light, shallow depth of field, authentic expression, no CGI, no illustration, no cartoon, no 3D render, no anime, no plastic skin, young Israeli woman age 24, light brown hair bob cut, green eyes, simple black top, eager friendly expression, fresh graduate energy, authentic portrait",
+      "file": "/workspace/assets/characters/08_woman_junior.jpg",
+      "url": "https://ai-gateway-outputs.0d37909e38d3e99c29fa2cd343ac421a.r2.cloudflarestorage.com/provider-outputs/e9cbf36c7f68632171f5d4c423782177719810a411e831b0af31ec6ddb891cbb/300cf64b-83e6-44d6-b1be-8a5f7abc35cc?X-Amz-Expires=86400&X-Amz-Date=20260828T150842Z&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=766732b82d28513d70fca8df61685d41%2F20260828%2Fauto%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=566defa0f92e8e6a8c8c37cd09dd09124ca4b702826dc7e8dd1ada7f31615132"
+    }
+  ],
+  "style": "photorealistic"
+}
