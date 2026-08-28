@@ -1,0 +1,22 @@
+{
+  "meeting": {
+    "file": "assets/videos/meeting.mp4",
+    "source": "ken-burns (Unsplash office photo)"
+  },
+  "leave": {
+    "file": "assets/videos/leave.mp4",
+    "source": "ken-burns (Unsplash professional woman photo)"
+  },
+  "guy": {
+    "file": "assets/videos/guy.mp4",
+    "source": "replicate/minimax/video-01"
+  },
+  "phone": {
+    "file": "assets/videos/phone.mp4",
+    "source": "replicate/minimax/video-01"
+  },
+  "nods": {
+    "file": "assets/videos/nods.mp4",
+    "source": "replicate/minimax/video-01"
+  }
+}
