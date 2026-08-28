@@ -10,6 +10,9 @@
     "voice:en": "bash generate-voice-en.sh",
     "voice:premium": "bash generate-voice-en-premium.sh",
     "render:human": "node compose-ad-human.mjs",
+    "i2v": "node generate-i2v-replicate.mjs",
+    "render:replicate": "node compose-ad-replicate.mjs",
+    "render:replicate:full": "npm run i2v && npm run voice:premium && npm run render:replicate",
     "voice": "bash generate-voice.sh"
   },
   "devDependencies": {
