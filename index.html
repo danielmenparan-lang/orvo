@@ -139,6 +139,34 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 .chat-hint{font-size:12px;color:var(--gray);margin-bottom:10px;line-height:1.5}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:8px;color:#fff;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none}
 #toast.show{opacity:1}
+
+/* Cinematic demo */
+.demo-section{background:linear-gradient(180deg,#fff 0%,var(--bg) 100%);padding:80px clamp(20px,5vw,64px);border-top:1px solid var(--border)}
+.demo-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center}
+.demo-copy .section-label{margin-bottom:12px}
+.demo-copy h2{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,40px);font-weight:500;line-height:1.15;margin-bottom:16px;letter-spacing:-.02em}
+.demo-copy p{color:var(--gray);font-size:16px;margin-bottom:24px;max-width:420px}
+.demo-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.demo-scene-meta{margin-top:8px}
+.demo-scene-meta h3{font-size:18px;font-weight:600;margin-bottom:6px}
+.demo-scene-meta p{font-size:14px;color:var(--gray)}
+.demo-progress-track{height:3px;background:rgba(0,0,0,.08);border-radius:99px;margin-top:20px;overflow:hidden}
+.demo-progress-bar{height:100%;background:var(--o);width:20%;transition:width .4s ease}
+.demo-dots{display:flex;gap:8px;margin-top:16px}
+.demo-dot{width:10px;height:10px;border-radius:50%;border:none;background:rgba(0,0,0,.12);padding:0;cursor:pointer;transition:transform .2s,background .2s}
+.demo-dot.active{background:var(--o);transform:scale(1.15)}
+.demo-stage{position:relative;border-radius:20px;overflow:hidden;background:var(--dark);box-shadow:0 24px 80px rgba(0,0,0,.18);aspect-ratio:16/10}
+.demo-stage video{width:100%;height:100%;object-fit:cover;display:block;background:#111}
+.demo-phone-frame{position:absolute;right:8%;bottom:10%;width:min(34%,160px);aspect-ratio:9/19;border-radius:22px;border:3px solid rgba(255,255,255,.85);box-shadow:0 16px 40px rgba(0,0,0,.45);overflow:hidden;opacity:0;transform:translateY(12px) scale(.96);transition:opacity .45s ease,transform .45s ease;pointer-events:none;background:#000}
+.demo-phone-frame.visible{opacity:1;transform:translateY(0) scale(1)}
+.demo-phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:38%;height:14px;background:#000;border-radius:0 0 10px 10px;z-index:2}
+.demo-phone-frame iframe{width:100%;height:100%;border:0;transform:scale(.52);transform-origin:top left;width:192%;height:192%}
+@media(max-width:900px){
+  .demo-inner{grid-template-columns:1fr}
+  .demo-copy{text-align:center}
+  .demo-copy p,.demo-controls{justify-content:center;margin-left:auto;margin-right:auto}
+  .demo-controls{justify-content:center}
+}
 </style>
 </head>
 <body>
@@ -149,6 +177,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 <nav>
   <a class="logo" href="#" data-action="home"><span>O</span>RVO</a>
   <ul class="nav-links">
+    <li><a href="#demo">Demo</a></li>
     <li><a href="#how">How it works</a></li>
     <li><a href="#builders">For builders</a></li>
   </ul>
@@ -199,6 +228,33 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
     <div class="trust-item"><b>Private chat</b> — agree on scope & price</div>
     <div class="trust-item"><b>Secure payments</b> — via Stripe</div>
   </div>
+
+  <section class="demo-section" id="demo">
+    <div class="demo-inner" id="cinematic-demo">
+      <div class="demo-copy">
+        <p class="section-label">Product story</p>
+        <h2>See how teams discover ORVO</h2>
+        <p>Five cinematic moments — from the meeting room to the phone demo — showing why clients post requests and vetted builders quote on ORVO.</p>
+        <div class="demo-controls">
+          <button class="btn btn-primary btn-lg" id="demo-play" type="button">Play story</button>
+          <button class="btn btn-ghost" id="demo-mute" type="button" aria-pressed="false">Mute</button>
+        </div>
+        <div class="demo-scene-meta">
+          <h3 id="demo-scene-title">The pitch</h3>
+          <p id="demo-scene-caption">Your team needs an AI agent. Where do you start?</p>
+        </div>
+        <div class="demo-progress-track"><div class="demo-progress-bar" id="demo-progress"></div></div>
+        <div class="demo-dots" id="demo-dots" role="tablist" aria-label="Demo scenes"></div>
+      </div>
+      <div class="demo-stage">
+        <video id="demo-video" playsinline preload="metadata" muted poster=""></video>
+        <div class="demo-phone-frame" id="demo-phone-frame" aria-hidden="true">
+          <div class="demo-phone-notch"></div>
+          <iframe src="https://fantastic-eclair-0b2c66.netlify.app/" title="ORVO website preview"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="section" id="how">
     <p class="section-label">Process</p>
@@ -324,6 +380,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase-config.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
+<script src="demo.js?v=1"></script>
 </body>
 </html>
