@@ -4,37 +4,39 @@
 (function () {
   'use strict';
 
+  const CDN = 'https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main';
+
   const SCENES = [
     {
       id: 'meeting',
       title: 'The pitch',
       caption: 'Your team needs an AI agent. Where do you start?',
-      src: 'assets/videos/meeting.mp4',
+      src: `${CDN}/assets/videos/meeting.mp4`,
     },
     {
       id: 'leave',
       title: 'She has the answer',
       caption: 'Someone on the team already found ORVO.',
-      src: 'assets/videos/leave.mp4',
+      src: `${CDN}/assets/videos/leave.mp4`,
     },
     {
       id: 'guy',
       title: 'Wait — what\'s ORVO?',
       caption: 'Sound familiar? Most teams don\'t know where to find vetted builders.',
-      src: 'assets/videos/guy.mp4',
+      src: `${CDN}/assets/videos/guy.mp4`,
     },
     {
       id: 'phone',
       title: 'Show, don\'t tell',
       caption: 'Post a request. Vetted builders send quotes. Pay securely.',
-      src: 'assets/videos/phone.mp4',
+      src: `${CDN}/assets/videos/phone.mp4`,
       phoneOverlay: true,
     },
     {
       id: 'nods',
       title: 'Everyone\'s in',
       caption: 'One marketplace for AI agents — clients and builders.',
-      src: 'assets/videos/nods.mp4',
+      src: `${CDN}/assets/videos/nods.mp4`,
     },
   ];
 
