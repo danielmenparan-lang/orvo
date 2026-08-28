@@ -8,6 +8,8 @@
     "render:ai": "node compose-ad-ai.mjs",
     "render:premium": "node compose-ad-premium.mjs",
     "voice:en": "bash generate-voice-en.sh",
+    "voice:premium": "bash generate-voice-en-premium.sh",
+    "render:human": "node compose-ad-human.mjs",
     "voice": "bash generate-voice.sh"
   },
   "devDependencies": {
