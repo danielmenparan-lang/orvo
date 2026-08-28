@@ -239,9 +239,9 @@ const voiceMap = [
   { f: 'end-vo.mp3', ms: Math.round(T.end * 1000) },
 ];
 const filterA = [
-  ...voiceMap.map((v, i) => `[${i}:a]adelay=${v.ms}|${v.ms},volume=1.0,aresample=48000[a${i}]`),
+  ...voiceMap.map((v, i) => `[${i}:a]adelay=${v.ms}|${v.ms},volume=2.8,aresample=48000[a${i}]`),
   `${voiceMap.map((_, i) => `[a${i}]`).join('')}amix=inputs=${voiceMap.length}:duration=longest:dropout_transition=3[mix]`,
-  '[mix]apad=pad_dur=19[aout]',
+  '[mix]loudnorm=I=-11:TP=-0.5:LRA=5,apad=pad_dur=19[aout]',
 ].join(';');
 
 run('ffmpeg', [
