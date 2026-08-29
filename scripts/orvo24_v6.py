@@ -25,11 +25,11 @@ IDEOGRAM = "ideogram-ai/ideogram-v3-quality"
 KLING = "kwaivgi/kling-v2.1"
 LIPSYNC = "kwaivgi/kling-lip-sync"
 
-# Bright happy commercial — NOT gritty documentary
+# Light playful tone — same sunny office throughout
 LOOK = (
-    "Bright uplifting startup commercial, happy smiling professionals, fresh energetic joyful mood, "
-    "soft flattering golden window light, high-key clean lighting, attractive well-groomed people, "
-    "aspirational modern office, pleasant to watch, Instagram ad quality, 16:9 widescreen"
+    "Bright uplifting startup commercial, happy smiling professionals, light playful energy, "
+    "same modern sunny startup office throughout, soft flattering golden window light, "
+    "high-key clean lighting, attractive well-groomed people, fun friendly vibe, 16:9"
 )
 
 OFFICE = (
@@ -67,33 +67,33 @@ SCENES = [
         "id": "03_tom",
         "frame": "03_tom.jpg",
         "style_ref": "02_guy_asks.jpg",
-        "dialogue": ("en-US-AndrewMultilingualNeural", "Four thirty? Why leave so early?"),
+        "dialogue": ("en-US-AndrewMultilingualNeural", "Wait, four thirty? Where are you going?"),
         "prompt_img": f"{LOOK}, {OFFICE}, handsome man 31 friendly surprised smile blue shirt, fresh clean look gesturing at watch",
-        "prompt_vid": f"Handsome man speaks with playful surprised smile, {LIP}, bright office, points at watch",
+        "prompt_vid": f"Handsome man speaks with playful surprised grin, {LIP}, light humor, bright office, points at watch",
     },
     {
         "id": "04_maya",
         "frame": "04_maya.jpg",
         "style_ref": "01_hero_woman.jpg",
-        "dialogue": ("en-US-AvaMultilingualNeural", "My agent finishes all my work."),
+        "dialogue": ("en-US-AvaMultilingualNeural", "My agent finishes everything for me!"),
         "prompt_img": f"{LOOK}, {OFFICE}, stunning woman 28 radiant confident smile white shirt, fresh beautiful glowing skin holding bag",
-        "prompt_vid": f"Beautiful woman speaks with bright confident smile, {LIP}, golden soft light, pleasant bokeh",
+        "prompt_vid": f"Beautiful woman speaks with bright amused confident smile, {LIP}, golden soft light, pleasant bokeh",
     },
     {
         "id": "05_alex",
         "frame": "05_alex.jpg",
         "style_ref": "03_skeptic.jpg",
-        "dialogue": ("en-US-BrianMultilingualNeural", "You can't even build an agent."),
+        "dialogue": ("en-US-BrianMultilingualNeural", "You? Build an agent? Seriously?"),
         "prompt_img": f"{LOOK}, {OFFICE}, attractive man 33 glasses friendly skeptical smirk, clean fresh look, smart casual",
-        "prompt_vid": f"Attractive man speaks with light skeptical smirk not angry, {LIP}, bright cheerful office",
+        "prompt_vid": f"Attractive man speaks with playful skeptical smirk, {LIP}, light comedic tone, bright cheerful office",
     },
     {
         "id": "06_phone",
         "frame": "06_phone.jpg",
         "style_ref": "01_hero_woman.jpg",
-        "dialogue": ("en-US-AvaMultilingualNeural", "I just use orvo24.com."),
+        "dialogue": ("en-US-AvaMultilingualNeural", "I just went to orvo24.com. That's it."),
         "prompt_img": f"{LOOK}, {OFFICE}, beautiful woman holds phone showing orange orvo24.com, bright happy proud smile",
-        "prompt_vid": "Woman shows phone with warm proud smile, speaks cheerfully, natural hand motion, bright light",
+        "prompt_vid": "Woman shows phone with proud playful smile, speaks cheerfully, natural hand motion, bright light",
     },
     {
         "id": "07_nods",
@@ -105,10 +105,10 @@ SCENES = [
 
 SUBS = [
     (0, 5, ""), (5, 10, "She packs up to leave early..."),
-    (10, 15, "Four thirty? Why leave so early?"),
-    (15, 20, "My agent finishes all my work."),
-    (20, 25, "You can't even build an agent."),
-    (25, 30, "I just use orvo24.com."),
+    (10, 15, "Wait, four thirty? Where are you going?"),
+    (15, 20, "My agent finishes everything for me!"),
+    (20, 25, "You? Build an agent? Seriously?"),
+    (25, 30, "I just went to orvo24.com. That's it."),
     (30, 35, ""),
 ]
 
@@ -174,12 +174,34 @@ def git_publish(paths: list[Path], msg: str):
     st = subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True)
     if not st.stdout.strip():
         return
-    subprocess.run(["git", "commit", "-m", msg], cwd=root, check=True, capture_output=True)
+    r = subprocess.run(["git", "commit", "-m", msg], cwd=root, capture_output=True)
+    if r.returncode != 0:
+        return
     for i in range(4):
         if subprocess.run(["git", "push", "origin", BRANCH], cwd=root, capture_output=True).returncode == 0:
             break
         time.sleep(4 * (i + 1))
     time.sleep(4)
+
+
+def clip_duration(path: Path) -> float:
+    return float(subprocess.check_output([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=nw=1:nokey=1", str(path),
+    ]).decode().strip())
+
+
+def soften_clip(src: Path, dst: Path, fade: float = 0.35):
+    """Fade in/out so hard cuts feel smoother."""
+    d = clip_duration(src)
+    out_f = max(0.1, d - fade)
+    subprocess.run([
+        "ffmpeg", "-y", "-i", str(src),
+        "-vf", f"fade=t=in:st=0:d={fade},fade=t=out:st={out_f}:d={fade}",
+        "-af", f"afade=t=in:st=0:d={fade},afade=t=out:st={out_f}:d={fade}",
+        "-c:v", "libx264", "-crf", "12", "-preset", "fast", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(dst),
+    ], check=True, capture_output=True)
 
 
 def gen_frame(scene):
@@ -267,9 +289,12 @@ def grade_clip(src: Path, dst: Path):
 def export_final(clips):
     scaled = []
     for i, c in enumerate(clips):
-        p = OUT / f"s{i:02d}.mp4"
-        grade_clip(c, p)
-        scaled.append(p)
+        g = OUT / f"g{i:02d}.mp4"
+        grade_clip(c, g)
+        s = OUT / f"s{i:02d}.mp4"
+        soften_clip(g, s)
+        scaled.append(s)
+        g.unlink(missing_ok=True)
     concat = OUT / "concat.txt"
     concat.write_text("\n".join(f"file '{x.resolve()}'" for x in scaled))
     hq = OUT / "orvo24-v6-hq.mp4"
@@ -308,9 +333,8 @@ async def prepare_audio():
             continue
         voice, text = sc["dialogue"]
         mp3 = audio_dir / f"{sc['id']}.mp3"
-        if not mp3.exists():
-            print(f"TTS {sc['id']}: {text}", flush=True)
-            await gen_tts(voice, text, mp3)
+        print(f"TTS {sc['id']}: {text}", flush=True)
+        await gen_tts(voice, text, mp3)
         paths.append(mp3)
     if paths:
         git_publish(paths, "v6 dialogue audio")
