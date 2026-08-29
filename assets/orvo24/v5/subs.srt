@@ -1,0 +1,19 @@
+1
+00:00:05,000 --> 00:00:10,000
+She packs up to leave early...
+
+2
+00:00:10,000 --> 00:00:15,000
+Four thirty? Why leave so early?
+
+3
+00:00:15,000 --> 00:00:20,000
+My agent finishes all my work.
+
+4
+00:00:20,000 --> 00:00:25,000
+You can't even build an agent.
+
+5
+00:00:25,000 --> 00:00:30,000
+I just use orvo24.com.
