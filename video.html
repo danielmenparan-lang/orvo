@@ -13,24 +13,40 @@ video{width:min(1000px,100%);border-radius:14px;background:#111;box-shadow:0 24p
 .links{margin-top:18px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
 a{color:#FF6B35;font-size:14px;text-decoration:none}
 a:hover{text-decoration:underline}
+#err{color:#ff6b6b;font-size:13px;margin-top:12px;display:none;max-width:520px;text-align:center}
 </style>
 </head>
 <body>
 <h1>ORVO24 — Product Story</h1>
 <p class="sub">7 סצנות · Kling Pro · 16:9 · משרד כתום בהיר · 35 שניות · כתוביות בעברית</p>
-<video
-  controls
-  autoplay
-  playsinline
-  preload="metadata"
-  poster="https://raw.githubusercontent.com/danielmenparan-lang/orvo/main/assets/orvo24/v3/04_maya.jpg"
->
-  <source src="https://raw.githubusercontent.com/danielmenparan-lang/orvo/main/assets/orvo24/v3/orvo24-v3.mp4" type="video/mp4"/>
+<video id="v" controls autoplay playsinline preload="auto"
+  poster="https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main/assets/orvo24/v3/04_maya.jpg">
+  <source id="src" src="https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main/assets/orvo24/v3/orvo24-v3-web.mp4" type="video/mp4"/>
 </video>
+<p id="err"></p>
 <div class="links">
-  <a href="https://raw.githubusercontent.com/danielmenparan-lang/orvo/main/assets/orvo24/v3/orvo24-v3.mp4" download="orvo24-v3.mp4">↓ הורד MP4 (עם כתוביות)</a>
-  <a href="https://raw.githubusercontent.com/danielmenparan-lang/orvo/main/assets/orvo24/v3/orvo24-v3-hq.mp4" download="orvo24-v3-hq.mp4">↓ HD ללא כתוביות</a>
+  <a href="https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main/assets/orvo24/v3/orvo24-v3-web.mp4" download="orvo24-v3.mp4">↓ הורד MP4 (עם כתוביות)</a>
+  <a href="assets/orvo24/v3/orvo24-v3-hq.mp4" download="orvo24-v3-hq.mp4">↓ HD מלא (מקומי)</a>
   <a href="/">← חזרה לאתר</a>
 </div>
+<script>
+const CDN = "https://cdn.jsdelivr.net/gh/danielmenparan-lang/orvo@main/assets/orvo24/v3/";
+const v = document.getElementById("v");
+const src = document.getElementById("src");
+const err = document.getElementById("err");
+const fallbacks = [CDN + "orvo24-v3-web.mp4", "assets/orvo24/v3/orvo24-v3-web.mp4", CDN + "orvo24-v3.mp4"];
+let i = 0;
+function tryNext() {
+  if (i >= fallbacks.length) {
+    err.style.display = "block";
+    err.textContent = "לא הצלחנו לטעון את הסרטון. נסה לרענן או להוריד את הקובץ.";
+    return;
+  }
+  src.src = fallbacks[i++];
+  v.load();
+  v.play().catch(() => {});
+}
+v.addEventListener("error", tryNext);
+</script>
 </body>
 </html>
