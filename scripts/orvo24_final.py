@@ -228,13 +228,28 @@ def animate(scene, start_uri):
 
 
 def concat_and_subtitle(videos):
-    concat = OUT / "concat.txt"
-    concat.write_text("\n".join(f"file '{v}'" for v in videos))
-    raw = OUT / "orvo24-final-raw.mp4"
-    subprocess.run(
-        ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat), "-c", "copy", str(raw)],
-        check=True, capture_output=True,
+    VF = (
+        "scale=1920:1080:force_original_aspect_ratio=decrease:flags=lanczos,"
+        "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black,"
+        "unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=0.45"
     )
+    scaled = []
+    for i, v in enumerate(videos):
+        dst = OUT / f"scaled_{i:02d}.mp4"
+        subprocess.run([
+            "ffmpeg", "-y", "-i", str(v), "-vf", VF,
+            "-c:v", "libx264", "-crf", "14", "-preset", "slow",
+            "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(dst),
+        ], check=True, capture_output=True)
+        scaled.append(dst)
+
+    concat = OUT / "concat_scaled.txt"
+    concat.write_text("\n".join(f"file '{p}'" for p in scaled))
+    hq = OUT / "orvo24-final-hq.mp4"
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat),
+        "-c", "copy", str(hq),
+    ], check=True, capture_output=True)
 
     srt = OUT / "subs.srt"
     lines = []
@@ -252,10 +267,15 @@ def concat_and_subtitle(videos):
 
     final = OUT / "orvo24-final.mp4"
     subprocess.run([
-        "ffmpeg", "-y", "-i", str(raw),
-        "-vf", f"subtitles={srt}:force_style='FontSize=22,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=3,Outline=2,Alignment=2,MarginV=40'",
-        "-c:v", "libx264", "-crf", "18", "-preset", "fast", str(final),
+        "ffmpeg", "-y", "-i", str(hq),
+        "-vf", f"subtitles={srt}:force_style='FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=3,Outline=2,Alignment=2,MarginV=48'",
+        "-c:v", "libx264", "-crf", "14", "-preset", "slow",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(final),
     ], check=True, capture_output=True)
+
+    for p in scaled:
+        p.unlink(missing_ok=True)
+    concat.unlink(missing_ok=True)
     return final
 
 
