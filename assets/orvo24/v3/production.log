@@ -1,0 +1,159 @@
+
+=== 01_office ===
+  reuse 01_office.jpg
+Traceback (most recent call last):
+  File "/workspace/scripts/orvo24_v3.py", line 225, in <module>
+    main()
+  File "/workspace/scripts/orvo24_v3.py", line 218, in main
+    vids.append(gen_video(sc, uri))
+                ^^^^^^^^^^^^^^^^^^
+  File "/workspace/scripts/orvo24_v3.py", line 162, in gen_video
+    url = poll(pred["urls"]["get"], scene["id"])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scripts/orvo24_v3.py", line 109, in poll
+    p = api("GET", url)
+        ^^^^^^^^^^^^^^^
+  File "/workspace/scripts/orvo24_v3.py", line 95, in api
+    req = urllib.request.Request(url, data=body, method=method,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 318, in __init__
+    self.full_url = url
+    ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 344, in full_url
+    self._parse()
+  File "/usr/lib/python3.12/urllib/request.py", line 373, in _parse
+    raise ValueError("unknown url type: %r" % self.full_url)
+ValueError: unknown url type: '01_office'
+
+=== 01_office ===
+  reuse 01_office.jpg
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] succeeded
+  saved 01_office.mp4 (8946KB)
+
+=== 02_packing ===
+  [02_packing.jpg] processing
+  [02_packing.jpg] processing
+  [02_packing.jpg] succeeded
+  saved 02_packing.jpg
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] succeeded
+  saved 02_packing.mp4 (8393KB)
+
+=== 03_tom ===
+  [03_tom.jpg] processing
+  [03_tom.jpg] processing
+  [03_tom.jpg] succeeded
+  saved 03_tom.jpg
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] succeeded
+  saved 03_tom.mp4 (7713KB)
+
+=== 04_maya ===
+  [04_maya.jpg] processing
+  [04_maya.jpg] processing
+  [04_maya.jpg] succeeded
+  saved 04_maya.jpg
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] succeeded
+  saved 04_maya.mp4 (7937KB)
+
+=== 05_alex ===
+  [05_alex.jpg] processing
+  [05_alex.jpg] processing
+  [05_alex.jpg] succeeded
+  saved 05_alex.jpg
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] succeeded
+  saved 05_alex.mp4 (7435KB)
+
+=== 06_phone ===
+  [06_phone.jpg] processing
+  [06_phone.jpg] processing
+  [06_phone.jpg] succeeded
+  saved 06_phone.jpg
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] succeeded
+  saved 06_phone.mp4 (7233KB)
+
+=== 07_nods ===
+  [07_nods.jpg] processing
+  [07_nods.jpg] processing
+  [07_nods.jpg] succeeded
+  saved 07_nods.jpg
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] succeeded
+  saved 07_nods.mp4 (6031KB)
+
+=== export ===
+DONE: /workspace/assets/orvo24/v3/orvo24-v3.mp4
