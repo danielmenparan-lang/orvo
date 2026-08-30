@@ -1,0 +1,136 @@
+
+=== s01_establish (2.0s) ===
+  [s01_establish.jpg] starting
+  [s01_establish.jpg] processing
+  [s01_establish.jpg] succeeded
+  saved s01_establish.jpg
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] processing
+  [s01_establish] succeeded
+  saved s01_establish_raw.mp4
+  ok t=2.0
+
+=== s02_hero (3.0s) ===
+  [s02_hero.jpg] processing
+  [s02_hero.jpg] processing
+  [s02_hero.jpg] processing
+  [s02_hero.jpg] succeeded
+  saved s02_hero.jpg
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] processing
+  [s02_hero] succeeded
+  saved s02_hero_raw.mp4
+  ok t=5.0
+
+=== s03_pack (3.0s) ===
+  [s03_pack.jpg] processing
+  [s03_pack.jpg] processing
+  [s03_pack.jpg] succeeded
+  saved s03_pack.jpg
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] processing
+  [s03_pack] succeeded
+  saved s03_pack_raw.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  ok t=8.0
+
+=== s04_her (3.0s) ===
+  [s04_her.jpg] processing
+  [s04_her.jpg] processing
+  [s04_her.jpg] processing
+  [s04_her.jpg] succeeded
+  saved s04_her.jpg
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] processing
+  [s04_her] succeeded
+  saved s04_her_raw.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  ok t=11.0
+
+=== s05_skeptic (3.0s) ===
+  [s05_skeptic.jpg] processing
+  [s05_skeptic.jpg] processing
+  [s05_skeptic.jpg] processing
+  [s05_skeptic.jpg] processing
+  [s05_skeptic.jpg] succeeded
+  saved s05_skeptic.jpg
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] processing
+  [s05_skeptic] succeeded
+  saved s05_skeptic_raw.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  ok t=14.0
+
+=== s06_walk (3.0s) ===
+  [s06_walk.jpg] processing
+  [s06_walk.jpg] processing
+  [s06_walk.jpg] succeeded
+  saved s06_walk.jpg
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] processing
+  [s06_walk] succeeded
+  saved s06_walk_raw.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  ok t=17.0
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+
+DONE /workspace/assets/orvo24/v8/orvo24-v8-web.mp4 (20.6s)
