@@ -1,0 +1,217 @@
+=== TTS ===
+TTS 03_tom: Wait, four thirty? Where are you going?
+TTS 04_maya: My agent finishes everything for me!
+TTS 05_alex: You? Build an agent? Seriously?
+TTS 06_phone: I just went to orvo24.com. That's it.
+
+=== 01_office ===
+  [01_office.jpg] starting
+  [01_office.jpg] processing
+  [01_office.jpg] processing
+  [01_office.jpg] processing
+  [01_office.jpg] succeeded
+  saved 01_office.jpg
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] processing
+  [01_office] succeeded
+  saved base 01_office_base.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+
+=== 02_packing ===
+  [02_packing.jpg] processing
+  [02_packing.jpg] processing
+  [02_packing.jpg] succeeded
+  saved 02_packing.jpg
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] processing
+  [02_packing] succeeded
+  saved base 02_packing_base.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+
+=== 03_tom ===
+  [03_tom.jpg] processing
+  [03_tom.jpg] processing
+  [03_tom.jpg] succeeded
+  saved 03_tom.jpg
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] processing
+  [03_tom] succeeded
+  saved base 03_tom_base.mp4
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] processing
+  [lip-03_tom] succeeded
+  lip-sync 03_tom.mp4
+
+=== 04_maya ===
+  [04_maya.jpg] processing
+  [04_maya.jpg] processing
+  [04_maya.jpg] succeeded
+  saved 04_maya.jpg
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] processing
+  [04_maya] succeeded
+  saved base 04_maya_base.mp4
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] processing
+  [lip-04_maya] succeeded
+  lip-sync 04_maya.mp4
+
+=== 05_alex ===
+  [05_alex.jpg] processing
+  [05_alex.jpg] processing
+  [05_alex.jpg] succeeded
+  saved 05_alex.jpg
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] processing
+  [05_alex] succeeded
+  saved base 05_alex_base.mp4
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] processing
+  [lip-05_alex] succeeded
+  lip-sync 05_alex.mp4
+
+=== 06_phone ===
+  [06_phone.jpg] processing
+  [06_phone.jpg] processing
+  [06_phone.jpg] succeeded
+  saved 06_phone.jpg
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] processing
+  [06_phone] succeeded
+  saved base 06_phone_base.mp4
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] processing
+  [lip-06_phone] succeeded
+  lip-sync 06_phone.mp4
+
+=== 07_nods ===
+  [07_nods.jpg] processing
+  [07_nods.jpg] processing
+  [07_nods.jpg] succeeded
+  saved 07_nods.jpg
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] processing
+  [07_nods] succeeded
+  saved base 07_nods_base.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+
+=== export ===
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+DONE
+  /workspace/assets/orvo24/v6/orvo24-v6.mp4
+  /workspace/assets/orvo24/v6/orvo24-v6-web.mp4
