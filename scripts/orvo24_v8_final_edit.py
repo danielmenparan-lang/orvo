@@ -26,7 +26,7 @@ SCENE_KEYS = [
 # Product slide captions (timed inside product scene)
 PRODUCT_SUBS = [
     (0.15, 1.35, "Post what you need."),
-    (1.35, 2.55, "A builder responds."),
+    (1.35, 2.55, "A builder responds to you."),
     (2.55, 4.0, "Your agent runs. orvo24.com"),
 ]
 
@@ -103,17 +103,18 @@ async def tts(voice, text, path):
 
 
 async def synthesize_vo(audio_dir):
-    """English VO with chained timing so lines never overlap or cut off."""
+    """English VO — sequential, no overlap, never cut off."""
     starts = scene_starts(SCENE_DURS, XFADE)
     andrew = "en-US-AndrewMultilingualNeural"
     ava = "en-US-AvaMultilingualNeural"
+    MIN_GAP = 0.40
 
     spec = [
         ("scene", 2, 0.50, andrew, "It's not even five. How come you're leaving?", "Guy"),
         ("scene", 3, 0.45, ava, "My agent finishes my work for me.", "Her"),
         ("scene", 4, 0.40, andrew, "But you don't know how to build an agent.", "Guy"),
-        ("chain", None, 0.25, ava, "No.", "Her"),
-        ("chain", None, 0.30, ava, "Found a builder on Orvo.", "Her"),
+        ("chain", None, 0.35, ava, "No.", "Her"),
+        ("chain", None, 0.45, ava, "Found a builder on Orvo.", "Her"),
     ]
 
     placements = []
@@ -125,15 +126,15 @@ async def synthesize_vo(audio_dir):
         mp3 = audio_dir / f"line_{i:02d}.mp3"
         if kind == "scene":
             _, sc_idx, delay, voice, text, speaker = item
-            t0 = starts[sc_idx] + delay
+            t0 = max(starts[sc_idx] + delay, last_end + MIN_GAP)
         else:
             _, _, gap, voice, text, speaker = item
             t0 = last_end + gap
 
         await tts(voice, text, mp3)
         ln_d = dur(mp3)
-        t1 = t0 + ln_d + 0.15
-        last_end = t1
+        t1 = t0 + ln_d
+        last_end = t1 + 0.12
         placements.append((t0, mp3, ln_d))
         style = "Brand" if "Orvo" in text else "Dialogue"
         subs.append((t0, t1, "Speaker", speaker))
@@ -239,32 +240,48 @@ def xfade_video(clips, out):
 
 
 def build_audio(video_dur, placements, out):
-    """Single smooth VO bed — each line fully padded, mix longest."""
-    ins = [
-        "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=mono",
-        "-f", "lavfi", "-i", f"anoisesrc=color=pink:amplitude=0.004:duration={video_dur + 1}",
-    ]
-    pad_ms = int(video_dur * 1000) + 500
-    flt = [f"[0:a]atrim=0:{video_dur},asetpts=PTS-STARTPTS,volume=0[base]"]
-    for i, (start, mp3, _ln_d) in enumerate(placements):
-        ins += ["-i", str(mp3)]
-        ms = int(start * 1000)
-        flt.append(
-            f"[{i+2}:a]adelay={ms}|{ms},"
-            f"apad=whole_dur={pad_ms},"
-            f"atrim=0:{video_dur},asetpts=PTS-STARTPTS,"
-            f"highpass=f=90,volume=1.0[v{i}]"
-        )
-    n = len(placements)
-    mix = "[base]" + "".join(f"[v{i}]" for i in range(n))
+    """Concat VO into one clean bed — no amix overlap artifacts."""
+    tmp = out.parent / "vo_concat.m4a"
+    parts = []
+    cursor = 0.0
+    for start, mp3, ln_d in placements:
+        gap = start - cursor
+        if gap > 0.02:
+            parts.append(("silence", gap))
+        parts.append(("file", mp3))
+        cursor = start + ln_d
+    if cursor < video_dur:
+        parts.append(("silence", video_dur - cursor))
+
+    ins = []
+    flt = []
+    idx = 0
+    for kind, val in parts:
+        if kind == "silence":
+            ins += ["-f", "lavfi", "-i", f"anullsrc=r=48000:cl=mono:duration={val:.3f}"]
+        else:
+            ins += ["-i", str(val)]
+        flt.append(f"[{idx}:a]aformat=sample_rates=48000:channel_layouts=mono[s{idx}]")
+        idx += 1
+    n = len(parts)
+    flt.append("".join(f"[s{i}]" for i in range(n)) + f"concat=n={n}:v=0:a=1[vo]")
     flt.append(
-        f"{mix}amix=inputs={1 + n}:duration=longest:dropout_transition=3:normalize=0[vo];"
-        f"[1:a]atrim=0:{video_dur},highpass=f=200,lowpass=f=2200,volume=0.15[room];"
-        f"[vo][room]amix=inputs=2:duration=first:weights=1 0.2,"
-        f"loudnorm=I=-16:TP=-1.5:LRA=11[aout]"
+        f"[vo]afade=t=in:st=0:d=0.08,afade=t=out:st={max(0.1, video_dur - 0.3):.3f}:d=0.3,"
+        f"highpass=f=90,volume=1.05,loudnorm=I=-16:TP=-1.5:LRA=11[vn]"
     )
     run([
         "ffmpeg", "-y", *ins, "-filter_complex", ";".join(flt),
+        "-map", "[vn]", "-t", str(video_dur),
+        "-c:a", "aac", "-b:a", "192k", str(tmp),
+    ])
+
+    run([
+        "ffmpeg", "-y",
+        "-i", str(tmp),
+        "-f", "lavfi", "-i", f"anoisesrc=color=pink:amplitude=0.003:duration={video_dur}",
+        "-filter_complex",
+        f"[1:a]highpass=f=200,lowpass=f=2200,volume=0.12[room];"
+        f"[0:a][room]amix=inputs=2:duration=first:weights=1 0.15[aout]",
         "-map", "[aout]", "-t", str(video_dur),
         "-c:a", "aac", "-b:a", "192k", str(out),
     ])
