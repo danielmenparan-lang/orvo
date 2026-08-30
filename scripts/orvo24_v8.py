@@ -334,9 +334,9 @@ async def main():
         subprocess.run(["python3", "/workspace/scripts/orvo24_endcard.py"], check=True)
     end_trim = OUT / "scenes" / "s07_endcard.mp4"
     subprocess.run([
-        "ffmpeg", "-y", "-i", str(end), "-t", "3.0", "-c:v", "libx264", "-crf", "13",
-        "-c:a", "aac", "-b:a", "96k", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono",
-        "-shortest", str(end_trim),
+        "ffmpeg", "-y", "-i", str(end), "-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono",
+        "-t", "3.0", "-map", "0:v:0", "-map", "1:a:0", "-c:v", "libx264", "-crf", "13",
+        "-c:a", "aac", "-b:a", "96k", "-shortest", str(end_trim),
     ], check=True, capture_output=True)
     built.append(end_trim)
 
