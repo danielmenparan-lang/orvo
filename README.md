@@ -12,15 +12,19 @@ See [docs/revenue-model.md](docs/revenue-model.md) for the path to ~$100k/month.
 
 ## Setup
 
-1. Run `sql/revenue-engine.sql` in Supabase SQL Editor
+1. Run `sql/revenue-engine.sql` then `sql/builder-supply.sql` in Supabase SQL Editor
 2. (Optional) Add Stripe Payment Links in `supabase-config.js`
-3. Serve locally:
+3. Recruit builders via [builders.html](builders.html) + invite codes (see [docs/builder-supply.md](docs/builder-supply.md))
+4. Serve locally:
 
 ```bash
 python3 -m http.server 5173
 ```
 
 Open http://localhost:5173
+
+- Builders: http://localhost:5173/builders.html  
+- Ready agents: http://localhost:5173/agents.html
 
 Live: https://fantastic-eclair-0b2c66.netlify.app/
 

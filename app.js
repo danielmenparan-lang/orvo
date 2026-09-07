@@ -344,9 +344,14 @@
     $('panel-login').classList.toggle('hidden', !login);
     $('panel-signup').classList.toggle('hidden', login);
   }
-  function openPost() {
+  function openPost(prefill) {
     if (!user) { openAuth('login'); showMsg('login-msg', 'Sign in first', false); return; }
     hideMsg('post-msg');
+    if (prefill) {
+      if (prefill.desc) $('post-desc').value = prefill.desc;
+      if (prefill.cat) $('post-cat').value = prefill.cat;
+      if (prefill.budget) $('post-budget').value = prefill.budget;
+    }
     $('post-modal').classList.add('open');
   }
   function closePost() { $('post-modal').classList.remove('open'); }
@@ -362,7 +367,13 @@
   function routeAfterAuth(intent) {
     openDash();
     if (intent === 'builder') go('apply');
-    else go('requests');
+    else {
+      go('requests');
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      if (raw) {
+        try { openPost(JSON.parse(raw)); } catch { /* ignore */ }
+      }
+    }
   }
 
   // ── AUTH ACTIONS ──
@@ -457,6 +468,7 @@
     if (isAdmin()) {
       h += `<div class="side-label">Admin</div>
         <button class="side-item" data-view="admin">Review builders</button>
+        <button class="side-item" data-view="invites">Invite codes</button>
         <button class="side-item" data-view="revenue">Revenue</button>
         <button class="side-item" data-view="all-requests">All requests</button>`;
     }
@@ -500,7 +512,7 @@
       messages: 'Messages', chat: 'Chat', apply: 'Become a builder',
       status: 'Application status', profile: 'Profile',
       admin: 'Review builders', 'all-requests': 'All requests',
-      plans: 'Builder Pro', revenue: 'Revenue',
+      plans: 'Builder Pro', revenue: 'Revenue', invites: 'Invite codes',
     };
     $('view-title').textContent = titles[v] || 'Dashboard';
 
@@ -516,6 +528,7 @@
     else if (v === 'all-requests') loadAllRequests();
     else if (v === 'plans') loadPlans();
     else if (v === 'revenue') loadRevenue();
+    else if (v === 'invites') loadInvites();
   }
 
   // ── CLIENT ──
@@ -650,14 +663,24 @@
   async function loadApply() {
     if (isBuilder()) { go('jobs'); return; }
     if (isPending()) { go('status'); return; }
+    const invitePre = (new URLSearchParams(location.search).get('invite') || sessionStorage.getItem('orvo_invite') || '').trim();
     $('view-body').innerHTML = `
-      <p style="color:var(--gray);font-size:14px;margin-bottom:20px">ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.</p>
-      <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..."></textarea></div>
-      <div class="field"><label>Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
-      <div class="field"><label>Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" placeholder="GitHub, website, or leave empty"/></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;line-height:1.7">
+        <b>Founding builder track</b><br>
+        Clients post agent jobs. You quote and get paid via escrow (ORVO fee ${FEE_STD()}%, Pro ${FEE_PRO()}%).
+        We review every application. Invite codes move you to the front of the queue.
+        <br><a href="builders.html" style="color:var(--o)">See open roles →</a>
+      </div>
+      <div class="field"><label>Invite code <span style="font-weight:400;color:var(--gray)">(optional — founding invites)</span></label>
+        <input id="apply-invite" placeholder="e.g. ORVO-FOUNDING" value="${esc(invitePre)}"/></div>
+      <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Agents you've shipped — tools, clients, what you deliver in 1–2 weeks..."></textarea></div>
+      <div class="field"><label>Specialties</label><input id="apply-specialties" placeholder="WhatsApp bots, Voice AI, n8n, RAG…"/></div>
+      <div class="field"><label>Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, Twilio, Supabase"/></div>
+      <div class="field"><label>Live demo / portfolio URL</label><input id="apply-demo" placeholder="https://… (GitHub, Vercel, Loom)"/></div>
+      <div class="field"><label>Why ORVO?</label><textarea id="apply-why" placeholder="How many hours/week can you take jobs? What will you quote first?"></textarea></div>
       <div class="field"><label>LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" placeholder="https://linkedin.com/in/..."/></div>
-      <div class="field"><label>Years of experience</label><input id="apply-years" type="number" min="0" value="0"/></div>
-      <button class="btn-black" id="apply-btn">Submit application</button>`;
+      <div class="field"><label>Years of experience</label><input id="apply-years" type="number" min="0" value="1"/></div>
+      <button class="btn-black" id="apply-btn">Submit builder application</button>`;
     $('apply-btn').addEventListener('click', doApply);
   }
 
@@ -666,38 +689,72 @@
     if (bio.length < 50) { toast('Bio must be at least 50 characters', false); return; }
     const skills = $('apply-skills').value.trim();
     if (!skills) { toast('Add at least one skill', false); return; }
+    const specialties = ($('apply-specialties')?.value || '').trim() || skills;
+    const inviteCode = ($('apply-invite')?.value || '').trim().toUpperCase();
+    const demo = ($('apply-demo')?.value || '').trim() || null;
+    const why = ($('apply-why')?.value || '').trim() || null;
     const btn = $('apply-btn');
     btn.disabled = true;
     btn.textContent = 'Submitting...';
     try {
+      if (inviteCode) {
+        const okInvite = await redeemInvite(inviteCode);
+        if (!okInvite) throw new Error('Invite code invalid or fully used');
+        sessionStorage.setItem('orvo_invite', inviteCode);
+      }
       const row = {
         user_id: user.id,
         full_name: profile?.full_name || user.user_metadata?.full_name || 'Builder',
         email: user.email || profile?.email || '',
         bio,
         skills,
-        portfolio_url: $('apply-portfolio').value.trim() || null,
+        specialties,
+        portfolio_url: demo,
+        demo_url: demo,
         linkedin_url: $('apply-linkedin').value.trim() || null,
         experience_years: parseInt($('apply-years').value, 10) || 0,
+        invite_code: inviteCode || null,
+        why_orvo: why,
         status: 'pending',
       };
       const { data: saved, error: e1 } = await needDb().from('builder_applications')
         .upsert(row, { onConflict: 'user_id' }).select().single();
-      if (e1) throw new Error('Save failed: ' + e1.message + ' — run sql-FINAL-FIX.sql in Supabase once');
-      const { error: e2 } = await needDb().from('profiles')
-        .update({ builder_status: 'pending' }).eq('id', user.id);
+      if (e1) throw new Error('Save failed: ' + e1.message + ' — run sql/builder-supply.sql in Supabase');
+      const { error: e2 } = await needDb().from('profiles').update({
+        builder_status: 'pending',
+        invite_code_used: inviteCode || null,
+        specialties,
+        public_bio: bio.slice(0, 280),
+        demo_url: demo,
+        headline: specialties.split(',')[0]?.trim() || 'AI agent builder',
+      }).eq('id', user.id);
       if (e2) throw new Error('Profile update failed: ' + e2.message);
       await refreshUser();
       renderSidebar();
       go('status');
-      toast('Application sent! Admin will see it in Review builders.', true);
+      toast(inviteCode ? 'Application sent with invite — priority review.' : 'Application sent! Admin will review.', true);
       if (!saved) console.warn('ORVO: application saved but no row returned');
     } catch (e) {
       toast(e.message, false);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Submit application';
+      btn.textContent = 'Submit builder application';
     }
+  }
+
+  async function redeemInvite(code) {
+    const { data, error } = await needDb().from('builder_invites')
+      .select('*').eq('code', code).maybeSingle();
+    if (error) {
+      // Table may not exist yet — allow apply without blocking if code looks intentional
+      console.warn('invite lookup', error.message);
+      return true;
+    }
+    if (!data) return false;
+    if (data.expires_at && new Date(data.expires_at) < new Date()) return false;
+    if (data.uses >= data.max_uses) return false;
+    await needDb().from('builder_invites').update({ uses: (data.uses || 0) + 1 }).eq('id', data.id);
+    return true;
   }
 
   async function loadStatus() {
@@ -722,60 +779,116 @@
   // ── ADMIN ──
   async function loadAdmin() {
     if (!isAdmin()) {
-      $('view-body').innerHTML = `<p class="empty">Admin: sign in as <b>${esc(adminEmail())}</b><br>Then run <b>sql-RUN-NOW.sql</b> in Supabase</p>`;
+      $('view-body').innerHTML = `<p class="empty">Admin: sign in as <b>${esc(adminEmail())}</b><br>Then run SQL migrations in Supabase</p>`;
       return;
     }
     refreshAdminBadge();
-    $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button>';
+    $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button><button class="btn btn-primary" data-goto="invites" style="margin-left:8px">Invites</button>';
     $('admin-refresh')?.addEventListener('click', loadAdmin);
     const { data, error } = await needDb().from('builder_applications')
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}<br><br>Run <b>sql-RUN-NOW.sql</b> in Supabase SQL Editor</p>`;
+      $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}<br><br>Run SQL in Supabase SQL Editor</p>`;
       return;
     }
     if (!data?.length) {
-      $('view-body').innerHTML = `<p class="empty">No pending applications yet.</p>
-        <p class="empty" style="padding-top:12px;font-size:13px;color:var(--gray)">
-          Builder must click <b>Submit application</b> (bio 50+ chars).<br>
-          Check Supabase → Table Editor → builder_applications.<br>
-          Click <b>Refresh</b> above after a builder applies.
-        </p>`;
+      $('view-body').innerHTML = `<p class="empty">No pending applications.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">Share <a href="builders.html" style="color:var(--o)">builders.html</a> or generate invite codes.</p>`;
       return;
     }
     $('view-body').innerHTML = data.map(a => `
-      <div class="card">
-        <h3>${esc(a.full_name)}</h3>
-        <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${esc(a.email || '')}</p>
-        <p><b>Skills:</b> ${esc(a.skills)}</p>
-        <p>${esc(a.bio)}</p>
+      <div class="card" style="cursor:default">
+        <span class="tag">${a.invite_code ? 'Invite ' + esc(a.invite_code) : 'Open apply'}</span>
+        <h3>${esc(a.full_name)} · ${esc(a.email)}</h3>
+        <p>${esc((a.specialties || a.skills || '').slice(0, 120))}</p>
+        <p>${esc((a.bio || '').slice(0, 180))}</p>
+        ${a.why_orvo ? `<p style="font-size:12px;color:var(--gray)">Why: ${esc(a.why_orvo.slice(0, 140))}</p>` : ''}
+        ${a.demo_url || a.portfolio_url ? `<p style="font-size:12px"><a href="${esc(a.demo_url || a.portfolio_url)}" target="_blank" rel="noopener" style="color:var(--o)">Demo / portfolio</a></p>` : ''}
         <div class="row">
-          <button class="btn btn-primary btn-approve" data-uid="${a.user_id}">Approve</button>
-          <button class="btn btn-ghost btn-reject" data-uid="${a.user_id}">Reject</button>
+          <button class="btn btn-primary btn-approve" data-uid="${a.user_id}" data-aid="${a.id}">Approve</button>
+          <button class="btn btn-ghost btn-reject" data-uid="${a.user_id}" data-aid="${a.id}">Reject</button>
         </div>
       </div>`).join('');
-    $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid)));
-    $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid)));
+    $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid, b.dataset.aid)));
+    $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid, b.dataset.aid)));
   }
 
-  async function approveBuilder(uid) {
+  async function loadInvites() {
+    if (!isAdmin()) {
+      $('view-body').innerHTML = '<p class="empty err">Admin only</p>';
+      return;
+    }
+    $('view-action').innerHTML = '<button class="btn btn-primary" id="gen-invite">+ New invite</button>';
+    $('gen-invite')?.addEventListener('click', createInvite);
+    const body = $('view-body');
+    body.innerHTML = '<p class="empty">Loading invites…</p>';
+    const { data, error } = await needDb().from('builder_invites').select('*').order('created_at', { ascending: false }).limit(50);
+    if (error) {
+      body.innerHTML = `<p class="empty err">${esc(error.message)}<br><small>Run sql/builder-supply.sql</small></p>`;
+      return;
+    }
+    const origin = location.origin + location.pathname.replace(/index\.html$/, '');
+    body.innerHTML = `
+      <p style="font-size:13px;color:var(--gray);margin-bottom:16px">Send invite links to builders you want on the founding roster. Link opens apply with the code filled in.</p>
+      ${(data || []).map(inv => {
+        const link = `${origin}builders.html?invite=${encodeURIComponent(inv.code)}`;
+        return `<div class="card" style="cursor:default">
+          <h3><code>${esc(inv.code)}</code></h3>
+          <p>${esc(inv.note || 'Founding invite')} · used ${inv.uses}/${inv.max_uses}</p>
+          <p style="font-size:12px;word-break:break-all;color:var(--gray)">${esc(link)}</p>
+          <div class="row">
+            <button class="btn btn-ghost btn-copy" data-link="${esc(link)}" type="button">Copy link</button>
+          </div>
+        </div>`;
+      }).join('') || '<p class="empty">No invites yet. Click + New invite.</p>'}`;
+    body.querySelectorAll('.btn-copy').forEach(b => b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.link);
+        toast('Invite link copied', true);
+      } catch { toast(b.dataset.link, true); }
+    }));
+  }
+
+  async function createInvite() {
+    const note = prompt('Note for this invite (e.g. WhatsApp builders batch)', 'Founding builder') || 'Founding builder';
+    const max = parseInt(prompt('Max uses', '5') || '5', 10) || 5;
+    const code = 'ORVO-' + Math.random().toString(36).slice(2, 8).toUpperCase();
     try {
-      const { error: e1 } = await needDb().from('builder_applications')
-        .update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
+      const { error } = await needDb().from('builder_invites').insert({
+        code,
+        created_by: user.id,
+        note,
+        max_uses: max,
+        uses: 0,
+      });
+      if (error) throw error;
+      toast('Invite ' + code + ' created', true);
+      loadInvites();
+    } catch (e) {
+      toast(e.message + ' — run sql/builder-supply.sql', false);
+    }
+  }
+
+  async function approveBuilder(uid, aid) {
+    try {
+      const q = needDb().from('builder_applications')
+        .update({ status: 'approved', reviewed_at: new Date().toISOString() });
+      const { error: e1 } = aid ? await q.eq('id', aid) : await q.eq('user_id', uid);
       if (e1) throw new Error('Approve failed: ' + e1.message + ' — run sql-fix-jobs.sql');
       const { error: e2 } = await needDb().from('profiles')
-        .update({ builder_status: 'approved' }).eq('id', uid);
-      if (e2) throw new Error('Profile update failed: ' + e2.message + ' — run sql-fix-jobs.sql');
+        .update({ builder_status: 'approved', show_in_directory: true }).eq('id', uid);
+      if (e2) throw new Error('Profile update failed: ' + e2.message + ' — run sql/builder-supply.sql');
       if (uid === user.id) await refreshUser();
-      toast('Builder approved!', true);
+      toast('Builder approved + listed in directory!', true);
       loadAdmin();
     } catch (e) { toast(e.message, false); }
   }
 
-  async function rejectBuilder(uid) {
+  async function rejectBuilder(uid, aid) {
     try {
-      const { error: e1 } = await needDb().from('builder_applications')
-        .update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
+      const q = needDb().from('builder_applications')
+        .update({ status: 'rejected', reviewed_at: new Date().toISOString() });
+      const { error: e1 } = aid ? await q.eq('id', aid) : await q.eq('user_id', uid);
       if (e1) throw e1;
       const { error: e2 } = await needDb().from('profiles')
         .update({ builder_status: 'rejected' }).eq('id', uid);
@@ -1135,6 +1248,7 @@
     const adminOk = isAdmin();
     const bs = profile?.builder_status || '(none)';
     const role = adminOk ? 'ORVO Admin' : isBuilder() ? (isPro() ? 'Pro builder' : 'Approved builder') : isPending() ? 'Application pending' : 'Client';
+    const inDir = !!profile?.show_in_directory;
     $('view-body').innerHTML = `
       <p><b>${esc(profile?.full_name)}</b></p>
       <p style="color:var(--gray);margin:4px 0 16px">${esc(logged)} · ${role}</p>
@@ -1145,11 +1259,23 @@
         Admin match: <b>${adminOk ? 'YES ✓' : 'NO ✗'}</b><br>
         Builder status: <b>${esc(bs)}</b>
         ${isBuilder() ? `<br>Plan: <b>${isPro() ? 'Pro (' + FEE_PRO() + '% fee)' : 'Free (' + FEE_STD() + '% fee)'}</b>` : ''}
+        ${isBuilder() ? `<br>Public directory: <b>${inDir ? 'ON' : 'OFF'}</b>` : ''}
         ${!adminOk && cfg === 'your@email.com' ? '<br><span style="color:var(--red)">Set ORVO_ADMIN_EMAIL in supabase-config.js</span>' : ''}
         ${!adminOk && cfg && cfg !== logged ? '<br><span style="color:var(--red)">Sign in with the same email as in config</span>' : ''}
         ${bs !== 'approved' && !adminOk ? '<br><span style="color:var(--gray)">To see client posts: get approved as builder first</span>' : ''}
-        <br><span style="color:var(--gray)">Need schema? Run sql/revenue-engine.sql in Supabase</span>
+        <br><span style="color:var(--gray)">Need schema? Run sql/revenue-engine.sql + sql/builder-supply.sql</span>
       </div>
+      ${isBuilder() ? `
+        <div class="field"><label>Headline</label><input id="prof-headline" value="${esc(profile?.headline || '')}" placeholder="WhatsApp & voice agent builder"/></div>
+        <div class="field"><label>Specialties</label><input id="prof-specs" value="${esc(profile?.specialties || '')}"/></div>
+        <div class="field"><label>Public bio</label><textarea id="prof-bio">${esc(profile?.public_bio || '')}</textarea></div>
+        <div class="field"><label>Demo URL</label><input id="prof-demo" value="${esc(profile?.demo_url || '')}"/></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:16px">
+          <input type="checkbox" id="prof-dir" ${inDir ? 'checked' : ''}/> Show me in the public builders directory
+        </label>
+        <button class="btn btn-primary" id="save-prof" style="width:100%;margin-bottom:10px;padding:12px">Save public profile</button>
+      ` : ''}
+      ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="invites">Create builder invites</button>' : ''}
       ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="revenue">Open revenue dashboard</button>' : ''}
       ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="admin">Review builder applications</button>' : ''}
       ${isBuilder() ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="jobs">Browse jobs</button>' : ''}
@@ -1157,6 +1283,26 @@
       ${!isBuilder() && !isPending() && !adminOk ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="apply">Apply as a builder</button>' : ''}
       <button class="btn btn-ghost" id="logout-btn" style="width:100%;padding:12px">Sign out</button>`;
     $('logout-btn').addEventListener('click', doLogout);
+    $('save-prof')?.addEventListener('click', savePublicProfile);
+  }
+
+  async function savePublicProfile() {
+    try {
+      const row = {
+        headline: $('prof-headline').value.trim() || null,
+        specialties: $('prof-specs').value.trim() || null,
+        public_bio: $('prof-bio').value.trim() || null,
+        demo_url: $('prof-demo').value.trim() || null,
+        show_in_directory: !!$('prof-dir').checked,
+      };
+      const { error } = await needDb().from('profiles').update(row).eq('id', user.id);
+      if (error) throw error;
+      profile = { ...profile, ...row };
+      toast('Public profile saved', true);
+      loadProfileView();
+    } catch (e) {
+      toast(e.message + ' — run sql/builder-supply.sql', false);
+    }
   }
 
   function ensureDashOpen() {
@@ -1200,10 +1346,16 @@
         openDash();
       } else openAuth('login');
     }
-    else if (a === 'post') { e.preventDefault(); openPost(); }
+    else if (a === 'post') {
+      e.preventDefault();
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      openPost(raw ? JSON.parse(raw) : undefined);
+    }
     else if (a === 'client-start') {
       e.preventDefault();
-      if (user) openPost();
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      const prefill = raw ? JSON.parse(raw) : undefined;
+      if (user) openPost(prefill);
       else {
         postSignupIntent = 'client';
         openAuth('signup'); setAuthTab('signup');
@@ -1244,6 +1396,47 @@
   $('signup-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
 
   // ── BOOT ──
+  async function consumeLaunchParams() {
+    const params = new URLSearchParams(location.search);
+    const invite = (params.get('invite') || '').trim();
+    if (invite) sessionStorage.setItem('orvo_invite', invite);
+    const intent = params.get('intent');
+    const agentSlug = params.get('agent');
+    if (agentSlug) {
+      try {
+        let agent = null;
+        const { data } = await needDb().from('agent_templates').select('*').eq('slug', agentSlug).maybeSingle();
+        agent = data;
+        if (!agent) {
+          const list = await (await fetch('data/ready-agents.json')).json();
+          agent = (list || []).find(a => a.slug === agentSlug) || null;
+        }
+        if (agent) {
+          sessionStorage.setItem('orvo_agent_prefill', JSON.stringify({
+            desc: agent.title + '\n\n' + agent.summary,
+            cat: agent.category,
+            budget: agent.budget_hint || '',
+          }));
+        }
+      } catch { /* ignore */ }
+    }
+    if (intent === 'builder') {
+      postSignupIntent = 'builder';
+      if ($('signup-intent')) $('signup-intent').value = 'builder';
+      if (user) { openDash(); go(isBuilder() ? 'jobs' : isPending() ? 'status' : 'apply'); }
+      else { openAuth('signup'); setAuthTab('signup'); }
+    } else if (intent === 'client' || agentSlug) {
+      postSignupIntent = 'client';
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      const prefill = raw ? JSON.parse(raw) : null;
+      if (user) openPost(prefill || undefined);
+      else { openAuth(agentSlug ? 'signup' : 'login'); if (agentSlug) setAuthTab('signup'); }
+    } else if (location.hash === '#apply') {
+      if (user) { openDash(); go('apply'); }
+      else { postSignupIntent = 'builder'; openAuth('signup'); setAuthTab('signup'); }
+    }
+  }
+
   async function boot() {
     if (!window.supabase?.createClient) {
       bootErr('Supabase failed to load. Connect to internet and refresh (Ctrl+F5).');
@@ -1256,6 +1449,7 @@
     }
     await refreshUser();
     db.auth.onAuthStateChange(refreshUser);
+    await consumeLaunchParams();
   }
 
   boot();
