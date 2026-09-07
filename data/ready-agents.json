@@ -1,0 +1,50 @@
+[
+  {
+    "slug": "whatsapp-restaurant",
+    "title": "WhatsApp order bot for restaurants",
+    "category": "WhatsApp / Chat",
+    "summary": "Takes orders on WhatsApp, answers menu questions, alerts the kitchen.",
+    "budget_hint": "$800–$2,500",
+    "skills": "WhatsApp API, n8n, GPT"
+  },
+  {
+    "slug": "voice-clinic",
+    "title": "Voice receptionist for clinics",
+    "category": "Voice / Phone",
+    "summary": "Answers calls, books appointments, routes emergencies to staff.",
+    "budget_hint": "$1,500–$4,000",
+    "skills": "Twilio, Voice AI, Calendar"
+  },
+  {
+    "slug": "lead-qualifier",
+    "title": "CRM lead qualifier",
+    "category": "CRM / Email",
+    "summary": "Scores inbound leads, follows up by email/SMS, syncs to CRM.",
+    "budget_hint": "$1,000–$3,000",
+    "skills": "HubSpot, Make, GPT"
+  },
+  {
+    "slug": "support-rag",
+    "title": "Support agent with your docs",
+    "category": "Automation",
+    "summary": "Answers customer questions from your knowledge base 24/7.",
+    "budget_hint": "$1,200–$3,500",
+    "skills": "RAG, Supabase, Slack"
+  },
+  {
+    "slug": "invoice-chaser",
+    "title": "Invoice follow-up agent",
+    "category": "Automation",
+    "summary": "Reminds clients about unpaid invoices politely until paid.",
+    "budget_hint": "$700–$2,000",
+    "skills": "n8n, Stripe, Email"
+  },
+  {
+    "slug": "social-publisher",
+    "title": "Social content publisher",
+    "category": "Other",
+    "summary": "Turns blog posts into scheduled multi-platform social drafts.",
+    "budget_hint": "$600–$1,800",
+    "skills": "Buffer API, GPT, Notion"
+  }
+]

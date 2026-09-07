@@ -19,9 +19,30 @@
   let adminChannel = null;
 
   const $ = (id) => document.getElementById(id);
-  const FEE = () => window.ORVO_FEE_PERCENT || 0;
+  const FEE_STD = () => Number(window.ORVO_FEE_PERCENT) || 15;
+  const FEE_PRO = () => Number(window.ORVO_PRO_FEE_PERCENT) || 10;
+  const PRO_PRICE = () => Number(window.ORVO_PRO_PRICE_CENTS) || 9900;
+  const BOOST_PRICE = () => Number(window.ORVO_BOOST_PRICE_CENTS) || 4900;
   // Fallback if supabase-config.js cached/old
   const ADMIN_EMAIL = 'danielmen.paran@gmail.com';
+
+  function isPro() {
+    if (profile?.builder_plan !== 'pro') return false;
+    if (!profile.builder_plan_until) return true;
+    return new Date(profile.builder_plan_until) > new Date();
+  }
+
+  function feePercentForBuilder(builderProfile) {
+    if (builderProfile?.builder_plan === 'pro') {
+      if (!builderProfile.builder_plan_until) return FEE_PRO();
+      if (new Date(builderProfile.builder_plan_until) > new Date()) return FEE_PRO();
+    }
+    return FEE_STD();
+  }
+
+  function FEE() {
+    return isBuilder() && isPro() ? FEE_PRO() : FEE_STD();
+  }
 
   function myEmail() {
     return (user?.email || profile?.email || '').toLowerCase().trim();
@@ -123,7 +144,11 @@
   }
 
   function chatPaidPhase(status) {
-    return status === 'in_progress' || status === 'funded' || status === 'completed';
+    return status === 'in_progress' || status === 'funded' || status === 'completed' || status === 'released';
+  }
+
+  function isFeatured(r) {
+    return r?.featured_until && new Date(r.featured_until) > new Date();
   }
 
   function chatHasPhone(text) {
@@ -319,9 +344,14 @@
     $('panel-login').classList.toggle('hidden', !login);
     $('panel-signup').classList.toggle('hidden', login);
   }
-  function openPost() {
+  function openPost(prefill) {
     if (!user) { openAuth('login'); showMsg('login-msg', 'Sign in first', false); return; }
     hideMsg('post-msg');
+    if (prefill) {
+      if (prefill.desc) $('post-desc').value = prefill.desc;
+      if (prefill.cat) $('post-cat').value = prefill.cat;
+      if (prefill.budget) $('post-budget').value = prefill.budget;
+    }
     $('post-modal').classList.add('open');
   }
   function closePost() { $('post-modal').classList.remove('open'); }
@@ -337,7 +367,13 @@
   function routeAfterAuth(intent) {
     openDash();
     if (intent === 'builder') go('apply');
-    else go('requests');
+    else {
+      go('requests');
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      if (raw) {
+        try { openPost(JSON.parse(raw)); } catch { /* ignore */ }
+      }
+    }
   }
 
   // ── AUTH ACTIONS ──
@@ -432,13 +468,16 @@
     if (isAdmin()) {
       h += `<div class="side-label">Admin</div>
         <button class="side-item" data-view="admin">Review builders</button>
+        <button class="side-item" data-view="invites">Invite codes</button>
+        <button class="side-item" data-view="revenue">Revenue</button>
         <button class="side-item" data-view="all-requests">All requests</button>`;
     }
     if (isBuilder()) {
       h += `<div class="side-label">Builder</div>
         <button class="side-item" data-view="jobs">Browse jobs</button>
         <button class="side-item" data-view="quotes">My quotes</button>
-        <button class="side-item" data-view="messages">Messages</button>`;
+        <button class="side-item" data-view="messages">Messages</button>
+        <button class="side-item" data-view="plans">${isPro() ? 'Pro plan ✓' : 'Upgrade to Pro'}</button>`;
     } else if (isPending()) {
       h += `<button class="side-item" data-view="status">Application status</button>`;
     } else {
@@ -473,6 +512,7 @@
       messages: 'Messages', chat: 'Chat', apply: 'Become a builder',
       status: 'Application status', profile: 'Profile',
       admin: 'Review builders', 'all-requests': 'All requests',
+      plans: 'Builder Pro', revenue: 'Revenue', invites: 'Invite codes',
     };
     $('view-title').textContent = titles[v] || 'Dashboard';
 
@@ -486,6 +526,9 @@
     else if (v === 'profile') loadProfileView();
     else if (v === 'admin') loadAdmin();
     else if (v === 'all-requests') loadAllRequests();
+    else if (v === 'plans') loadPlans();
+    else if (v === 'revenue') loadRevenue();
+    else if (v === 'invites') loadInvites();
   }
 
   // ── CLIENT ──
@@ -521,13 +564,20 @@
     if (!data?.length) { body.innerHTML = '<p class="empty">No requests yet. Click <b>+ Post request</b></p>'; return; }
     body.innerHTML = data.map(r => `
       <div class="card" data-click="${r.id}">
-        <span class="tag">${esc(r.category || 'Project')}</span>
+        <span class="tag">${esc(r.category || 'Project')}${isFeatured(r) ? ' · Featured' : ''}</span>
         <h3>${esc(r.title)}</h3>
         <p>${esc(r.description.slice(0, 120))}</p>
         <span class="badge">${esc(r.status)} · ${ago(r.created_at)}</span>
+        ${r.status === 'open' && !isFeatured(r) ? `<div class="row"><button class="btn btn-ghost btn-boost" data-rid="${r.id}" type="button">Boost ${money(BOOST_PRICE())} / 7 days</button></div>` : ''}
       </div>`).join('');
     body.querySelectorAll('[data-click]').forEach(el => {
-      el.addEventListener('click', () => go('chat', el.dataset.click));
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-boost')) return;
+        go('chat', el.dataset.click);
+      });
+    });
+    body.querySelectorAll('.btn-boost').forEach(b => {
+      b.addEventListener('click', (e) => { e.stopPropagation(); boostRequest(b.dataset.rid); });
     });
   }
 
@@ -550,9 +600,13 @@
         <p class="empty" style="padding-top:8px;font-size:12px">Clients must post with status "open". If you were just approved, sign out and back in.</p>`;
       return;
     }
-    body.innerHTML = data.map(r => `
-      <div class="card">
-        <span class="tag">${esc(r.category || 'Project')}</span>
+    const sorted = [...data].sort((a, b) => Number(isFeatured(b)) - Number(isFeatured(a)));
+    const feeNote = isPro()
+      ? `Your Pro fee: ${FEE_PRO()}% (standard ${FEE_STD()}%)`
+      : `Platform fee: ${FEE_STD()}% · <a href="#" data-goto="plans" style="color:var(--o)">Upgrade to Pro → ${FEE_PRO()}%</a>`;
+    body.innerHTML = `<p style="font-size:13px;color:var(--gray);margin-bottom:16px">${feeNote}</p>` + sorted.map(r => `
+      <div class="card${isFeatured(r) ? ' card-featured' : ''}">
+        <span class="tag">${esc(r.category || 'Project')}${isFeatured(r) ? ' · Featured' : ''}</span>
         <h3>${esc(r.title)}</h3>
         <p>${esc(r.description)}</p>
         <p>Budget: ${esc(r.budget || 'Not specified')}</p>
@@ -609,14 +663,24 @@
   async function loadApply() {
     if (isBuilder()) { go('jobs'); return; }
     if (isPending()) { go('status'); return; }
+    const invitePre = (new URLSearchParams(location.search).get('invite') || sessionStorage.getItem('orvo_invite') || '').trim();
     $('view-body').innerHTML = `
-      <p style="color:var(--gray);font-size:14px;margin-bottom:20px">ORVO reviews every builder manually. Once approved, you can browse jobs and send quotes.</p>
-      <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Your experience building AI agents — tools, projects, what you can deliver..."></textarea></div>
-      <div class="field"><label>Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, WhatsApp bots, Voice AI"/></div>
-      <div class="field"><label>Portfolio URL <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-portfolio" placeholder="GitHub, website, or leave empty"/></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;line-height:1.7">
+        <b>Founding builder track</b><br>
+        Clients post agent jobs. You quote and get paid via escrow (ORVO fee ${FEE_STD()}%, Pro ${FEE_PRO()}%).
+        We review every application. Invite codes move you to the front of the queue.
+        <br><a href="builders.html" style="color:var(--o)">See open roles →</a>
+      </div>
+      <div class="field"><label>Invite code <span style="font-weight:400;color:var(--gray)">(optional — founding invites)</span></label>
+        <input id="apply-invite" placeholder="e.g. ORVO-FOUNDING" value="${esc(invitePre)}"/></div>
+      <div class="field"><label>Bio (min 50 characters)</label><textarea id="apply-bio" placeholder="Agents you've shipped — tools, clients, what you deliver in 1–2 weeks..."></textarea></div>
+      <div class="field"><label>Specialties</label><input id="apply-specialties" placeholder="WhatsApp bots, Voice AI, n8n, RAG…"/></div>
+      <div class="field"><label>Skills (comma separated)</label><input id="apply-skills" placeholder="Cursor, n8n, Twilio, Supabase"/></div>
+      <div class="field"><label>Live demo / portfolio URL</label><input id="apply-demo" placeholder="https://… (GitHub, Vercel, Loom)"/></div>
+      <div class="field"><label>Why ORVO?</label><textarea id="apply-why" placeholder="How many hours/week can you take jobs? What will you quote first?"></textarea></div>
       <div class="field"><label>LinkedIn <span style="font-weight:400;color:var(--gray)">(optional)</span></label><input id="apply-linkedin" placeholder="https://linkedin.com/in/..."/></div>
-      <div class="field"><label>Years of experience</label><input id="apply-years" type="number" min="0" value="0"/></div>
-      <button class="btn-black" id="apply-btn">Submit application</button>`;
+      <div class="field"><label>Years of experience</label><input id="apply-years" type="number" min="0" value="1"/></div>
+      <button class="btn-black" id="apply-btn">Submit builder application</button>`;
     $('apply-btn').addEventListener('click', doApply);
   }
 
@@ -625,38 +689,72 @@
     if (bio.length < 50) { toast('Bio must be at least 50 characters', false); return; }
     const skills = $('apply-skills').value.trim();
     if (!skills) { toast('Add at least one skill', false); return; }
+    const specialties = ($('apply-specialties')?.value || '').trim() || skills;
+    const inviteCode = ($('apply-invite')?.value || '').trim().toUpperCase();
+    const demo = ($('apply-demo')?.value || '').trim() || null;
+    const why = ($('apply-why')?.value || '').trim() || null;
     const btn = $('apply-btn');
     btn.disabled = true;
     btn.textContent = 'Submitting...';
     try {
+      if (inviteCode) {
+        const okInvite = await redeemInvite(inviteCode);
+        if (!okInvite) throw new Error('Invite code invalid or fully used');
+        sessionStorage.setItem('orvo_invite', inviteCode);
+      }
       const row = {
         user_id: user.id,
         full_name: profile?.full_name || user.user_metadata?.full_name || 'Builder',
         email: user.email || profile?.email || '',
         bio,
         skills,
-        portfolio_url: $('apply-portfolio').value.trim() || null,
+        specialties,
+        portfolio_url: demo,
+        demo_url: demo,
         linkedin_url: $('apply-linkedin').value.trim() || null,
         experience_years: parseInt($('apply-years').value, 10) || 0,
+        invite_code: inviteCode || null,
+        why_orvo: why,
         status: 'pending',
       };
       const { data: saved, error: e1 } = await needDb().from('builder_applications')
         .upsert(row, { onConflict: 'user_id' }).select().single();
-      if (e1) throw new Error('Save failed: ' + e1.message + ' — run sql-FINAL-FIX.sql in Supabase once');
-      const { error: e2 } = await needDb().from('profiles')
-        .update({ builder_status: 'pending' }).eq('id', user.id);
+      if (e1) throw new Error('Save failed: ' + e1.message + ' — run sql/builder-supply.sql in Supabase');
+      const { error: e2 } = await needDb().from('profiles').update({
+        builder_status: 'pending',
+        invite_code_used: inviteCode || null,
+        specialties,
+        public_bio: bio.slice(0, 280),
+        demo_url: demo,
+        headline: specialties.split(',')[0]?.trim() || 'AI agent builder',
+      }).eq('id', user.id);
       if (e2) throw new Error('Profile update failed: ' + e2.message);
       await refreshUser();
       renderSidebar();
       go('status');
-      toast('Application sent! Admin will see it in Review builders.', true);
+      toast(inviteCode ? 'Application sent with invite — priority review.' : 'Application sent! Admin will review.', true);
       if (!saved) console.warn('ORVO: application saved but no row returned');
     } catch (e) {
       toast(e.message, false);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Submit application';
+      btn.textContent = 'Submit builder application';
     }
+  }
+
+  async function redeemInvite(code) {
+    const { data, error } = await needDb().from('builder_invites')
+      .select('*').eq('code', code).maybeSingle();
+    if (error) {
+      // Table may not exist yet — allow apply without blocking if code looks intentional
+      console.warn('invite lookup', error.message);
+      return true;
+    }
+    if (!data) return false;
+    if (data.expires_at && new Date(data.expires_at) < new Date()) return false;
+    if (data.uses >= data.max_uses) return false;
+    await needDb().from('builder_invites').update({ uses: (data.uses || 0) + 1 }).eq('id', data.id);
+    return true;
   }
 
   async function loadStatus() {
@@ -681,60 +779,116 @@
   // ── ADMIN ──
   async function loadAdmin() {
     if (!isAdmin()) {
-      $('view-body').innerHTML = `<p class="empty">Admin: sign in as <b>${esc(adminEmail())}</b><br>Then run <b>sql-RUN-NOW.sql</b> in Supabase</p>`;
+      $('view-body').innerHTML = `<p class="empty">Admin: sign in as <b>${esc(adminEmail())}</b><br>Then run SQL migrations in Supabase</p>`;
       return;
     }
     refreshAdminBadge();
-    $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button>';
+    $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button><button class="btn btn-primary" data-goto="invites" style="margin-left:8px">Invites</button>';
     $('admin-refresh')?.addEventListener('click', loadAdmin);
     const { data, error } = await needDb().from('builder_applications')
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}<br><br>Run <b>sql-RUN-NOW.sql</b> in Supabase SQL Editor</p>`;
+      $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}<br><br>Run SQL in Supabase SQL Editor</p>`;
       return;
     }
     if (!data?.length) {
-      $('view-body').innerHTML = `<p class="empty">No pending applications yet.</p>
-        <p class="empty" style="padding-top:12px;font-size:13px;color:var(--gray)">
-          Builder must click <b>Submit application</b> (bio 50+ chars).<br>
-          Check Supabase → Table Editor → builder_applications.<br>
-          Click <b>Refresh</b> above after a builder applies.
-        </p>`;
+      $('view-body').innerHTML = `<p class="empty">No pending applications.</p>
+        <p class="empty" style="padding-top:8px;font-size:13px">Share <a href="builders.html" style="color:var(--o)">builders.html</a> or generate invite codes.</p>`;
       return;
     }
     $('view-body').innerHTML = data.map(a => `
-      <div class="card">
-        <h3>${esc(a.full_name)}</h3>
-        <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${esc(a.email || '')}</p>
-        <p><b>Skills:</b> ${esc(a.skills)}</p>
-        <p>${esc(a.bio)}</p>
+      <div class="card" style="cursor:default">
+        <span class="tag">${a.invite_code ? 'Invite ' + esc(a.invite_code) : 'Open apply'}</span>
+        <h3>${esc(a.full_name)} · ${esc(a.email)}</h3>
+        <p>${esc((a.specialties || a.skills || '').slice(0, 120))}</p>
+        <p>${esc((a.bio || '').slice(0, 180))}</p>
+        ${a.why_orvo ? `<p style="font-size:12px;color:var(--gray)">Why: ${esc(a.why_orvo.slice(0, 140))}</p>` : ''}
+        ${a.demo_url || a.portfolio_url ? `<p style="font-size:12px"><a href="${esc(a.demo_url || a.portfolio_url)}" target="_blank" rel="noopener" style="color:var(--o)">Demo / portfolio</a></p>` : ''}
         <div class="row">
-          <button class="btn btn-primary btn-approve" data-uid="${a.user_id}">Approve</button>
-          <button class="btn btn-ghost btn-reject" data-uid="${a.user_id}">Reject</button>
+          <button class="btn btn-primary btn-approve" data-uid="${a.user_id}" data-aid="${a.id}">Approve</button>
+          <button class="btn btn-ghost btn-reject" data-uid="${a.user_id}" data-aid="${a.id}">Reject</button>
         </div>
       </div>`).join('');
-    $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid)));
-    $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid)));
+    $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid, b.dataset.aid)));
+    $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid, b.dataset.aid)));
   }
 
-  async function approveBuilder(uid) {
+  async function loadInvites() {
+    if (!isAdmin()) {
+      $('view-body').innerHTML = '<p class="empty err">Admin only</p>';
+      return;
+    }
+    $('view-action').innerHTML = '<button class="btn btn-primary" id="gen-invite">+ New invite</button>';
+    $('gen-invite')?.addEventListener('click', createInvite);
+    const body = $('view-body');
+    body.innerHTML = '<p class="empty">Loading invites…</p>';
+    const { data, error } = await needDb().from('builder_invites').select('*').order('created_at', { ascending: false }).limit(50);
+    if (error) {
+      body.innerHTML = `<p class="empty err">${esc(error.message)}<br><small>Run sql/builder-supply.sql</small></p>`;
+      return;
+    }
+    const origin = location.origin + location.pathname.replace(/index\.html$/, '');
+    body.innerHTML = `
+      <p style="font-size:13px;color:var(--gray);margin-bottom:16px">Send invite links to builders you want on the founding roster. Link opens apply with the code filled in.</p>
+      ${(data || []).map(inv => {
+        const link = `${origin}builders.html?invite=${encodeURIComponent(inv.code)}`;
+        return `<div class="card" style="cursor:default">
+          <h3><code>${esc(inv.code)}</code></h3>
+          <p>${esc(inv.note || 'Founding invite')} · used ${inv.uses}/${inv.max_uses}</p>
+          <p style="font-size:12px;word-break:break-all;color:var(--gray)">${esc(link)}</p>
+          <div class="row">
+            <button class="btn btn-ghost btn-copy" data-link="${esc(link)}" type="button">Copy link</button>
+          </div>
+        </div>`;
+      }).join('') || '<p class="empty">No invites yet. Click + New invite.</p>'}`;
+    body.querySelectorAll('.btn-copy').forEach(b => b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.link);
+        toast('Invite link copied', true);
+      } catch { toast(b.dataset.link, true); }
+    }));
+  }
+
+  async function createInvite() {
+    const note = prompt('Note for this invite (e.g. WhatsApp builders batch)', 'Founding builder') || 'Founding builder';
+    const max = parseInt(prompt('Max uses', '5') || '5', 10) || 5;
+    const code = 'ORVO-' + Math.random().toString(36).slice(2, 8).toUpperCase();
     try {
-      const { error: e1 } = await needDb().from('builder_applications')
-        .update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
+      const { error } = await needDb().from('builder_invites').insert({
+        code,
+        created_by: user.id,
+        note,
+        max_uses: max,
+        uses: 0,
+      });
+      if (error) throw error;
+      toast('Invite ' + code + ' created', true);
+      loadInvites();
+    } catch (e) {
+      toast(e.message + ' — run sql/builder-supply.sql', false);
+    }
+  }
+
+  async function approveBuilder(uid, aid) {
+    try {
+      const q = needDb().from('builder_applications')
+        .update({ status: 'approved', reviewed_at: new Date().toISOString() });
+      const { error: e1 } = aid ? await q.eq('id', aid) : await q.eq('user_id', uid);
       if (e1) throw new Error('Approve failed: ' + e1.message + ' — run sql-fix-jobs.sql');
       const { error: e2 } = await needDb().from('profiles')
-        .update({ builder_status: 'approved' }).eq('id', uid);
-      if (e2) throw new Error('Profile update failed: ' + e2.message + ' — run sql-fix-jobs.sql');
+        .update({ builder_status: 'approved', show_in_directory: true }).eq('id', uid);
+      if (e2) throw new Error('Profile update failed: ' + e2.message + ' — run sql/builder-supply.sql');
       if (uid === user.id) await refreshUser();
-      toast('Builder approved!', true);
+      toast('Builder approved + listed in directory!', true);
       loadAdmin();
     } catch (e) { toast(e.message, false); }
   }
 
-  async function rejectBuilder(uid) {
+  async function rejectBuilder(uid, aid) {
     try {
-      const { error: e1 } = await needDb().from('builder_applications')
-        .update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('user_id', uid);
+      const q = needDb().from('builder_applications')
+        .update({ status: 'rejected', reviewed_at: new Date().toISOString() });
+      const { error: e1 } = aid ? await q.eq('id', aid) : await q.eq('user_id', uid);
       if (e1) throw e1;
       const { error: e2 } = await needDb().from('profiles')
         .update({ builder_status: 'rejected' }).eq('id', uid);
@@ -777,20 +931,36 @@
     if (req?.user_id === user.id) {
       const { data: quotes } = await needDb().from('quotes').select('*').eq('request_id', rid);
       const ids = [...new Set((quotes || []).map(q => q.builder_id))];
-      const { data: profs } = ids.length ? await needDb().from('profiles').select('id,full_name').in('id', ids) : { data: [] };
+      const { data: profs } = ids.length ? await needDb().from('profiles').select('id,full_name,builder_plan,builder_plan_until').in('id', ids) : { data: [] };
       const names = Object.fromEntries((profs || []).map(p => [p.id, p.full_name]));
-      quotesHtml = (quotes || []).length ? (quotes || []).map(q => `
+      const profMap = Object.fromEntries((profs || []).map(p => [p.id, p]));
+      quotesHtml = (quotes || []).length ? (quotes || []).map(q => {
+        const pct = feePercentForBuilder(profMap[q.builder_id]);
+        const fee = Math.round(q.amount_cents * pct / 100);
+        return `
         <div class="card" style="cursor:default">
           <h3>${esc(names[q.builder_id] || 'Builder')} — ${money(q.amount_cents)}</h3>
           <p>${esc(q.message)}</p>
-          ${q.status === 'pending' ? `<button class="btn btn-primary btn-pay" data-qid="${q.id}" data-rid="${rid}">Accept & pay</button>` : `<span class="badge">${esc(q.status)}</span>`}
-        </div>`).join('') : '<p class="empty">Waiting for quotes...</p>';
+          <p style="font-size:12px;color:var(--gray)">ORVO fee ${pct}%: ${money(fee)} · Builder: ${money(q.amount_cents - fee)}</p>
+          ${q.status === 'pending' ? `<button class="btn btn-primary btn-pay" data-qid="${q.id}" data-rid="${rid}">Accept & fund escrow</button>` : `<span class="badge">${esc(q.status)}</span>`}
+        </div>`;
+      }).join('') : '<p class="empty">Waiting for quotes...</p>';
+    }
+
+    const escrowActions = [];
+    if (req?.user_id === user.id && (req.status === 'funded' || req.status === 'in_progress')) {
+      escrowActions.push(`<button class="btn btn-primary btn-complete" data-rid="${rid}">Mark complete & release payout</button>`);
+    }
+    if (req?.status === 'completed' || req?.status === 'released') {
+      escrowActions.push(`<span class="badge">Escrow released · project done</span>`);
     }
 
     $('view-body').innerHTML = `
       <h3 style="margin-bottom:12px">${esc(req?.title || 'Chat')}</h3>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Status: <b>${esc(req?.status || 'open')}</b></p>
       ${req?.user_id === user.id ? `<div style="margin-bottom:16px"><b>Quotes</b>${quotesHtml}</div>` : ''}
-      <p class="chat-hint">No emails or phone numbers. Off-platform contact links blocked. Agent/demo links (GitHub, Vercel, n8n…) are OK.</p>
+      ${escrowActions.length ? `<div class="row" style="margin-bottom:16px">${escrowActions.join('')}</div>` : ''}
+      <p class="chat-hint">No emails or phone numbers. Off-platform contact links blocked. Agent/demo links (GitHub, Vercel, n8n…) are OK. Funds stay in escrow until the client marks the job complete.</p>
       <div class="chat">
         <div class="chat-msgs" id="chat-msgs"></div>
         <form class="chat-send" id="chat-form">
@@ -801,6 +971,9 @@
 
     $('view-body').querySelectorAll('.btn-pay').forEach(b => {
       b.addEventListener('click', () => acceptQuote(b.dataset.qid, b.dataset.rid));
+    });
+    $('view-body').querySelectorAll('.btn-complete').forEach(b => {
+      b.addEventListener('click', () => completeAndRelease(b.dataset.rid));
     });
     $('chat-form').addEventListener('submit', sendMsg);
     await renderMsgs();
@@ -881,12 +1054,15 @@
   async function acceptQuote(qid, rid) {
     const { data: q } = await needDb().from('quotes').select('*').eq('id', qid).single();
     if (!q) return;
-    const fee = FEE() > 0 ? Math.round(q.amount_cents * FEE() / 100) : 0;
+    const { data: builderProf } = await needDb().from('profiles')
+      .select('builder_plan,builder_plan_until').eq('id', q.builder_id).maybeSingle();
+    const pct = feePercentForBuilder(builderProf);
+    const fee = Math.round(q.amount_cents * pct / 100);
     const stripeLink = (window.STRIPE_PAYMENT_LINK || '').trim();
-    const feeLine = fee > 0 ? `\n\nORVO fee (${FEE()}%): ${money(fee)}\nBuilder receives: ${money(q.amount_cents - fee)}` : '';
+    const feeLine = `\n\nORVO fee (${pct}%): ${money(fee)}\nBuilder receives on release: ${money(q.amount_cents - fee)}`;
     const msg = stripeLink
-      ? `Pay ${money(q.amount_cents)} via Stripe?${feeLine}`
-      : `Confirm payment of ${money(q.amount_cents)}?${feeLine}${feeLine ? '' : '\n\n(Stripe will be connected soon — recording payment manually for now.)'}`;
+      ? `Fund escrow ${money(q.amount_cents)} via Stripe?${feeLine}`
+      : `Fund escrow of ${money(q.amount_cents)}?${feeLine}\n\n(Stripe link optional — recording escrow hold for now.)`;
     if (!confirm(msg)) return;
     try {
       await needDb().from('quotes').update({ status: 'accepted' }).eq('id', qid);
@@ -896,6 +1072,7 @@
         amount_cents: q.amount_cents, platform_fee_cents: fee,
         builder_payout_cents: q.amount_cents - fee,
         status: stripeLink ? 'pending' : 'paid',
+        escrow_status: stripeLink ? 'pending' : 'held',
       });
       if (stripeLink) {
         window.open(stripeLink, '_blank');
@@ -904,9 +1081,165 @@
       }
       await needDb().from('quotes').update({ status: 'paid' }).eq('id', qid);
       await needDb().from('requests').update({ status: 'funded' }).eq('id', rid);
-      toast('Payment recorded — project funded!', true);
+      toast('Escrow funded — builder can start work', true);
       loadChat();
     } catch (e) { toast(e.message, false); }
+  }
+
+  async function completeAndRelease(rid) {
+    if (!confirm('Mark this project complete and release the builder payout from escrow?')) return;
+    try {
+      const { data: pay, error: pErr } = await needDb().from('payments')
+        .select('*').eq('request_id', rid).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (pErr) throw pErr;
+      if (pay) {
+        await needDb().from('payments').update({
+          escrow_status: 'released',
+          released_at: new Date().toISOString(),
+          status: 'released',
+        }).eq('id', pay.id);
+      }
+      const { error } = await needDb().from('requests').update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        completed_by: user.id,
+      }).eq('id', rid);
+      if (error) {
+        // Columns may be missing before SQL migration — fall back to status only
+        const { error: e2 } = await needDb().from('requests').update({ status: 'completed' }).eq('id', rid);
+        if (e2) throw e2;
+      }
+      if (pay?.quote_id) {
+        await needDb().from('quotes').update({ status: 'completed' }).eq('id', pay.quote_id);
+      }
+      toast('Payout released. ORVO fee kept.', true);
+      loadChat();
+    } catch (e) {
+      toast(e.message + ' — run sql/revenue-engine.sql if columns missing', false);
+    }
+  }
+
+  async function boostRequest(rid) {
+    const price = BOOST_PRICE();
+    const link = (window.STRIPE_BOOST_LINK || '').trim();
+    const ok = confirm(`Boost this request for 7 days (${money(price)})?\nFeatured jobs appear first for builders.`);
+    if (!ok) return;
+    try {
+      await needDb().from('plan_purchases').insert({
+        user_id: user.id,
+        kind: 'request_boost',
+        amount_cents: price,
+        request_id: rid,
+        status: link ? 'pending' : 'paid',
+      });
+      if (link) {
+        window.open(link, '_blank');
+        toast('Complete boost payment in Stripe', true);
+        return;
+      }
+      const until = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await needDb().from('requests').update({ featured_until: until }).eq('id', rid);
+      if (error) throw error;
+      toast('Request boosted for 7 days!', true);
+      loadRequests();
+    } catch (e) {
+      toast(e.message + ' — run sql/revenue-engine.sql in Supabase', false);
+    }
+  }
+
+  async function loadPlans() {
+    const body = $('view-body');
+    if (!isBuilder() && !isAdmin()) {
+      body.innerHTML = '<p class="empty">Builder Pro is for approved builders.</p>';
+      return;
+    }
+    const pro = isPro();
+    body.innerHTML = `
+      <div class="card" style="cursor:default">
+        <span class="tag">${pro ? 'Active' : 'Free plan'}</span>
+        <h3>Builder Pro — ${money(PRO_PRICE())}/mo</h3>
+        <p>Lower platform fee (${FEE_PRO()}% instead of ${FEE_STD()}%), Pro badge, and priority placement in client quote lists.</p>
+        <p style="font-size:13px;color:var(--gray);margin:12px 0">Path to scale: more closed deals at a lower cut — you keep more; ORVO grows GMV.</p>
+        ${pro
+          ? `<span class="badge">Pro active${profile.builder_plan_until ? ' until ' + new Date(profile.builder_plan_until).toLocaleDateString() : ''}</span>`
+          : `<button class="btn btn-primary" id="buy-pro" style="margin-top:8px">Upgrade to Pro</button>`}
+      </div>
+      <div class="card" style="cursor:default;margin-top:12px">
+        <h3>How ORVO makes money (and you do too)</h3>
+        <p>Clients fund escrow. When they mark the job complete, you get paid minus the fee. Pro cuts that fee from ${FEE_STD()}% → ${FEE_PRO()}%.</p>
+      </div>`;
+    $('buy-pro')?.addEventListener('click', buyPro);
+  }
+
+  async function buyPro() {
+    const price = PRO_PRICE();
+    const link = (window.STRIPE_PRO_LINK || '').trim();
+    if (!confirm(`Upgrade to Builder Pro for ${money(price)}/month?`)) return;
+    try {
+      await needDb().from('plan_purchases').insert({
+        user_id: user.id,
+        kind: 'builder_pro',
+        amount_cents: price,
+        status: link ? 'pending' : 'paid',
+      });
+      if (link) {
+        window.open(link, '_blank');
+        toast('Complete Pro payment in Stripe', true);
+        return;
+      }
+      const until = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await needDb().from('profiles').update({
+        builder_plan: 'pro',
+        builder_plan_until: until,
+      }).eq('id', user.id);
+      if (error) throw error;
+      profile = { ...profile, builder_plan: 'pro', builder_plan_until: until };
+      toast('Builder Pro activated for 30 days!', true);
+      renderSidebar();
+      loadPlans();
+    } catch (e) {
+      toast(e.message + ' — run sql/revenue-engine.sql in Supabase', false);
+    }
+  }
+
+  async function loadRevenue() {
+    const body = $('view-body');
+    if (!isAdmin()) {
+      body.innerHTML = '<p class="empty err">Admin only</p>';
+      return;
+    }
+    body.innerHTML = '<p class="empty">Loading revenue...</p>';
+    try {
+      const { data: pays } = await needDb().from('payments').select('*').order('created_at', { ascending: false }).limit(200);
+      const { data: plans } = await needDb().from('plan_purchases').select('*').eq('status', 'paid').limit(200);
+      const list = pays || [];
+      const gmv = list.reduce((s, p) => s + (p.amount_cents || 0), 0);
+      const fees = list.reduce((s, p) => s + (p.platform_fee_cents || 0), 0);
+      const held = list.filter(p => p.escrow_status === 'held').reduce((s, p) => s + (p.builder_payout_cents || 0), 0);
+      const released = list.filter(p => p.escrow_status === 'released').reduce((s, p) => s + (p.builder_payout_cents || 0), 0);
+      const planRev = (plans || []).reduce((s, p) => s + (p.amount_cents || 0), 0);
+      const dealTarget = 222;
+      const avgDeal = 300000;
+      const feeTarget = Math.round(dealTarget * avgDeal * FEE_STD() / 100);
+      body.innerHTML = `
+        <p style="font-size:13px;color:var(--gray);margin-bottom:16px">Toward $100k/mo: ~${dealTarget} deals × $3k × ${FEE_STD()}% ≈ ${money(feeTarget)} fees (see docs/revenue-model.md).</p>
+        <div class="rev-grid">
+          <div class="rev-stat"><b>${money(gmv)}</b><span>GMV (tracked)</span></div>
+          <div class="rev-stat"><b>${money(fees)}</b><span>Platform fees</span></div>
+          <div class="rev-stat"><b>${money(planRev)}</b><span>Pro + boosts</span></div>
+          <div class="rev-stat"><b>${money(fees + planRev)}</b><span>ORVO revenue</span></div>
+          <div class="rev-stat"><b>${money(held)}</b><span>Escrow held</span></div>
+          <div class="rev-stat"><b>${money(released)}</b><span>Released to builders</span></div>
+        </div>
+        <h3 style="margin:24px 0 12px;font-size:16px">Recent payments</h3>
+        ${list.slice(0, 20).map(p => `
+          <div class="card" style="cursor:default">
+            <h3>${money(p.amount_cents)} · fee ${money(p.platform_fee_cents || 0)}</h3>
+            <p>Escrow: ${esc(p.escrow_status || 'n/a')} · ${esc(p.status)} · ${ago(p.created_at)}</p>
+          </div>`).join('') || '<p class="empty">No payments yet</p>'}`;
+    } catch (e) {
+      body.innerHTML = `<p class="empty err">${esc(e.message)}<br><small>Run sql/revenue-engine.sql</small></p>`;
+    }
   }
 
   async function loadProfileView() {
@@ -914,7 +1247,8 @@
     const logged = (user?.email || '').toLowerCase().trim();
     const adminOk = isAdmin();
     const bs = profile?.builder_status || '(none)';
-    const role = adminOk ? 'ORVO Admin' : isBuilder() ? 'Approved builder' : isPending() ? 'Application pending' : 'Client';
+    const role = adminOk ? 'ORVO Admin' : isBuilder() ? (isPro() ? 'Pro builder' : 'Approved builder') : isPending() ? 'Application pending' : 'Client';
+    const inDir = !!profile?.show_in_directory;
     $('view-body').innerHTML = `
       <p><b>${esc(profile?.full_name)}</b></p>
       <p style="color:var(--gray);margin:4px 0 16px">${esc(logged)} · ${role}</p>
@@ -924,16 +1258,51 @@
         Admin email in config: <code>${esc(cfg || 'MISSING — edit supabase-config.js')}</code><br>
         Admin match: <b>${adminOk ? 'YES ✓' : 'NO ✗'}</b><br>
         Builder status: <b>${esc(bs)}</b>
+        ${isBuilder() ? `<br>Plan: <b>${isPro() ? 'Pro (' + FEE_PRO() + '% fee)' : 'Free (' + FEE_STD() + '% fee)'}</b>` : ''}
+        ${isBuilder() ? `<br>Public directory: <b>${inDir ? 'ON' : 'OFF'}</b>` : ''}
         ${!adminOk && cfg === 'your@email.com' ? '<br><span style="color:var(--red)">Set ORVO_ADMIN_EMAIL in supabase-config.js</span>' : ''}
         ${!adminOk && cfg && cfg !== logged ? '<br><span style="color:var(--red)">Sign in with the same email as in config</span>' : ''}
         ${bs !== 'approved' && !adminOk ? '<br><span style="color:var(--gray)">To see client posts: get approved as builder first</span>' : ''}
-        <br><span style="color:var(--gray)">Red bar at top? Run sql-RUN-NOW.sql in Supabase</span>
+        <br><span style="color:var(--gray)">Need schema? Run sql/revenue-engine.sql + sql/builder-supply.sql</span>
       </div>
+      ${isBuilder() ? `
+        <div class="field"><label>Headline</label><input id="prof-headline" value="${esc(profile?.headline || '')}" placeholder="WhatsApp & voice agent builder"/></div>
+        <div class="field"><label>Specialties</label><input id="prof-specs" value="${esc(profile?.specialties || '')}"/></div>
+        <div class="field"><label>Public bio</label><textarea id="prof-bio">${esc(profile?.public_bio || '')}</textarea></div>
+        <div class="field"><label>Demo URL</label><input id="prof-demo" value="${esc(profile?.demo_url || '')}"/></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:16px">
+          <input type="checkbox" id="prof-dir" ${inDir ? 'checked' : ''}/> Show me in the public builders directory
+        </label>
+        <button class="btn btn-primary" id="save-prof" style="width:100%;margin-bottom:10px;padding:12px">Save public profile</button>
+      ` : ''}
+      ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="invites">Create builder invites</button>' : ''}
+      ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="revenue">Open revenue dashboard</button>' : ''}
       ${adminOk ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="admin">Review builder applications</button>' : ''}
       ${isBuilder() ? '<button class="btn btn-primary" style="width:100%;margin-bottom:10px;padding:12px" data-goto="jobs">Browse jobs</button>' : ''}
+      ${isBuilder() && !isPro() ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="plans">Upgrade to Builder Pro</button>' : ''}
       ${!isBuilder() && !isPending() && !adminOk ? '<button class="btn btn-ghost" style="width:100%;margin-bottom:10px;padding:12px" data-goto="apply">Apply as a builder</button>' : ''}
       <button class="btn btn-ghost" id="logout-btn" style="width:100%;padding:12px">Sign out</button>`;
     $('logout-btn').addEventListener('click', doLogout);
+    $('save-prof')?.addEventListener('click', savePublicProfile);
+  }
+
+  async function savePublicProfile() {
+    try {
+      const row = {
+        headline: $('prof-headline').value.trim() || null,
+        specialties: $('prof-specs').value.trim() || null,
+        public_bio: $('prof-bio').value.trim() || null,
+        demo_url: $('prof-demo').value.trim() || null,
+        show_in_directory: !!$('prof-dir').checked,
+      };
+      const { error } = await needDb().from('profiles').update(row).eq('id', user.id);
+      if (error) throw error;
+      profile = { ...profile, ...row };
+      toast('Public profile saved', true);
+      loadProfileView();
+    } catch (e) {
+      toast(e.message + ' — run sql/builder-supply.sql', false);
+    }
   }
 
   function ensureDashOpen() {
@@ -977,10 +1346,16 @@
         openDash();
       } else openAuth('login');
     }
-    else if (a === 'post') { e.preventDefault(); openPost(); }
+    else if (a === 'post') {
+      e.preventDefault();
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      openPost(raw ? JSON.parse(raw) : undefined);
+    }
     else if (a === 'client-start') {
       e.preventDefault();
-      if (user) openPost();
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      const prefill = raw ? JSON.parse(raw) : undefined;
+      if (user) openPost(prefill);
       else {
         postSignupIntent = 'client';
         openAuth('signup'); setAuthTab('signup');
@@ -1021,6 +1396,47 @@
   $('signup-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
 
   // ── BOOT ──
+  async function consumeLaunchParams() {
+    const params = new URLSearchParams(location.search);
+    const invite = (params.get('invite') || '').trim();
+    if (invite) sessionStorage.setItem('orvo_invite', invite);
+    const intent = params.get('intent');
+    const agentSlug = params.get('agent');
+    if (agentSlug) {
+      try {
+        let agent = null;
+        const { data } = await needDb().from('agent_templates').select('*').eq('slug', agentSlug).maybeSingle();
+        agent = data;
+        if (!agent) {
+          const list = await (await fetch('data/ready-agents.json')).json();
+          agent = (list || []).find(a => a.slug === agentSlug) || null;
+        }
+        if (agent) {
+          sessionStorage.setItem('orvo_agent_prefill', JSON.stringify({
+            desc: agent.title + '\n\n' + agent.summary,
+            cat: agent.category,
+            budget: agent.budget_hint || '',
+          }));
+        }
+      } catch { /* ignore */ }
+    }
+    if (intent === 'builder') {
+      postSignupIntent = 'builder';
+      if ($('signup-intent')) $('signup-intent').value = 'builder';
+      if (user) { openDash(); go(isBuilder() ? 'jobs' : isPending() ? 'status' : 'apply'); }
+      else { openAuth('signup'); setAuthTab('signup'); }
+    } else if (intent === 'client' || agentSlug) {
+      postSignupIntent = 'client';
+      const raw = sessionStorage.getItem('orvo_agent_prefill');
+      const prefill = raw ? JSON.parse(raw) : null;
+      if (user) openPost(prefill || undefined);
+      else { openAuth(agentSlug ? 'signup' : 'login'); if (agentSlug) setAuthTab('signup'); }
+    } else if (location.hash === '#apply') {
+      if (user) { openDash(); go('apply'); }
+      else { postSignupIntent = 'builder'; openAuth('signup'); setAuthTab('signup'); }
+    }
+  }
+
   async function boot() {
     if (!window.supabase?.createClient) {
       bootErr('Supabase failed to load. Connect to internet and refresh (Ctrl+F5).');
@@ -1033,6 +1449,7 @@
     }
     await refreshUser();
     db.auth.onAuthStateChange(refreshUser);
+    await consumeLaunchParams();
   }
 
   boot();

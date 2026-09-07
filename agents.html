@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ORVO — Ready agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--o:#FF6B35;--o2:#FF8C5A;--bg:#F9F9F7;--black:#0A0A0A;--gray:#6B6B6B;--border:rgba(0,0,0,.07)}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--black);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none}
+nav{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,64px);border-bottom:1px solid var(--border);background:rgba(249,249,247,.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:600}.logo span{color:var(--o)}
+.nav-links{display:flex;gap:24px;font-size:14px;color:var(--gray)}
+.btn{border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;display:inline-flex}
+.btn-primary{background:var(--o);color:#fff}.btn-primary:hover{background:var(--o2)}
+.btn-ghost{background:transparent;border:1px solid var(--border)}
+.btn-lg{padding:12px 22px;font-size:14px;border-radius:10px}
+.wrap{max-width:1100px;margin:0 auto;padding:64px clamp(20px,5vw,64px)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--o);margin-bottom:12px}
+h1{font-family:'Playfair Display',serif;font-size:clamp(32px,4.5vw,48px);font-weight:500;line-height:1.1;margin-bottom:14px;letter-spacing:-.02em}
+.lead{font-size:17px;color:var(--gray);max-width:520px;margin-bottom:40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:10px}
+.tag{font-size:11px;font-weight:600;color:var(--o);text-transform:uppercase;letter-spacing:.04em}
+.card h3{font-size:18px;line-height:1.3}
+.card p{font-size:14px;color:var(--gray);flex:1}
+.meta{font-size:13px;color:var(--black)}
+.skills{font-size:12px;color:var(--gray)}
+.card .btn{align-self:flex-start;margin-top:8px}
+.note{margin-top:36px;font-size:14px;color:var(--gray);max-width:560px}
+footer{padding:28px clamp(20px,5vw,64px);border-top:1px solid var(--border);font-size:13px;color:var(--gray);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media(max-width:700px){.nav-links{display:none}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">ORVO<span>.</span></a>
+  <div class="nav-links">
+    <a href="builders.html">For builders</a>
+    <a href="index.html#how">How it works</a>
+  </div>
+  <a class="btn btn-primary" href="index.html?intent=client">Post a request</a>
+</nav>
+
+<div class="wrap">
+  <p class="eyebrow">Seed catalog</p>
+  <h1>Ready agents clients can request today.</h1>
+  <p class="lead">Each template becomes a marketplace request. Builders quote. Escrow holds payment until the work is done.</p>
+  <div class="grid" id="grid"><p style="color:var(--gray)">Loading…</p></div>
+  <p class="note">Builders: these are the jobs we need capacity for. <a href="builders.html" style="color:var(--o)">Take a founding seat →</a></p>
+</div>
+
+<footer>
+  <span>© 2026 ORVO</span>
+  <a href="index.html">Marketplace</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-config.js?v=11"></script>
+<script>
+(async function () {
+  const grid = document.getElementById('grid');
+  let agents = [];
+  try {
+    if (window.supabase?.createClient && window.SUPABASE_URL) {
+      const db = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const { data } = await db.from('agent_templates')
+        .select('*').eq('active', true).order('sort_order');
+      if (data?.length) agents = data;
+    }
+  } catch { /* use JSON seed */ }
+  if (!agents.length) {
+    try { agents = await (await fetch('data/ready-agents.json')).json(); }
+    catch { agents = []; }
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  grid.innerHTML = agents.map(a => `
+    <div class="card">
+      <div class="tag">${esc(a.category)}</div>
+      <h3>${esc(a.title)}</h3>
+      <p>${esc(a.summary)}</p>
+      <div class="meta">Budget ${esc(a.budget_hint || 'Open')}</div>
+      <div class="skills">${esc(a.skills || '')}</div>
+      <a class="btn btn-primary btn-lg" href="index.html?intent=client&agent=${encodeURIComponent(a.slug || '')}">Request this agent</a>
+    </div>`).join('') || '<p style="color:var(--gray)">No agents yet.</p>';
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ORVO — Join as a builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--o:#FF6B35;--o2:#FF8C5A;--bg:#F9F9F7;--black:#0A0A0A;--dark:#141414;--gray:#6B6B6B;--border:rgba(0,0,0,.07)}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--black);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none}
+nav{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,64px);border-bottom:1px solid var(--border);background:rgba(249,249,247,.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10}
+.logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:600}.logo span{color:var(--o)}
+.nav-links{display:flex;gap:24px;font-size:14px;color:var(--gray)}
+.nav-links a:hover{color:var(--black)}
+.btn{border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;display:inline-flex;align-items:center}
+.btn-primary{background:var(--o);color:#fff}.btn-primary:hover{background:var(--o2)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--black)}
+.btn-lg{padding:14px 26px;font-size:15px;border-radius:10px}
+.hero{padding:72px clamp(20px,5vw,64px) 48px;max-width:1100px;margin:0 auto}
+.hero .eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--o);margin-bottom:14px}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(34px,5vw,52px);font-weight:500;line-height:1.1;letter-spacing:-.02em;max-width:720px;margin-bottom:16px}
+.hero p{font-size:17px;color:var(--gray);max-width:540px;margin-bottom:28px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+.stats{display:flex;gap:32px;flex-wrap:wrap;margin-top:36px;padding-top:28px;border-top:1px solid var(--border)}
+.stat b{display:block;font-size:22px;font-weight:600}.stat span{font-size:13px;color:var(--gray)}
+.section{padding:56px clamp(20px,5vw,64px);max-width:1100px;margin:0 auto}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--o);margin-bottom:10px}
+.section h2{font-family:'Playfair Display',serif;font-size:clamp(26px,3.5vw,38px);font-weight:500;margin-bottom:28px;letter-spacing:-.02em}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.role{padding:20px 0;border-top:1px solid var(--border)}
+.role h3{font-size:16px;margin-bottom:6px}
+.role .need{font-size:12px;font-weight:600;color:var(--o);margin-bottom:8px}
+.role p{font-size:13px;color:var(--gray)}
+.builders{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.bcard{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px}
+.bcard .tag{font-size:11px;font-weight:600;color:var(--o);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.bcard h3{font-size:17px;margin-bottom:4px}
+.bcard .head{font-size:13px;color:var(--gray);margin-bottom:10px}
+.bcard p{font-size:14px;color:var(--gray)}
+.bcard .skills{margin-top:12px;font-size:12px;color:var(--black)}
+.empty-note{font-size:14px;color:var(--gray);padding:24px 0}
+.invite-box{background:var(--dark);color:#fff;border-radius:16px;padding:36px clamp(20px,4vw,40px);margin-top:16px}
+.invite-box h3{font-family:'Playfair Display',serif;font-size:28px;font-weight:500;margin-bottom:10px}
+.invite-box p{color:rgba(255,255,255,.6);margin-bottom:20px;max-width:480px}
+.invite-row{display:flex;gap:10px;flex-wrap:wrap}
+.invite-row input{flex:1;min-width:180px;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:14px}
+.dark{background:var(--dark);color:#fff;padding:72px clamp(20px,5vw,64px);margin-top:40px}
+.dark-inner{max-width:1100px;margin:0 auto}
+.dark h2{font-family:'Playfair Display',serif;font-size:clamp(26px,3.5vw,38px);margin-bottom:12px}
+.dark p{color:rgba(255,255,255,.55);margin-bottom:24px;max-width:480px}
+footer{padding:28px clamp(20px,5vw,64px);border-top:1px solid var(--border);font-size:13px;color:var(--gray);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media(max-width:700px){.nav-links{display:none}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="index.html">ORVO<span>.</span></a>
+  <div class="nav-links">
+    <a href="agents.html">Ready agents</a>
+    <a href="index.html#pricing">Pricing</a>
+    <a href="index.html">Marketplace</a>
+  </div>
+  <a class="btn btn-primary" href="index.html?intent=builder#apply">Apply now</a>
+</nav>
+
+<section class="hero">
+  <p class="eyebrow">Founding builders · 2026</p>
+  <h1>We need builders before we need more pricing pages.</h1>
+  <p>ORVO is an AI agent marketplace. Clients post jobs. You quote, build, and get paid through escrow. First goal: fill the founding roster so every request gets a real quote.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary btn-lg" href="index.html?intent=builder#apply">Apply as a builder</a>
+    <a class="btn btn-ghost btn-lg" href="#roles">See open roles</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="need-total">20</b><span>Founding seats to fill</span></div>
+    <div class="stat"><b>15%</b><span>Platform fee (Pro 10%)</span></div>
+    <div class="stat"><b>Escrow</b><span>Paid when client marks done</span></div>
+  </div>
+</section>
+
+<section class="section" id="roles">
+  <p class="section-label">Recruiting now</p>
+  <h2>Open roles on the founding roster</h2>
+  <div class="roles" id="roles-grid"></div>
+</section>
+
+<section class="section" id="directory">
+  <p class="section-label">Directory</p>
+  <h2>Approved builders</h2>
+  <div class="builders" id="builders-grid">
+    <p class="empty-note" id="builders-empty">Loading directory…</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="invite-box">
+    <h3>Have an invite code?</h3>
+    <p>Founding invites skip the cold queue. Paste your code and continue to apply.</p>
+    <div class="invite-row">
+      <input id="invite-input" placeholder="Invite code" autocomplete="off"/>
+      <button class="btn btn-primary btn-lg" id="invite-go" type="button">Continue with invite</button>
+    </div>
+  </div>
+</section>
+
+<section class="dark">
+  <div class="dark-inner">
+    <h2>Clients already know what they want.</h2>
+    <p>Browse ready agent templates — each one becomes a marketplace request you can quote on.</p>
+    <a class="btn btn-primary btn-lg" href="agents.html">View ready agents</a>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 ORVO — Builder supply</span>
+  <a href="index.html">Back to marketplace</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-config.js?v=11"></script>
+<script>
+(async function () {
+  const rolesEl = document.getElementById('roles-grid');
+  const buildersEl = document.getElementById('builders-grid');
+  const emptyEl = document.getElementById('builders-empty');
+
+  let roles = [];
+  try {
+    roles = await (await fetch('data/founding-roles.json')).json();
+  } catch { roles = []; }
+
+  const needTotal = roles.reduce((s, r) => s + (r.need || 0), 0);
+  document.getElementById('need-total').textContent = String(needTotal || 20);
+
+  rolesEl.innerHTML = roles.map(r => `
+    <div class="role">
+      <div class="need">Need ${r.need}</div>
+      <h3>${r.role}</h3>
+      <p>${r.skills}</p>
+      <p style="margin-top:8px">${r.pay}</p>
+    </div>`).join('');
+
+  let builders = [];
+  try {
+    if (window.supabase?.createClient && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+      const db = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const { data } = await db.from('profiles')
+        .select('full_name,headline,specialties,public_bio,demo_url,builder_plan')
+        .eq('builder_status', 'approved')
+        .eq('show_in_directory', true)
+        .limit(48);
+      builders = data || [];
+    }
+  } catch { /* RLS / schema not ready */ }
+
+  if (!builders.length) {
+    buildersEl.innerHTML = `
+      <p class="empty-note" style="grid-column:1/-1">
+        No public builders yet — that's the point. Apply to take a founding seat.
+        After approval, turn on <b>Show in directory</b> in your profile.
+      </p>`;
+  } else {
+    emptyEl?.remove();
+    buildersEl.innerHTML = builders.map(b => `
+      <div class="bcard">
+        <div class="tag">${b.builder_plan === 'pro' ? 'Pro builder' : 'Vetted builder'}</div>
+        <h3>${escapeHtml(b.full_name || 'Builder')}</h3>
+        <div class="head">${escapeHtml(b.headline || 'AI agent builder')}</div>
+        <p>${escapeHtml((b.public_bio || '').slice(0, 160))}</p>
+        <div class="skills">${escapeHtml(b.specialties || '')}</div>
+        ${b.demo_url ? `<p style="margin-top:10px;font-size:12px"><a href="${escapeAttr(b.demo_url)}" target="_blank" rel="noopener" style="color:var(--o)">Demo →</a></p>` : ''}
+      </div>`).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/`/g, '');
+  }
+
+  const params = new URLSearchParams(location.search);
+  const pre = params.get('invite');
+  if (pre) document.getElementById('invite-input').value = pre;
+
+  document.getElementById('invite-go').addEventListener('click', () => {
+    const code = document.getElementById('invite-input').value.trim();
+    const q = new URLSearchParams({ intent: 'builder' });
+    if (code) q.set('invite', code);
+    location.href = 'index.html?' + q.toString() + '#apply';
+  });
+})();
+</script>
+</body>
+</html>
