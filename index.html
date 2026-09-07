@@ -106,6 +106,19 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 .card{border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;cursor:pointer;transition:box-shadow .15s}
 .card:hover{box-shadow:0 4px 20px rgba(0,0,0,.06)}
 .card:not([data-click]){cursor:default}
+.card-featured{border-color:rgba(255,107,53,.35);box-shadow:0 4px 24px rgba(255,107,53,.1)}
+.rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+@media(max-width:700px){.rev-grid{grid-template-columns:1fr 1fr}}
+.rev-stat{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px}
+.rev-stat b{display:block;font-size:20px;font-weight:600;margin-bottom:4px}
+.rev-stat span{font-size:12px;color:var(--gray)}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+@media(max-width:800px){.price-grid{grid-template-columns:1fr}}
+.price-item{padding-top:20px;border-top:2px solid var(--border)}
+.price-item .amt{font-family:'Playfair Display',serif;font-size:32px;font-weight:500;margin:8px 0 12px;letter-spacing:-.02em}
+.price-item .amt span{font-size:14px;font-family:Inter,sans-serif;color:var(--gray);font-weight:400}
+.price-item h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.price-item p{font-size:14px;color:var(--gray)}
 .card h3{font-size:16px;margin-bottom:6px}
 .card p{font-size:13px;color:var(--gray);margin-bottom:4px}
 .tag{display:inline-block;font-size:11px;background:rgba(255,107,53,.1);color:var(--o);padding:3px 8px;border-radius:4px;margin-bottom:8px}
@@ -179,6 +192,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
   <ul class="nav-links">
     <li><a href="#demo">ORVO24</a></li>
     <li><a href="#how">How it works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
     <li><a href="#builders">For builders</a></li>
   </ul>
   <div class="nav-btns" id="nav-out">
@@ -225,8 +239,8 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 
   <div class="trust">
     <div class="trust-item"><b>Vetted builders</b> — manual review</div>
-    <div class="trust-item"><b>Private chat</b> — agree on scope & price</div>
-    <div class="trust-item"><b>Secure payments</b> — via Stripe</div>
+    <div class="trust-item"><b>Escrow payments</b> — release when done</div>
+    <div class="trust-item"><b>15% platform fee</b> — Pro builders pay 10%</div>
   </div>
 
   <section class="demo-section" id="demo">
@@ -250,11 +264,33 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 
   <section class="section" id="how">
     <p class="section-label">Process</p>
-    <h2>Post it. Builders quote.<br>You pay safe.</h2>
+    <h2>Post it. Builders quote.<br>Escrow keeps it safe.</h2>
     <div class="steps">
-      <div class="step"><div class="step-num">01</div><h3>Client posts a request</h3><p>Describe the AI agent you need. Only approved builders see your post.</p></div>
+      <div class="step"><div class="step-num">01</div><h3>Client posts a request</h3><p>Describe the AI agent you need. Boost for $49 to feature it for 7 days.</p></div>
       <div class="step"><div class="step-num">02</div><h3>Builders send quotes</h3><p>Vetted builders review your job, message you, and send a price.</p></div>
-      <div class="step"><div class="step-num">03</div><h3>Pay through ORVO</h3><p>Accept a quote and pay securely via Stripe. Builder gets paid when the job is done.</p></div>
+      <div class="step"><div class="step-num">03</div><h3>Fund escrow · release on done</h3><p>Pay through ORVO. Funds release when you mark the job complete. We take 15% (10% for Pro builders).</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="pricing" style="padding-top:0">
+    <p class="section-label">Pricing</p>
+    <h2>Simple fees.<br>Built to scale.</h2>
+    <div class="price-grid">
+      <div class="price-item">
+        <h3>Marketplace fee</h3>
+        <div class="amt">15%<span> / deal</span></div>
+        <p>Only when a project closes. Pro builders pay 10%. Path to $100k/mo ≈ 222 deals × $3k.</p>
+      </div>
+      <div class="price-item">
+        <h3>Builder Pro</h3>
+        <div class="amt">$99<span> / mo</span></div>
+        <p>Lower fee, Pro badge, priority in the job board. For builders closing volume.</p>
+      </div>
+      <div class="price-item">
+        <h3>Request boost</h3>
+        <div class="amt">$49<span> / 7 days</span></div>
+        <p>Feature your job at the top so vetted builders see it first.</p>
+      </div>
     </div>
   </section>
 
@@ -265,8 +301,8 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
       <div class="values">
         <div class="value"><h3>Apply & get vetted</h3><p>Submit your bio and skills. ORVO reviews every builder before they see any jobs.</p></div>
         <div class="value"><h3>Browse open jobs</h3><p>Once approved, see client requests that match your skills. Send quotes and chat.</p></div>
-        <div class="value"><h3>Get paid via ORVO</h3><p>Clients pay through Stripe. You receive payment when the project is complete.</p></div>
-        <div class="value"><h3>No cold outreach</h3><p>Clients come to you. Focus on building great agents, not finding leads.</p></div>
+        <div class="value"><h3>Get paid via ORVO</h3><p>Clients fund escrow. You receive payout when they mark the project complete — minus the platform fee.</p></div>
+        <div class="value"><h3>Builder Pro — $99/mo</h3><p>Cut your fee from 15% to 10%, get a Pro badge, and sit higher when clients compare quotes.</p></div>
       </div>
       <button class="btn btn-primary btn-lg" style="margin-top:40px" data-action="builder-start">Apply as a builder</button>
     </div>
@@ -282,9 +318,10 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
   </section>
 
   <footer>
-    <span>© 2025 ORVO — AI Agent Marketplace</span>
+    <span>© 2026 ORVO — AI Agent Marketplace</span>
     <div class="footer-links">
       <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
       <a href="#" data-action="login">Sign in</a>
       <a href="#" data-action="builder-start">Become a builder</a>
     </div>
@@ -371,7 +408,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase-config.js?v=9"></script>
-<script src="app.js?v=11"></script>
+<script src="supabase-config.js?v=10"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
