@@ -678,6 +678,92 @@
       ${app.status === 'pending' ? '<button class="btn btn-ghost" style="margin-top:12px;padding:12px 28px" data-goto="apply">Edit application</button>' : ''}`;
   }
 
+  // ── GMAIL (admin) ──
+  async function loadGmailPanelHtml() {
+    let status = { connected: false, configured: false };
+    try {
+      const res = await fetch('/api/gmail/status', { cache: 'no-store' });
+      status = await res.json();
+    } catch (e) {
+      status = { connected: false, configured: false, error: e.message };
+    }
+    const connected = Boolean(status.connected);
+    const configured = status.configured !== false;
+    let inboxHtml = '';
+    if (connected) {
+      try {
+        const res = await fetch('/api/gmail/inbox?max=5', { cache: 'no-store' });
+        const data = await res.json();
+        if (data.ok && data.messages?.length) {
+          inboxHtml = `<div style="margin-top:14px">${data.messages.map(m => `
+            <div style="padding:10px 0;border-top:1px solid var(--border);font-size:13px">
+              <div style="font-weight:600">${esc(m.subject)}</div>
+              <div style="color:var(--gray);font-size:12px">${esc(m.from)}</div>
+              <div style="color:var(--gray);margin-top:4px">${esc(m.snippet || '')}</div>
+            </div>`).join('')}</div>`;
+        } else if (data.error) {
+          inboxHtml = `<p style="margin-top:12px;font-size:13px;color:var(--red)">${esc(data.error)}</p>`;
+        } else {
+          inboxHtml = `<p style="margin-top:12px;font-size:13px;color:var(--gray)">Inbox is empty.</p>`;
+        }
+      } catch (e) {
+        inboxHtml = `<p style="margin-top:12px;font-size:13px;color:var(--red)">${esc(e.message)}</p>`;
+      }
+    }
+    const badge = connected
+      ? `<span class="badge" style="background:#dcfce7;color:var(--green)">Connected · ${esc(status.emailAddress || '')}</span>`
+      : configured
+        ? `<span class="badge">Not connected</span>`
+        : `<span class="badge" style="background:#fee2e2;color:var(--red)">Secret missing</span>`;
+    return `
+      <div class="card" style="margin-bottom:20px">
+        <h3>Gmail</h3>
+        <p style="font-size:13px;color:var(--gray);margin:8px 0 14px">Connect admin inbox to read / send mail via Gmail API.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          ${badge}
+          <a class="btn btn-primary" href="/api/gmail/auth" style="padding:9px 16px">Connect Gmail</a>
+          <button class="btn btn-ghost" id="gmail-refresh" type="button">Refresh status</button>
+        </div>
+        ${!configured ? `<p style="font-size:12px;color:var(--red);margin-top:8px">Add <code>GMAIL_CLIENT_SECRET</code> in Netlify env, redeploy, then connect. See docs/gmail-setup.md</p>` : ''}
+        ${status.error && !connected ? `<p style="font-size:12px;color:var(--gray);margin-top:8px">${esc(status.error)}</p>` : ''}
+        ${connected ? `
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <p style="font-size:13px;font-weight:600;margin-bottom:8px">Send test email</p>
+            <div class="field"><label>To</label><input id="gmail-to" type="email" placeholder="someone@example.com"/></div>
+            <div class="field"><label>Subject</label><input id="gmail-subject" type="text" placeholder="ORVO test"/></div>
+            <div class="field"><label>Body</label><textarea id="gmail-body" rows="3" placeholder="Hello from ORVO"></textarea></div>
+            <button class="btn btn-black" id="gmail-send" type="button" style="margin-top:8px">Send</button>
+          </div>
+          <div style="margin-top:16px">
+            <p style="font-size:13px;font-weight:600">Recent inbox</p>
+            ${inboxHtml}
+          </div>` : ''}
+      </div>`;
+  }
+
+  function bindGmailPanel() {
+    $('gmail-refresh')?.addEventListener('click', loadAdmin);
+    $('gmail-send')?.addEventListener('click', async () => {
+      const to = $('gmail-to')?.value.trim();
+      const subject = $('gmail-subject')?.value.trim();
+      const body = $('gmail-body')?.value || '';
+      if (!to || !subject) { toast('To + subject required', false); return; }
+      try {
+        const res = await fetch('/api/gmail/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, body }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Send failed');
+        toast('Email sent', true);
+        $('gmail-to').value = '';
+        $('gmail-subject').value = '';
+        $('gmail-body').value = '';
+      } catch (e) { toast(e.message, false); }
+    });
+  }
+
   // ── ADMIN ──
   async function loadAdmin() {
     if (!isAdmin()) {
@@ -687,22 +773,25 @@
     refreshAdminBadge();
     $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button>';
     $('admin-refresh')?.addEventListener('click', loadAdmin);
+    const gmailHtml = await loadGmailPanelHtml();
     const { data, error } = await needDb().from('builder_applications')
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}<br><br>Run <b>sql-RUN-NOW.sql</b> in Supabase SQL Editor</p>`;
+      $('view-body').innerHTML = `${gmailHtml}<p class="empty err">${esc(error.message)}<br><br>Run <b>sql-RUN-NOW.sql</b> in Supabase SQL Editor</p>`;
+      bindGmailPanel();
       return;
     }
     if (!data?.length) {
-      $('view-body').innerHTML = `<p class="empty">No pending applications yet.</p>
+      $('view-body').innerHTML = `${gmailHtml}<p class="empty">No pending applications yet.</p>
         <p class="empty" style="padding-top:12px;font-size:13px;color:var(--gray)">
           Builder must click <b>Submit application</b> (bio 50+ chars).<br>
           Check Supabase → Table Editor → builder_applications.<br>
           Click <b>Refresh</b> above after a builder applies.
         </p>`;
+      bindGmailPanel();
       return;
     }
-    $('view-body').innerHTML = data.map(a => `
+    $('view-body').innerHTML = gmailHtml + data.map(a => `
       <div class="card">
         <h3>${esc(a.full_name)}</h3>
         <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${esc(a.email || '')}</p>
@@ -713,6 +802,7 @@
           <button class="btn btn-ghost btn-reject" data-uid="${a.user_id}">Reject</button>
         </div>
       </div>`).join('');
+    bindGmailPanel();
     $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid)));
     $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid)));
   }
