@@ -1,13 +1,47 @@
 /**
  * Shared Gmail OAuth helpers for Netlify Functions.
- * Secrets stay in Netlify env / Blobs — never in the frontend.
+ * Secrets stay in Netlify env / gmail-secrets.json / Blobs — never in the frontend.
  */
+
+const fs = require('fs');
+const path = require('path');
+
+function loadFileSecrets() {
+  const candidates = [
+    path.join(process.cwd(), 'gmail-secrets.json'),
+    path.join(__dirname, '..', '..', '..', 'gmail-secrets.json'),
+    path.join(__dirname, 'gmail-secrets.json'),
+  ];
+  for (const file of candidates) {
+    try {
+      if (!fs.existsSync(file)) continue;
+      const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (raw && (raw.client_secret || raw.client_id)) return raw;
+    } catch {
+      /* try next */
+    }
+  }
+  return {};
+}
+
+const fileSecrets = loadFileSecrets();
 
 const CLIENT_ID =
   process.env.GMAIL_CLIENT_ID ||
+  fileSecrets.client_id ||
   '303519877691-obt1ji4ranubn6l83jn1ra58v1068j28.apps.googleusercontent.com';
 
-const CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || '';
+const CLIENT_SECRET_RAW =
+  process.env.GMAIL_CLIENT_SECRET ||
+  fileSecrets.client_secret ||
+  '';
+
+const CLIENT_SECRET =
+  !CLIENT_SECRET_RAW ||
+  CLIENT_SECRET_RAW === 'PASTE_SECRET_HERE' ||
+  CLIENT_SECRET_RAW === 'YOUR_CLIENT_SECRET_HERE'
+    ? ''
+    : CLIENT_SECRET_RAW;
 
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -23,6 +57,7 @@ function siteOrigin(event) {
 function redirectUri(event) {
   return (
     process.env.GMAIL_REDIRECT_URI ||
+    fileSecrets.redirect_uri ||
     `${siteOrigin(event)}/oauth2callback`
   );
 }
