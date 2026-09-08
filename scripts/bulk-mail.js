@@ -391,19 +391,25 @@ async function sendViaGmailApi({ to, subject, body }) {
 
 async function sendViaResend({ to, subject, body }) {
   const s = secrets();
-  const from = s.from_email || s.from || s.email || 'onboarding@resend.dev';
+  const replyTo = s.reply_to || s.email || null;
+  const fromName = s.from_name || 'Daniel';
+  const fromAddr = s.from_email || s.from || 'onboarding@resend.dev';
+  const from = fromAddr.includes('<') ? fromAddr : `${fromName} <${fromAddr}>`;
+  const payload = {
+    from,
+    to: [to],
+    subject,
+    text: body,
+  };
+  if (replyTo) payload.reply_to = replyTo;
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${s.resend_api_key || s.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject,
-      text: body,
-    }),
+    body: JSON.stringify(payload),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || JSON.stringify(data));
