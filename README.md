@@ -17,4 +17,5 @@ Live: https://fantastic-eclair-0b2c66.netlify.app/
 
 ## Gmail API
 
-Admin can connect Gmail (read + send) via Netlify Functions. Setup: [docs/gmail-setup.md](docs/gmail-setup.md).
+- **Email agent** (write/send mail automatically): [docs/gmail-agent.md](docs/gmail-agent.md)
+- Website admin Connect panel (optional): [docs/gmail-setup.md](docs/gmail-setup.md)
