@@ -678,6 +678,222 @@
       ${app.status === 'pending' ? '<button class="btn btn-ghost" style="margin-top:12px;padding:12px 28px" data-goto="apply">Edit application</button>' : ''}`;
   }
 
+  // ── GMAIL (admin) ──
+  async function loadGmailPanelHtml() {
+    let status = { connected: false, configured: false };
+    try {
+      const res = await fetch('/api/gmail/status', { cache: 'no-store' });
+      status = await res.json();
+    } catch (e) {
+      status = { connected: false, configured: false, error: e.message };
+    }
+    const connected = Boolean(status.connected);
+    const configured = status.configured !== false;
+    let inboxHtml = '';
+    if (connected) {
+      try {
+        const res = await fetch('/api/gmail/inbox?max=5', { cache: 'no-store' });
+        const data = await res.json();
+        if (data.ok && data.messages?.length) {
+          inboxHtml = `<div style="margin-top:14px">${data.messages.map(m => `
+            <div style="padding:10px 0;border-top:1px solid var(--border);font-size:13px">
+              <div style="font-weight:600">${esc(m.subject)}</div>
+              <div style="color:var(--gray);font-size:12px">${esc(m.from)}</div>
+              <div style="color:var(--gray);margin-top:4px">${esc(m.snippet || '')}</div>
+            </div>`).join('')}</div>`;
+        } else if (data.error) {
+          inboxHtml = `<p style="margin-top:12px;font-size:13px;color:var(--red)">${esc(data.error)}</p>`;
+        } else {
+          inboxHtml = `<p style="margin-top:12px;font-size:13px;color:var(--gray)">Inbox is empty.</p>`;
+        }
+      } catch (e) {
+        inboxHtml = `<p style="margin-top:12px;font-size:13px;color:var(--red)">${esc(e.message)}</p>`;
+      }
+    }
+    const badge = connected
+      ? `<span class="badge" style="background:#dcfce7;color:var(--green)">Connected · ${esc(status.emailAddress || '')}</span>`
+      : configured
+        ? `<span class="badge">Not connected</span>`
+        : `<span class="badge" style="background:#fee2e2;color:var(--red)">Secret missing</span>`;
+    return `
+      <div class="card" style="margin-bottom:20px">
+        <h3>Gmail</h3>
+        <p style="font-size:13px;color:var(--gray);margin:8px 0 14px">Connect admin inbox to read / send mail via Gmail API.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          ${badge}
+          <a class="btn btn-primary" href="/api/gmail/auth" style="padding:9px 16px">Connect Gmail</a>
+          <button class="btn btn-ghost" id="gmail-refresh" type="button">Refresh status</button>
+        </div>
+        ${!configured ? `<p style="font-size:12px;color:var(--red);margin-top:8px">Add <code>GMAIL_CLIENT_SECRET</code> in Netlify env, redeploy, then connect. See docs/gmail-setup.md</p>` : ''}
+        ${status.error && !connected ? `<p style="font-size:12px;color:var(--gray);margin-top:8px">${esc(status.error)}</p>` : ''}
+        ${connected ? `
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <p style="font-size:13px;font-weight:600;margin-bottom:8px">Invite builders to quote</p>
+            <p style="font-size:12px;color:var(--gray);margin-bottom:10px">Emails approved ORVO builders about an open request. Placeholders: {{name}} {{title}} {{category}} {{budget}} {{link}}</p>
+            <div class="field"><label>Open request</label><select id="invite-request"><option value="">— pick or type title below —</option></select></div>
+            <div class="field"><label>Title</label><input id="invite-title" type="text" placeholder="WhatsApp booking bot"/></div>
+            <div class="field"><label>Category</label><input id="invite-category" type="text" placeholder="WhatsApp / Chat"/></div>
+            <div class="field"><label>Budget</label><input id="invite-budget" type="text" placeholder="$800"/></div>
+            <div class="field"><label>Subject</label><input id="invite-subject" type="text" value="ORVO: new request — {{title}} — invite to quote"/></div>
+            <div class="field"><label>Body</label><textarea id="invite-body" rows="7">Hi {{name}},
+
+There's a new open request on ORVO:
+
+Title: {{title}}
+Category: {{category}}
+Budget: {{budget}}
+
+You're invited to review it and send a quote on ORVO:
+{{link}}
+
+Thanks,
+ORVO</textarea></div>
+            <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost" id="invite-dry" type="button">Dry-run</button>
+              <button class="btn btn-primary" id="invite-send" type="button">Send invites</button>
+            </div>
+            <p id="invite-status" style="font-size:12px;color:var(--gray);margin-top:10px"></p>
+          </div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <p style="font-size:13px;font-weight:600;margin-bottom:8px">Send test email</p>
+            <div class="field"><label>To</label><input id="gmail-to" type="email" placeholder="someone@example.com"/></div>
+            <div class="field"><label>Subject</label><input id="gmail-subject" type="text" placeholder="ORVO test"/></div>
+            <div class="field"><label>Body</label><textarea id="gmail-body" rows="3" placeholder="Hello from ORVO"></textarea></div>
+            <button class="btn btn-black" id="gmail-send" type="button" style="margin-top:8px">Send</button>
+          </div>
+          <div style="margin-top:16px">
+            <p style="font-size:13px;font-weight:600">Recent inbox</p>
+            ${inboxHtml}
+          </div>` : ''}
+      </div>`;
+  }
+
+  async function loadInviteRequestOptions() {
+    const sel = $('invite-request');
+    if (!sel) return;
+    try {
+      const { data } = await needDb().from('requests')
+        .select('id,title,category,budget,status')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      (data || []).forEach((r) => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.title || r.id;
+        opt.dataset.title = r.title || '';
+        opt.dataset.category = r.category || '';
+        opt.dataset.budget = r.budget || '';
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', () => {
+        const opt = sel.selectedOptions[0];
+        if (!opt || !opt.value) return;
+        if ($('invite-title')) $('invite-title').value = opt.dataset.title || '';
+        if ($('invite-category')) $('invite-category').value = opt.dataset.category || '';
+        if ($('invite-budget')) $('invite-budget').value = opt.dataset.budget || '';
+      });
+    } catch { /* ignore */ }
+  }
+
+  async function loadApprovedBuilders() {
+    const { data, error } = await needDb().from('builder_applications')
+      .select('email,full_name,skills,status')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    return (data || [])
+      .map((b) => ({
+        email: (b.email || '').trim(),
+        name: (b.full_name || '').trim(),
+        skills: (b.skills || '').trim(),
+      }))
+      .filter((b) => b.email && b.email.includes('@'));
+  }
+
+  async function runBuilderInvites(dryRun) {
+    const statusEl = $('invite-status');
+    const setStatus = (t) => { if (statusEl) statusEl.textContent = t; };
+    try {
+      const title = $('invite-title')?.value.trim() || '';
+      const category = $('invite-category')?.value.trim() || 'General';
+      const budget = $('invite-budget')?.value.trim() || 'See request';
+      const subject = $('invite-subject')?.value.trim() || '';
+      const body = $('invite-body')?.value || '';
+      if (!title) { toast('Request title required', false); return; }
+      if (!subject || !body) { toast('Subject + body required', false); return; }
+
+      setStatus('Loading approved builders…');
+      const builders = await loadApprovedBuilders();
+      if (!builders.length) {
+        toast('No approved builders found', false);
+        setStatus('No approved builders in builder_applications.');
+        return;
+      }
+
+      const link = window.location.origin + '/';
+      const batchSize = 20;
+      let sent = 0;
+      let failed = 0;
+      for (let i = 0; i < builders.length; i += batchSize) {
+        const batch = builders.slice(i, i + batchSize);
+        setStatus(`${dryRun ? 'Dry-run' : 'Sending'} ${i + 1}–${i + batch.length} of ${builders.length}…`);
+        const res = await fetch('/api/gmail/invite-builders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            builders: batch,
+            title, category, budget, link, subject, body,
+            dryRun: Boolean(dryRun),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok && data.error) throw new Error(data.error);
+        sent += data.sent || (dryRun ? batch.length : 0);
+        failed += data.failed || 0;
+        if (!data.ok && data.error && !(data.results || []).length) throw new Error(data.error);
+      }
+      const msg = dryRun
+        ? `Dry-run OK · ${builders.length} builders (nothing sent)`
+        : `Invites done · sent ${sent}, failed ${failed}, total ${builders.length}`;
+      setStatus(msg);
+      toast(msg, failed === 0);
+    } catch (e) {
+      setStatus(e.message);
+      toast(e.message, false);
+    }
+  }
+
+  function bindGmailPanel() {
+    $('gmail-refresh')?.addEventListener('click', loadAdmin);
+    loadInviteRequestOptions();
+    $('invite-dry')?.addEventListener('click', () => runBuilderInvites(true));
+    $('invite-send')?.addEventListener('click', () => {
+      if (!confirm('Send invite emails to all approved builders?')) return;
+      runBuilderInvites(false);
+    });
+    $('gmail-send')?.addEventListener('click', async () => {
+      const to = $('gmail-to')?.value.trim();
+      const subject = $('gmail-subject')?.value.trim();
+      const body = $('gmail-body')?.value || '';
+      if (!to || !subject) { toast('To + subject required', false); return; }
+      try {
+        const res = await fetch('/api/gmail/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, body }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Send failed');
+        toast('Email sent', true);
+        $('gmail-to').value = '';
+        $('gmail-subject').value = '';
+        $('gmail-body').value = '';
+      } catch (e) { toast(e.message, false); }
+    });
+  }
+
   // ── ADMIN ──
   async function loadAdmin() {
     if (!isAdmin()) {
@@ -687,22 +903,25 @@
     refreshAdminBadge();
     $('view-action').innerHTML = '<button class="btn btn-ghost" id="admin-refresh">Refresh</button>';
     $('admin-refresh')?.addEventListener('click', loadAdmin);
+    const gmailHtml = await loadGmailPanelHtml();
     const { data, error } = await needDb().from('builder_applications')
       .select('*').eq('status', 'pending').order('created_at', { ascending: false });
     if (error) {
-      $('view-body').innerHTML = `<p class="empty err">${esc(error.message)}<br><br>Run <b>sql-RUN-NOW.sql</b> in Supabase SQL Editor</p>`;
+      $('view-body').innerHTML = `${gmailHtml}<p class="empty err">${esc(error.message)}<br><br>Run <b>sql-RUN-NOW.sql</b> in Supabase SQL Editor</p>`;
+      bindGmailPanel();
       return;
     }
     if (!data?.length) {
-      $('view-body').innerHTML = `<p class="empty">No pending applications yet.</p>
+      $('view-body').innerHTML = `${gmailHtml}<p class="empty">No pending applications yet.</p>
         <p class="empty" style="padding-top:12px;font-size:13px;color:var(--gray)">
           Builder must click <b>Submit application</b> (bio 50+ chars).<br>
           Check Supabase → Table Editor → builder_applications.<br>
           Click <b>Refresh</b> above after a builder applies.
         </p>`;
+      bindGmailPanel();
       return;
     }
-    $('view-body').innerHTML = data.map(a => `
+    $('view-body').innerHTML = gmailHtml + data.map(a => `
       <div class="card">
         <h3>${esc(a.full_name)}</h3>
         <p style="font-size:13px;color:var(--gray);margin-bottom:8px">${esc(a.email || '')}</p>
@@ -713,6 +932,7 @@
           <button class="btn btn-ghost btn-reject" data-uid="${a.user_id}">Reject</button>
         </div>
       </div>`).join('');
+    bindGmailPanel();
     $('view-body').querySelectorAll('.btn-approve').forEach(b => b.addEventListener('click', () => approveBuilder(b.dataset.uid)));
     $('view-body').querySelectorAll('.btn-reject').forEach(b => b.addEventListener('click', () => rejectBuilder(b.dataset.uid)));
   }

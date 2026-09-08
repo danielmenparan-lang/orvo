@@ -1,5 +1,46 @@
 [build]
   publish = "."
+  functions = "netlify/functions"
+  command = "npm install"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/oauth2callback"
+  to = "/.netlify/functions/gmail-callback"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/gmail/auth"
+  to = "/.netlify/functions/gmail-auth"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/gmail/status"
+  to = "/.netlify/functions/gmail-status"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/gmail/inbox"
+  to = "/.netlify/functions/gmail-inbox"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/gmail/send"
+  to = "/.netlify/functions/gmail-send"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/gmail/invite-builders"
+  to = "/.netlify/functions/gmail-invite-builders"
+  status = 200
+  force = true
 
 [[headers]]
   for = "/assets/videos/*"
