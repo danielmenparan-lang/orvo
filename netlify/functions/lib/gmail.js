@@ -245,11 +245,11 @@ function buildRawEmail({ to, subject, body, from }) {
     `Subject: ${encodeSubject(subject)}`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset="UTF-8"',
-    'Content-Transfer-Encoding: 7bit',
+    'Content-Transfer-Encoding: 8bit',
     '',
     body || '',
   ].filter((line) => line !== null);
-  return Buffer.from(lines.join('\r\n'))
+  return Buffer.from(lines.join('\r\n'), 'utf8')
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')

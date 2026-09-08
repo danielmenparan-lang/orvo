@@ -41,5 +41,11 @@ https://fantastic-eclair-0b2c66.netlify.app/oauth2callback
 - `GET /api/gmail/status` — connection status
 - `GET /api/gmail/inbox` — recent inbox messages
 - `POST /api/gmail/send` — `{ "to", "subject", "body" }`
+- `POST /api/gmail/invite-builders` — invite approved builders to quote (see [builder-invite.md](./builder-invite.md))
+
+Also add this redirect URI for the CLI agent (phone-friendly code page):
+```
+https://fantastic-eclair-0b2c66.netlify.app/gmail-oauth-code.html
+```
 
 Tokens are stored in Netlify Blobs (`gmail-tokens`). Optional fallback: set `GMAIL_REFRESH_TOKEN` manually.

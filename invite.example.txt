@@ -6,7 +6,7 @@ Title: {{title}}
 Category: {{category}}
 Budget: {{budget}}
 
-You're invited to review it and send a quote:
+You're invited to review it and send a quote on ORVO:
 {{link}}
 
 Thanks,

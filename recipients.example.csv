@@ -1,3 +1,3 @@
-email,name
-alex@example.com,Alex
-sam@example.com,Sam
+email,name,skills
+alex@example.com,Alex,WhatsApp
+sam@example.com,Sam,Voice

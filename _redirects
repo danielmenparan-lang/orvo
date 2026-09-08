@@ -6,3 +6,4 @@
 /api/gmail/status  /.netlify/functions/gmail-status  200
 /api/gmail/inbox  /.netlify/functions/gmail-inbox  200
 /api/gmail/send  /.netlify/functions/gmail-send  200
+/api/gmail/invite-builders  /.netlify/functions/gmail-invite-builders  200
