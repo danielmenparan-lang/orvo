@@ -347,14 +347,23 @@ async function exchangeCode(code) {
 async function accessToken() {
   const s = secrets();
   let tokens = loadJson(TOKENS_PATH);
-  if (!tokens?.refresh_token) throw new Error('OAuth not connected. Use app_password or run exchange <CODE>.');
-  if (tokens.access_token && tokens.expiry_date > Date.now() + 60_000) return tokens.access_token;
+  if (!tokens?.access_token && !tokens?.refresh_token) {
+    throw new Error('OAuth not connected. Paste refresh/access token or use Resend.');
+  }
+  if (tokens.access_token && tokens.expiry_date > Date.now() + 30_000) {
+    return tokens.access_token;
+  }
+  if (!tokens.refresh_token) {
+    throw new Error('Access token expired and no refresh_token. Re-authorize in OAuth Playground.');
+  }
+  const clientId = tokens.oauth_client_id || s.client_id;
+  const clientSecret = tokens.oauth_client_secret || s.client_secret;
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: s.client_id,
-      client_secret: s.client_secret,
+      client_id: clientId,
+      client_secret: clientSecret,
       refresh_token: tokens.refresh_token,
       grant_type: 'refresh_token',
     }),
@@ -373,7 +382,7 @@ async function accessToken() {
 
 async function sendViaGmailApi({ to, subject, body }) {
   const s = secrets();
-  const from = s.from || s.email || 'me';
+  const from = s.email || 'danielmen.paran@gmail.com';
   const token = await accessToken();
   const mime = buildMime({ from, to, subject, body });
   const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -416,12 +425,18 @@ async function sendViaResend({ to, subject, body }) {
   return { id: data.id, to };
 }
 
+function hasGmailToken() {
+  const tokens = loadJson(TOKENS_PATH);
+  return Boolean(tokens?.access_token || tokens?.refresh_token);
+}
+
 async function sendOne(payload) {
+  // Prefer Gmail so mail is sent FROM the user's Gmail address
+  if (hasGmailToken()) return sendViaGmailApi(payload);
   if (hasResend()) return sendViaResend(payload);
   if (hasAppPassword()) return sendViaSmtp(payload);
-  if (loadJson(TOKENS_PATH)?.refresh_token) return sendViaGmailApi(payload);
   throw new Error(
-    'Not ready to send. Add resend_api_key to gmail-secrets.json (recommended), or Gmail app_password / OAuth tokens.'
+    'Not ready to send. Add Gmail OAuth tokens, resend_api_key, or app_password.'
   );
 }
 
@@ -497,7 +512,15 @@ async function main() {
 
     console.log(JSON.stringify({
       ok: true,
-      mode: dryRun ? 'dry-run' : (hasResend() ? 'resend' : hasAppPassword() ? 'smtp' : 'gmail-api'),
+      mode: dryRun
+        ? 'dry-run'
+        : hasGmailToken()
+          ? 'gmail-api'
+          : hasResend()
+            ? 'resend'
+            : hasAppPassword()
+              ? 'smtp'
+              : 'unknown',
       total: recipients.length,
       delay_ms: delay,
     }));
