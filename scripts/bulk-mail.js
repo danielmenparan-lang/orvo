@@ -2,15 +2,12 @@
 /**
  * ORVO automatic bulk email system
  *
- * Credentials (gmail-secrets.json):
- *   - client_id / client_secret  (Gmail API OAuth) OR
- *   - app_password + email       (Gmail SMTP — simplest)
+ * Preferred (works now, no Google OAuth):
+ *   resend_api_key + from_email in gmail-secrets.json
  *
- * Commands:
- *   node scripts/bulk-mail.js send --list recipients.csv --subject "Hi {{name}}" --body-file message.txt
- *   node scripts/bulk-mail.js send --list recipients.csv --subject "Hi" --body "Hello {{name}}" --dry-run
- *   node scripts/bulk-mail.js auth-url
- *   node scripts/bulk-mail.js exchange <CODE>
+ * Also supported:
+ *   - Gmail App Password (SMTP)
+ *   - Gmail OAuth client_id/client_secret + tokens
  */
 
 const fs = require('fs');
@@ -47,12 +44,21 @@ function hasAppPassword(s = secrets()) {
   return Boolean(pass && pass !== 'PASTE_APP_PASSWORD_HERE' && (s.email || s.user));
 }
 
+function hasResend(s = secrets()) {
+  const key = s.resend_api_key || s.RESEND_API_KEY || '';
+  return Boolean(key && key !== 'PASTE_RESEND_API_KEY_HERE' && key.startsWith('re_'));
+}
+
 function hasOAuth(s = secrets()) {
   return Boolean(
     s.client_id &&
     s.client_secret &&
     s.client_secret !== 'PASTE_SECRET_HERE'
   );
+}
+
+function sendReady(s = secrets()) {
+  return hasResend(s) || hasAppPassword(s) || Boolean(loadJson(TOKENS_PATH)?.refresh_token);
 }
 
 function redirectUri() {
@@ -383,11 +389,33 @@ async function sendViaGmailApi({ to, subject, body }) {
   return data;
 }
 
+async function sendViaResend({ to, subject, body }) {
+  const s = secrets();
+  const from = s.from_email || s.from || s.email || 'onboarding@resend.dev';
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${s.resend_api_key || s.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject,
+      text: body,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || JSON.stringify(data));
+  return { id: data.id, to };
+}
+
 async function sendOne(payload) {
+  if (hasResend()) return sendViaResend(payload);
   if (hasAppPassword()) return sendViaSmtp(payload);
   if (loadJson(TOKENS_PATH)?.refresh_token) return sendViaGmailApi(payload);
   throw new Error(
-    'Not ready to send. Add app_password+email to gmail-secrets.json (recommended), or finish OAuth exchange.'
+    'Not ready to send. Add resend_api_key to gmail-secrets.json (recommended), or Gmail app_password / OAuth tokens.'
   );
 }
 
@@ -410,13 +438,20 @@ async function main() {
     const tokens = loadJson(TOKENS_PATH);
     console.log(JSON.stringify({
       ok: true,
-      email: s.email || s.user || null,
+      email: s.email || s.user || s.from_email || null,
       has_client_id: Boolean(s.client_id),
       has_client_secret: hasOAuth(s),
+      has_resend: hasResend(s),
       has_app_password: hasAppPassword(s),
       oauth_connected: Boolean(tokens?.refresh_token),
-      send_ready: hasAppPassword(s) || Boolean(tokens?.refresh_token),
-      mode: hasAppPassword(s) ? 'smtp-app-password' : tokens?.refresh_token ? 'gmail-api-oauth' : 'not-ready',
+      send_ready: sendReady(s),
+      mode: hasResend(s)
+        ? 'resend'
+        : hasAppPassword(s)
+          ? 'smtp-app-password'
+          : tokens?.refresh_token
+            ? 'gmail-api-oauth'
+            : 'not-ready',
     }, null, 2));
     return;
   }
@@ -450,13 +485,13 @@ async function main() {
     const delay = Number(args.delay || 1500);
     const dryRun = Boolean(args['dry-run']);
 
-    if (!dryRun && !hasAppPassword() && !loadJson(TOKENS_PATH)?.refresh_token) {
-      throw new Error('Send blocked: add Gmail App Password to gmail-secrets.json (email + app_password), then retry.');
+    if (!dryRun && !sendReady()) {
+      throw new Error('Send blocked: add resend_api_key (from resend.com) to gmail-secrets.json, then retry.');
     }
 
     console.log(JSON.stringify({
       ok: true,
-      mode: dryRun ? 'dry-run' : (hasAppPassword() ? 'smtp' : 'gmail-api'),
+      mode: dryRun ? 'dry-run' : (hasResend() ? 'resend' : hasAppPassword() ? 'smtp' : 'gmail-api'),
       total: recipients.length,
       delay_ms: delay,
     }));

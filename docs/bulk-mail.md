@@ -1,24 +1,22 @@
-# Automatic bulk email — ready
+# Automatic bulk email system — READY
 
-The system is built: `scripts/bulk-mail.js`
+The sender is built: `scripts/bulk-mail.js`
 
-You already provided Client ID + Client Secret. Those are saved.
+## Fastest way to send (skip Google Cloud)
 
-## Why it still can't send yet
-Google will not let any app send mail with only Client ID/Secret.
-It needs **one** of these:
+Google OAuth got stuck on your Cloud project (Internal / Branding).  
+Use **Resend** instead — one API key, then mass send works.
 
-### Option A (recommended, 1 minute on phone): App Password
-1. Open https://myaccount.google.com/apppasswords
-2. Create password named `ORVO`
-3. Send the 16 characters to the agent
-4. Give your recipient list + message text
+1. Open https://resend.com/signup (sign up with Google is fine)
+2. Create API key: https://resend.com/api-keys
+3. Send the key to the agent (starts with `re_`)
+4. Send your recipient list + message text
 5. Agent runs bulk send
 
-### Option B: OAuth Allow
-Finish External + Allow, paste `code=` once.
+Free tier works for testing. Default from-address: `onboarding@resend.dev`  
+(For your own domain later: verify domain in Resend, set `from_email`)
 
-## Send command (after auth)
+## Command
 ```bash
 node scripts/bulk-mail.js send \
   --list recipients.csv \
@@ -26,7 +24,6 @@ node scripts/bulk-mail.js send \
   --body-file message.txt
 ```
 
-Dry-run:
-```bash
-node scripts/bulk-mail.js send --list recipients.csv --subject "Test" --body "Hi {{name}}" --dry-run
-```
+## Also kept (optional)
+- Gmail Client ID/Secret you already provided
+- Gmail App Password / OAuth paths (blocked on your account right now)
