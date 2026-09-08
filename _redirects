@@ -1,3 +1,8 @@
 /assets/*  /assets/:splat  200
 /video.html  /video.html  200
 /characters.html  /characters.html  200
+/oauth2callback  /.netlify/functions/gmail-callback  200
+/api/gmail/auth  /.netlify/functions/gmail-auth  200
+/api/gmail/status  /.netlify/functions/gmail-status  200
+/api/gmail/inbox  /.netlify/functions/gmail-inbox  200
+/api/gmail/send  /.netlify/functions/gmail-send  200

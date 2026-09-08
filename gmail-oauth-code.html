@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ORVO — קוד Gmail</title>
+  <style>
+    body{font-family:system-ui,sans-serif;background:#F9F9F7;color:#0A0A0A;margin:0;padding:24px;line-height:1.5}
+    .box{max-width:520px;margin:40px auto;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:28px}
+    h1{font-size:22px;margin:0 0 12px}
+    p{color:#6B6B6B;margin:0 0 16px}
+    code,pre{display:block;background:#111;color:#fff;padding:16px;border-radius:10px;word-break:break-all;font-size:14px;white-space:pre-wrap}
+    .err{color:#B91C1C}
+    button{margin-top:14px;background:#FF6B35;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:600;width:100%}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>קוד חיבור Gmail</h1>
+    <div id="out"><p>טוען…</p></div>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const err = params.get('error');
+    const code = params.get('code');
+    const out = document.getElementById('out');
+    if (err) {
+      out.innerHTML = '<p class="err">Google החזיר שגיאה: <b>' + err + '</b></p>';
+    } else if (!code) {
+      out.innerHTML = '<p class="err">לא נמצא קוד בכתובת. פתח שוב את קישור החיבור מהסוכן.</p>';
+    } else {
+      out.innerHTML =
+        '<p>העתק את הקוד הזה ושלח אותו לסוכן ב־Cursor:</p>' +
+        '<pre id="code">' + code.replace(/[<>&]/g, '') + '</pre>' +
+        '<button type="button" id="copy">העתק קוד</button>' +
+        '<p style="margin-top:16px;font-size:13px">אחרי ההעתקה אפשר לסגור את העמוד.</p>';
+      document.getElementById('copy').onclick = async () => {
+        await navigator.clipboard.writeText(code);
+        document.getElementById('copy').textContent = 'הועתק ✓';
+      };
+    }
+  </script>
+</body>
+</html>

@@ -1,1 +1,8 @@
 assets/orvo24/production.log
+.env
+.env.*
+!.env.example
+gmail-secrets.json
+gmail-tokens.json
+node_modules/
+.netlify/

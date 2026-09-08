@@ -1,0 +1,9 @@
+{
+  "name": "orvo",
+  "private": true,
+  "description": "ORVO AI Agent Marketplace",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "@netlify/functions": "^2.8.1"
+  }
+}
