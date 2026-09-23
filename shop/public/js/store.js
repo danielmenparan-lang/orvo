@@ -33,6 +33,7 @@ function addToCart(product, qty = 1) {
   }
   saveCart(cart);
   toast('נוסף לעגלה');
+  return cart;
 }
 
 function removeFromCart(id) {

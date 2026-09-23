@@ -141,27 +141,31 @@ body > * { position: relative; z-index: 1; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.75) 100%),
+    linear-gradient(180deg, transparent 10%, rgba(0,0,0,0.55) 100%),
     repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.03) 80px, rgba(255,255,255,0.03) 81px),
-    radial-gradient(circle at 70% 40%, #2a2a2a 0%, #0a0a0a 55%);
+    radial-gradient(circle at 30% 40%, #222 0%, #0a0a0a 58%);
 }
 .hero-media::after {
   content: '';
   position: absolute;
-  inset: 15% 8% auto auto;
-  width: min(48vw, 520px);
+  top: 12%;
+  left: 6%;
+  width: min(42vw, 460px);
   aspect-ratio: 1;
   border: 1px solid rgba(255,255,255,0.18);
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.12), transparent 55%),
+    linear-gradient(145deg, rgba(255,255,255,0.14), transparent 55%),
     #171717;
   animation: floatPlane 8s var(--ease) infinite alternate;
+  pointer-events: none;
 }
 .hero-content {
   position: relative;
   z-index: 2;
-  padding: 4rem 0 3.5rem;
-  max-width: 640px;
+  padding: 4.5rem 0 3.75rem;
+  max-width: min(640px, 92%);
+  margin-inline-start: 0;
+  margin-inline-end: auto;
 }
 .hero-brand {
   font-family: 'Syne', sans-serif;

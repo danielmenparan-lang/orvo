@@ -65,14 +65,21 @@
           </div>
           <div style="display:flex;gap:.75rem;flex-wrap:wrap">
             <button class="btn" id="add-btn" type="button">הוסף לעגלה</button>
-            <a class="btn btn-ghost" href="/checkout">קנה עכשיו</a>
+            <button class="btn btn-ghost" id="buy-btn" type="button">קנה עכשיו</button>
           </div>
         </div>`;
 
-      document.getElementById('add-btn').addEventListener('click', () => {
+      const add = () => {
         const qty = Number(document.getElementById('qty').value) || 1;
         Mono.addToCart(p, qty);
+      };
+      document.getElementById('add-btn').addEventListener('click', () => {
+        add();
         Mono.openCart();
+      });
+      document.getElementById('buy-btn').addEventListener('click', () => {
+        add();
+        location.href = '/checkout';
       });
     }
 

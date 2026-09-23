@@ -42,7 +42,7 @@ function publicProduct(row, { admin = false } = {}) {
     base.margin_pct = row.margin_pct;
     base.aliexpress_url = row.aliexpress_url;
     base.aliexpress_search = row.aliexpress_search;
-    base.est_profit_ils = Math.round(row.price_ils - row.cost_usd * 3.7);
+    base.est_profit_ils = Math.round(row.price_ils - row.cost_usd * 3.3);
   }
   return base;
 }
@@ -237,7 +237,7 @@ app.get('/api/admin/dashboard', auth, (_req, res) => {
     WHERE o.status != 'cancelled'
   `).all();
   const estProfit = profitRows.reduce((sum, r) => {
-    return sum + (r.unit_price_ils - Math.round(r.cost_usd * 3.7)) * r.quantity;
+    return sum + (r.unit_price_ils - Math.round(r.cost_usd * 3.3)) * r.quantity;
   }, 0);
 
   res.json({
