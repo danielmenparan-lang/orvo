@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MONO — חנות גאדג'טים</title>
+  <meta name="description" content="MONO — חנות איקומרס נקייה בשחור־לבן. מוצרים מנצחים עם משלוח לישראל." />
+  <link rel="stylesheet" href="/css/store.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="inner">
+      <a class="brand" href="/">MONO</a>
+      <div class="nav-links">
+        <a href="#catalog">קטלוג</a>
+        <a href="#winners">מוצרים מנצחים</a>
+        <a href="/admin">ניהול</a>
+      </div>
+      <div class="nav-actions">
+        <button class="cart-btn" data-open-cart type="button">
+          עגלה
+          <span class="cart-count" data-cart-count>0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-media" aria-hidden="true"></div>
+    <div class="container hero-content">
+      <div class="hero-brand">MONO</div>
+      <h1>מוצרים מנצחים. מחיר חד. עיצוב שחור־לבן.</h1>
+      <p>חנות דרופשיפינג אמיתית — קטלוג נבחר מאליאקספרס, מסומן ומתומחר למכירה בישראל.</p>
+      <div class="hero-cta">
+        <a class="btn" href="#catalog">לקנות עכשיו</a>
+        <a class="btn btn-ghost" href="#winners">לראות מנצחים</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" id="winners">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <h2>מוצרים מנצחים</h2>
+          <p>נבחרו לפי ביקוש, מרווח ומדיה חברתית — מוכנים למכירה.</p>
+        </div>
+      </div>
+      <div class="product-grid" id="featured-grid"></div>
+    </div>
+  </section>
+
+  <section class="section" id="catalog" style="padding-top:0">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <h2>כל הקטלוג</h2>
+          <p>12 מוצרים פעילים. משלוח חינם מעל ₪249.</p>
+        </div>
+      </div>
+      <div class="filters" id="filters"></div>
+      <div class="product-grid" id="catalog-grid"></div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="inner">
+      <div>
+        <div class="brand">MONO</div>
+        <p style="margin-top:.5rem">חנות שחור־לבן למוצרים שעובדים.</p>
+      </div>
+      <div>
+        <a href="/admin">לוח ניהול</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="drawer-backdrop" data-close-cart></div>
+  <aside class="cart-drawer" aria-label="עגלה">
+    <div class="drawer-head" style="display:flex;justify-content:space-between;align-items:center">
+      <strong>העגלה</strong>
+      <button type="button" data-close-cart>סגור</button>
+    </div>
+    <div class="drawer-body" data-cart-body></div>
+    <div class="drawer-foot">
+      <div class="summary-row total"><span>סה״כ</span><span data-cart-subtotal>₪0</span></div>
+      <a class="btn btn-block" href="/checkout" style="margin-top:1rem">לתשלום</a>
+    </div>
+  </aside>
+
+  <script src="/js/store.js"></script>
+  <script>
+    const categories = [
+      { id: 'all', label: 'הכל' },
+      { id: 'tech', label: 'טק' },
+      { id: 'lifestyle', label: 'לייף־סטייל' },
+      { id: 'auto', label: 'רכב' },
+      { id: 'fitness', label: 'כושר' },
+      { id: 'travel', label: 'נסיעות' },
+      { id: 'home', label: 'בית' },
+      { id: 'beauty', label: 'יופי' },
+    ];
+
+    let allProducts = [];
+    let shippingMeta = { shipping_ils: 29, free_shipping_over: 249 };
+    let activeCat = 'all';
+
+    function bindAddButtons(map) {
+      document.querySelectorAll('[data-add]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const p = map[btn.dataset.add];
+          if (p) Mono.addToCart(p, 1);
+        });
+      });
+    }
+
+    function renderFeatured() {
+      const featured = allProducts.filter((p) => p.featured);
+      const grid = document.getElementById('featured-grid');
+      grid.innerHTML = featured.map(Mono.productCard).join('');
+      const map = Object.fromEntries(featured.map((p) => [p.id, p]));
+      bindAddButtons(map);
+      document.querySelectorAll('#featured-grid .reveal').forEach((el) => {
+        new IntersectionObserver((entries) => {
+          entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible'));
+        }, { threshold: 0.12 }).observe(el);
+      });
+    }
+
+    function renderCatalog() {
+      const list = activeCat === 'all' ? allProducts : allProducts.filter((p) => p.category === activeCat);
+      const grid = document.getElementById('catalog-grid');
+      grid.innerHTML = list.map(Mono.productCard).join('');
+      const map = Object.fromEntries(list.map((p) => [p.id, p]));
+      bindAddButtons(map);
+      document.querySelectorAll('#catalog-grid .reveal').forEach((el) => {
+        new IntersectionObserver((entries) => {
+          entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible'));
+        }, { threshold: 0.12 }).observe(el);
+      });
+    }
+
+    function renderFilters() {
+      const el = document.getElementById('filters');
+      el.innerHTML = categories
+        .map((c) => `<button class="filter-chip ${c.id === activeCat ? 'active' : ''}" data-cat="${c.id}">${c.label}</button>`)
+        .join('');
+      el.querySelectorAll('[data-cat]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeCat = btn.dataset.cat;
+          renderFilters();
+          renderCatalog();
+        });
+      });
+    }
+
+    async function boot() {
+      Mono.mountShell();
+      const data = await Mono.api('/api/products');
+      allProducts = data.products;
+      shippingMeta = data;
+      renderFeatured();
+      renderFilters();
+      renderCatalog();
+    }
+
+    boot().catch((err) => {
+      console.error(err);
+      document.getElementById('catalog-grid').innerHTML = '<p style="color:var(--muted)">לא ניתן לטעון מוצרים. הריצו את השרת.</p>';
+    });
+  </script>
+</body>
+</html>

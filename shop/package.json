@@ -1,0 +1,31 @@
+{
+  "name": "mono-store",
+  "version": "1.0.0",
+  "description": "MONO — black & white dropshipping store with AliExpress sourcing links",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "seed": "node -e \"require('./server/db').initDb()\""
+  },
+  "keywords": [
+    "ecommerce",
+    "dropshipping",
+    "aliexpress"
+  ],
+  "author": "MONO",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

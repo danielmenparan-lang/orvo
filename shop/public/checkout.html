@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>תשלום — MONO</title>
+  <link rel="stylesheet" href="/css/store.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="inner">
+      <a class="brand" href="/">MONO</a>
+      <a href="/#catalog" style="color:var(--muted)">המשך בקניות</a>
+    </div>
+  </nav>
+
+  <main class="container checkout-layout">
+    <section class="panel">
+      <h2>פרטי משלוח</h2>
+      <form class="form-grid" id="checkout-form">
+        <label>שם מלא<input name="customer_name" required placeholder="ישראל ישראלי" /></label>
+        <label>אימייל<input name="customer_email" type="email" required placeholder="you@email.com" /></label>
+        <label>טלפון<input name="customer_phone" required placeholder="050-0000000" /></label>
+        <label>עיר<input name="city" required placeholder="תל אביב" /></label>
+        <label>כתובת<textarea name="address" rows="3" required placeholder="רחוב, מספר, דירה"></textarea></label>
+        <label>הערות<textarea name="notes" rows="2" placeholder="אופציונלי"></textarea></label>
+        <button class="btn" type="submit">אישור הזמנה</button>
+      </form>
+      <p id="checkout-msg" style="margin-top:1rem;color:var(--muted)"></p>
+    </section>
+
+    <aside class="panel">
+      <h2>סיכום</h2>
+      <div id="summary-lines"></div>
+      <div class="summary-row" style="margin-top:1rem"><span>ביניים</span><span id="sum-sub">₪0</span></div>
+      <div class="summary-row"><span>משלוח</span><span id="sum-ship">₪0</span></div>
+      <div class="summary-row total"><span>לתשלום</span><span id="sum-total">₪0</span></div>
+      <p style="margin-top:1rem;color:var(--muted);font-size:.85rem">לאחר האישור תקבל מספר הזמנה. התשלום יאושר ידנית / בהמשך דרך סליקה.</p>
+    </aside>
+  </main>
+
+  <script src="/js/store.js"></script>
+  <script>
+    let shippingIls = 29;
+    let freeOver = 249;
+
+    function renderSummary() {
+      const cart = Mono.getCart();
+      const box = document.getElementById('summary-lines');
+      if (!cart.length) {
+        box.innerHTML = '<p style="color:var(--muted)">העגלה ריקה.</p>';
+        document.getElementById('sum-sub').textContent = '₪0';
+        document.getElementById('sum-ship').textContent = '₪0';
+        document.getElementById('sum-total').textContent = '₪0';
+        return;
+      }
+      box.innerHTML = cart.map((i) => `
+        <div class="summary-row">
+          <span>${i.name_he} × ${i.qty}</span>
+          <span>${Mono.money(i.price_ils * i.qty)}</span>
+        </div>`).join('');
+      const sub = Mono.cartSubtotal();
+      const ship = sub >= freeOver ? 0 : shippingIls;
+      document.getElementById('sum-sub').textContent = Mono.money(sub);
+      document.getElementById('sum-ship').textContent = ship ? Mono.money(ship) : 'חינם';
+      document.getElementById('sum-total').textContent = Mono.money(sub + ship);
+    }
+
+    document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('checkout-msg');
+      const cart = Mono.getCart();
+      if (!cart.length) {
+        msg.textContent = 'העגלה ריקה.';
+        return;
+      }
+      const fd = new FormData(e.target);
+      const payload = Object.fromEntries(fd.entries());
+      payload.items = cart.map((i) => ({ product_id: i.id, quantity: i.qty }));
+      msg.textContent = 'שולח הזמנה...';
+      try {
+        const { order } = await Mono.api('/api/orders', { method: 'POST', body: JSON.stringify(payload) });
+        Mono.saveCart([]);
+        msg.innerHTML = `ההזמנה התקבלה. מספר: <strong>${order.order_number}</strong> · סה״כ ${Mono.money(order.total_ils)}`;
+        e.target.reset();
+        renderSummary();
+      } catch (err) {
+        msg.textContent = 'שגיאה ביצירת הזמנה. נסו שוב.';
+        console.error(err);
+      }
+    });
+
+    Mono.api('/api/products').then((data) => {
+      shippingIls = data.shipping_ils;
+      freeOver = data.free_shipping_over;
+      renderSummary();
+    }).catch(() => renderSummary());
+  </script>
+</body>
+</html>
