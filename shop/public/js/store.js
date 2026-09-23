@@ -150,8 +150,8 @@ function stars(rating) {
 
 function scarcityLabel(p) {
   const left = Number(p.limited_left ?? p.stock ?? 0);
-  if (left <= 5) return `נותרו רק ${left} יחידות במהדורה`;
-  if (left <= 12) return `${left} יחידות אחרונות בסטוק האטלייה`;
+  if (left <= 5) return `נותרו רק ${left} יחידות במלאי`;
+  if (left <= 12) return `${left} יחידות אחרונות בקולקציה`;
   return `${p.sold_month || 0}+ נרכשו החודש`;
 }
 
