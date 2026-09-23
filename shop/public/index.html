@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MONO — מזוודות · תיקים · כובעים · ג'קטים</title>
+  <meta name="description" content="MONO — קולקציית נסיעות ולבוש עליון. מזוודות, תיקים, כובעים וג'קטים בעיצוב שחור־לבן." />
+  <link rel="stylesheet" href="/css/store.css" />
+</head>
+<body>
+  <div class="proof-bar" aria-hidden="true">
+    <div class="proof-track" id="proof-track">
+      <span>משלוח דיסקרטי · אריזה שחורה</span>
+      <span>החזרה תוך 30 יום</span>
+      <span>מלאי קצר · לא מבצע המוני</span>
+      <span>נבחר ללוק נסיעות ולבוש עליון</span>
+      <span>משלוח דיסקרטי · אריזה שחורה</span>
+      <span>החזרה תוך 30 יום</span>
+      <span>מלאי קצר · לא מבצע המוני</span>
+      <span>נבחר ללוק נסיעות ולבוש עליון</span>
+    </div>
+  </div>
+
+  <nav class="site-nav">
+    <div class="inner">
+      <a class="brand" href="/">MONO</a>
+      <div class="nav-links">
+        <a href="#edition">נבחרים</a>
+        <a href="#catalog">הקולקציה</a>
+        <a href="#promises">הבטחה</a>
+      </div>
+      <div class="nav-actions">
+        <button class="cart-btn" data-open-cart type="button">
+          תיק
+          <span class="cart-count" data-cart-count>0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-media" aria-hidden="true"></div>
+    <div class="container hero-content">
+      <div class="hero-kicker">Travel & Outerwear · Lookbook 01</div>
+      <div class="hero-brand">MONO</div>
+      <h1>מזוודות, תיקים, כובעים וג'קטים שמחזיקים לוק.</h1>
+      <p>קולקציה שחורה־לבנה לפריטי נסיעה ולבוש עליון — פחות גאדג'טים, יותר מה ששמים עליך ולוקחים איתך.</p>
+      <div class="hero-cta">
+        <a class="btn btn-gold" href="#edition">לנבחרים</a>
+        <a class="btn btn-ghost" href="#catalog">כל הקולקציה</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="ritual-strip reveal">
+      <div>
+        <div class="label">סגירת המהדורה</div>
+        <div class="countdown" id="edition-countdown">--</div>
+        <p style="color:var(--muted);font-size:.85rem;margin-top:.45rem">אחרי הסגירה חוזרים למחירון המלא.</p>
+      </div>
+      <div>
+        <div class="label">מה יש בפנים</div>
+        <p style="font-family:var(--serif);font-size:1.25rem;line-height:1.35">
+          מזוודות קשיחות · דאפלים · תיקי גב · פדורה · בומבר · מעיל צמר · בייקר.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <section class="section" id="edition">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <h2>נבחרים עכשיו</h2>
+          <p>הפריטים שהכי מתאימים ללוק נסיעות ולשכבה עליונה — מלאי קצר.</p>
+        </div>
+      </div>
+      <div class="product-grid" id="featured-grid"></div>
+    </div>
+  </section>
+
+  <section class="section" id="catalog" style="padding-top:0">
+    <div class="container">
+      <div class="section-head reveal">
+        <div>
+          <h2>הקולקציה</h2>
+          <p>מזוודות · תיקים · כובעים · ג'קטים. בלי רעש מותגי.</p>
+        </div>
+      </div>
+      <div class="filters" id="filters"></div>
+      <div class="product-grid" id="catalog-grid"></div>
+
+      <div class="promise-grid" id="promises">
+        <article class="reveal">
+          <h3>לוק, לא גאדג'ט</h3>
+          <p>התמקדנו במה שלובשים ולוקחים לטיסה — לא במסכים ובמטענים דיגיטליים.</p>
+        </article>
+        <article class="reveal">
+          <h3>אריזה שחורה</h3>
+          <p>בלי מיתוג ספק על הקופסה. נפתח כמו בוטיק, לא כמו חנות סיטונאית.</p>
+        </article>
+        <article class="reveal">
+          <h3>30 ימי החזרה</h3>
+          <p>לא יושב? לא מרגיש נכון על הגוף או בנסיעה — מחזירים.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="inner">
+      <div>
+        <div class="brand">MONO</div>
+        <p style="margin-top:.55rem">מזוודות · תיקים · כובעים · ג'קטים.</p>
+      </div>
+      <div>
+        <a href="/admin" style="opacity:.55">ניהול</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="drawer-backdrop" data-close-cart></div>
+  <aside class="cart-drawer" aria-label="תיק">
+    <div class="drawer-head" style="display:flex;justify-content:space-between;align-items:center">
+      <strong style="font-family:var(--serif);font-size:1.4rem;font-weight:500">התיק שלך</strong>
+      <button type="button" data-close-cart>סגור</button>
+    </div>
+    <div class="drawer-body" data-cart-body></div>
+    <div class="drawer-foot">
+      <div class="summary-row total"><span>סה״כ</span><span data-cart-subtotal>₪0</span></div>
+      <div data-ship-nudge></div>
+      <a class="btn btn-gold btn-block" href="/checkout" style="margin-top:1rem">להשלמת הרכישה</a>
+    </div>
+  </aside>
+
+  <script src="/js/store.js"></script>
+  <script>
+    const categories = [
+      { id: 'all', label: 'הכל' },
+      { id: 'luggage', label: 'מזוודות' },
+      { id: 'bags', label: 'תיקים' },
+      { id: 'hats', label: 'כובעים' },
+      { id: 'outerwear', label: 'ג׳קטים' },
+    ];
+
+    let allProducts = [];
+    let activeCat = 'all';
+
+    function bindAddButtons(scope, map) {
+      scope.querySelectorAll('[data-add]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const p = map[btn.dataset.add];
+          if (p) {
+            Mono.addToCart(p, 1);
+            Mono.openCart();
+          }
+        });
+      });
+    }
+
+    function renderFeatured() {
+      const featured = allProducts.filter((p) => p.featured);
+      const grid = document.getElementById('featured-grid');
+      grid.innerHTML = featured.map(Mono.productCard).join('');
+      bindAddButtons(grid, Object.fromEntries(featured.map((p) => [p.id, p])));
+      Mono.observeReveals(grid);
+    }
+
+    function renderCatalog() {
+      const list = activeCat === 'all' ? allProducts : allProducts.filter((p) => p.category === activeCat);
+      const grid = document.getElementById('catalog-grid');
+      grid.innerHTML = list.map(Mono.productCard).join('');
+      bindAddButtons(grid, Object.fromEntries(list.map((p) => [p.id, p])));
+      Mono.observeReveals(grid);
+    }
+
+    function renderFilters() {
+      const el = document.getElementById('filters');
+      el.innerHTML = categories
+        .map((c) => `<button class="filter-chip ${c.id === activeCat ? 'active' : ''}" data-cat="${c.id}">${c.label}</button>`)
+        .join('');
+      el.querySelectorAll('[data-cat]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeCat = btn.dataset.cat;
+          renderFilters();
+          renderCatalog();
+        });
+      });
+    }
+
+    async function boot() {
+      Mono.mountShell();
+      const data = await Mono.api('/api/products');
+      allProducts = data.products;
+      window.__monoMeta = data;
+      Mono.startCountdown(data.edition_ends_at, document.getElementById('edition-countdown'));
+      Mono.startSocialProof(allProducts, data.social_proof);
+      renderFeatured();
+      renderFilters();
+      renderCatalog();
+      Mono.observeReveals(document);
+    }
+
+    boot().catch((err) => {
+      console.error(err);
+      document.getElementById('catalog-grid').innerHTML = '<p style="color:var(--muted)">לא ניתן לטעון את הקולקציה.</p>';
+    });
+  </script>
+</body>
+</html>

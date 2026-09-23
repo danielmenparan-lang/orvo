@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MONO Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #080808;
+      --panel: #101010;
+      --fg: #f4f4f4;
+      --muted: #8f8f8f;
+      --line: rgba(255,255,255,.12);
+      --white: #fff;
+      --black: #000;
+      --ok: #b8f5c0;
+      --warn: #ffe08a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Heebo, sans-serif;
+      background:
+        radial-gradient(ellipse 70% 40% at 100% 0%, rgba(255,255,255,.06), transparent 50%),
+        var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+    }
+    .brand { font-family: Syne, sans-serif; letter-spacing: .16em; font-weight: 800; }
+    .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .sidebar {
+      border-left: 1px solid var(--line);
+      padding: 1.5rem 1rem;
+      background: rgba(0,0,0,.35);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .sidebar nav { display: grid; gap: .35rem; margin-top: 2rem; }
+    .sidebar button, .sidebar a {
+      text-align: right;
+      background: none;
+      border: 0;
+      color: var(--muted);
+      padding: .7rem .8rem;
+      cursor: pointer;
+      font: inherit;
+      text-decoration: none;
+      border-right: 2px solid transparent;
+    }
+    .sidebar button.active, .sidebar button:hover, .sidebar a:hover {
+      color: var(--fg);
+      background: rgba(255,255,255,.04);
+      border-right-color: var(--white);
+    }
+    .main { padding: 1.5rem; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: .85rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      padding: 1rem;
+      background: var(--panel);
+    }
+    .stat .label { color: var(--muted); font-size: .8rem; margin-bottom: .35rem; }
+    .stat .value { font-size: 1.45rem; font-weight: 700; font-family: Syne, sans-serif; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: right; padding: .75rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; font-size: .78rem; letter-spacing: .04em; }
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      padding: 1rem;
+      overflow: auto;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .65rem 1rem;
+      background: var(--white);
+      color: var(--black);
+      border: 1px solid var(--white);
+      font-weight: 600;
+      cursor: pointer;
+      font: inherit;
+    }
+    .btn-ghost { background: transparent; color: var(--fg); }
+    .btn-sm { padding: .4rem .65rem; font-size: .8rem; }
+    input, select {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--fg);
+      padding: .45rem .55rem;
+      font: inherit;
+      width: 100%;
+      max-width: 120px;
+    }
+    a.ae {
+      color: var(--fg);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      font-size: .82rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: .15rem .45rem;
+      border: 1px solid var(--line);
+      font-size: .72rem;
+      color: var(--muted);
+    }
+    .badge.new { color: var(--warn); border-color: var(--warn); }
+    .badge.ok { color: var(--ok); border-color: var(--ok); }
+    .login-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .login-box {
+      width: min(100%, 380px);
+      border: 1px solid var(--line);
+      padding: 2rem;
+      background: var(--panel);
+    }
+    .login-box h1 {
+      font-family: Syne, sans-serif;
+      letter-spacing: .12em;
+      margin-bottom: .35rem;
+    }
+    .login-box p { color: var(--muted); margin-bottom: 1.5rem; }
+    .login-box label { display: grid; gap: .35rem; margin-bottom: .85rem; color: var(--muted); font-size: .9rem; }
+    .login-box input { max-width: none; padding: .75rem; }
+    .hidden { display: none !important; }
+    .err { color: #ff8d8d; margin-top: .75rem; font-size: .9rem; }
+    .profit { color: var(--ok); }
+    .muted { color: var(--muted); }
+    .row-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { height: auto; position: static; border-left: 0; border-bottom: 1px solid var(--line); }
+      .sidebar nav { display: flex; flex-wrap: wrap; margin-top: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-view" class="login-wrap">
+    <form class="login-box" id="login-form">
+      <div class="brand">MONO</div>
+      <h1>ADMIN</h1>
+      <p>לוח ניהול נקי — מוצרים, הזמנות וקישורי ספק.</p>
+      <label>אימייל<input name="email" type="email" value="admin@mono.store" required /></label>
+      <label>סיסמה<input name="password" type="password" value="monoadmin123" required /></label>
+      <button class="btn" style="width:100%;margin-top:.5rem" type="submit">כניסה</button>
+      <p class="err" id="login-err"></p>
+    </form>
+  </div>
+
+  <div id="app-view" class="shell hidden">
+    <aside class="sidebar">
+      <div class="brand">MONO</div>
+      <p class="muted" style="font-size:.8rem;margin-top:.35rem">Backend</p>
+      <nav>
+        <button type="button" data-view="dash" class="active">לוח בקרה</button>
+        <button type="button" data-view="products">מוצרים + AliExpress</button>
+        <button type="button" data-view="orders">הזמנות</button>
+        <a href="/" target="_blank">פתח חנות ↗</a>
+        <button type="button" id="logout-btn">יציאה</button>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="view-title" style="font-family:Syne,sans-serif;letter-spacing:.06em">לוח בקרה</h2>
+          <p class="muted" id="view-sub">סטטוס החנות בזמן אמת</p>
+        </div>
+        <div id="admin-name" class="muted"></div>
+      </div>
+
+      <section id="view-dash">
+        <div class="stats" id="stats"></div>
+        <div class="panel">
+          <p class="muted">טיפ: בכל הזמנה חדשה — היכנסו להזמנות, לחצו על קישור AliExpress של הפריט, הזמינו מספק, ועדכנו סטטוס ל־ordered_supplier.</p>
+        </div>
+      </section>
+
+      <section id="view-products" class="hidden">
+        <div class="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>מוצר</th>
+                <th>מחיר מכירה</th>
+                <th>עלות AE</th>
+                <th>רווח משוער</th>
+                <th>מלאי</th>
+                <th>ספק</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="products-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="view-orders" class="hidden">
+        <div style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <select id="order-filter">
+            <option value="all">כל הסטטוסים</option>
+            <option value="new">חדש</option>
+            <option value="processing">בטיפול</option>
+            <option value="ordered_supplier">הוזמן מספק</option>
+            <option value="shipped">נשלח</option>
+            <option value="completed">הושלם</option>
+            <option value="cancelled">בוטל</option>
+          </select>
+        </div>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr>
+                <th>הזמנה</th>
+                <th>לקוח</th>
+                <th>פריטים + קישורי AE</th>
+                <th>סה״כ</th>
+                <th>סטטוס</th>
+              </tr>
+            </thead>
+            <tbody id="orders-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const TOKEN_KEY = 'mono_admin_token';
+    const money = (n) => `₪${Number(n || 0).toLocaleString('he-IL')}`;
+    let token = localStorage.getItem(TOKEN_KEY) || '';
+
+    async function api(path, options = {}) {
+      const res = await fetch(path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(options.headers || {}),
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw Object.assign(new Error(data.error || 'fail'), { status: res.status, data });
+      return data;
+    }
+
+    function showApp(on) {
+      document.getElementById('login-view').classList.toggle('hidden', on);
+      document.getElementById('app-view').classList.toggle('hidden', !on);
+    }
+
+    function setView(name) {
+      document.querySelectorAll('.sidebar button[data-view]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.view === name);
+      });
+      ['dash', 'products', 'orders'].forEach((v) => {
+        document.getElementById(`view-${v}`).classList.toggle('hidden', v !== name);
+      });
+      const titles = {
+        dash: ['לוח בקרה', 'סטטוס החנות בזמן אמת'],
+        products: ['מוצרים', 'מחירים, מלאי וקישורי AliExpress'],
+        orders: ['הזמנות', 'ניהול משלוחים והזמנות מספק'],
+      };
+      document.getElementById('view-title').textContent = titles[name][0];
+      document.getElementById('view-sub').textContent = titles[name][1];
+      if (name === 'dash') loadDash();
+      if (name === 'products') loadProducts();
+      if (name === 'orders') loadOrders();
+    }
+
+    async function loadDash() {
+      const { stats } = await api('/api/admin/dashboard');
+      const items = [
+        ['הזמנות חדשות', stats.new_orders],
+        ['סה״כ הזמנות', stats.orders],
+        ['הכנסות', money(stats.revenue_ils)],
+        ['רווח משוער', money(stats.est_profit_ils)],
+        ['מוצרים', stats.products],
+        ['מלאי נמוך', stats.low_stock],
+      ];
+      document.getElementById('stats').innerHTML = items
+        .map(([label, value]) => `<div class="stat"><div class="label">${label}</div><div class="value">${value}</div></div>`)
+        .join('');
+    }
+
+    async function loadProducts() {
+      const { products } = await api('/api/admin/products');
+      const body = document.getElementById('products-body');
+      body.innerHTML = products.map((p) => `
+        <tr data-id="${p.id}">
+          <td>
+            <strong>${p.name_he}</strong>
+            <div class="muted" style="font-size:.8rem">${p.name_en}</div>
+            ${p.featured ? '<span class="badge ok">featured</span>' : ''}
+          </td>
+          <td><input data-field="price_ils" type="number" value="${p.price_ils}" /></td>
+          <td><input data-field="cost_usd" type="number" step="0.01" value="${p.cost_usd}" /> <span class="muted">$</span></td>
+          <td class="profit">${money(p.est_profit_ils)}</td>
+          <td><input data-field="stock" type="number" value="${p.stock}" /></td>
+          <td>
+            <a class="ae" href="${p.aliexpress_url}" target="_blank" rel="noopener">פריט AE</a><br>
+            <a class="ae muted" href="${p.aliexpress_search}" target="_blank" rel="noopener">חיפוש דומים</a>
+          </td>
+          <td><button class="btn btn-sm save-product">שמור</button></td>
+        </tr>
+      `).join('');
+
+      body.querySelectorAll('.save-product').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const tr = btn.closest('tr');
+          const id = tr.dataset.id;
+          const payload = {};
+          tr.querySelectorAll('[data-field]').forEach((input) => {
+            payload[input.dataset.field] = Number(input.value);
+          });
+          await api(`/api/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+          btn.textContent = '✓';
+          setTimeout(() => (btn.textContent = 'שמור'), 900);
+          loadProducts();
+        });
+      });
+    }
+
+    async function loadOrders() {
+      const status = document.getElementById('order-filter').value;
+      const { orders } = await api(`/api/admin/orders?status=${status}`);
+      const body = document.getElementById('orders-body');
+      if (!orders.length) {
+        body.innerHTML = '<tr><td colspan="5" class="muted">אין הזמנות עדיין</td></tr>';
+        return;
+      }
+      body.innerHTML = orders.map((o) => `
+        <tr>
+          <td>
+            <strong>${o.order_number}</strong>
+            <div class="muted" style="font-size:.78rem">${o.created_at}</div>
+          </td>
+          <td>
+            ${o.customer_name}<br>
+            <span class="muted">${o.customer_email}</span><br>
+            <span class="muted">${o.customer_phone || ''} · ${o.city || ''}</span><br>
+            <span class="muted">${o.address || ''}</span>
+          </td>
+          <td>
+            ${(o.items || []).map((i) => `
+              <div style="margin-bottom:.55rem">
+                ${i.product_name} × ${i.quantity}
+                ${i.aliexpress_url ? `<br><a class="ae" href="${i.aliexpress_url}" target="_blank" rel="noopener">הזמן מאליאקספרס</a>` : ''}
+              </div>
+            `).join('')}
+          </td>
+          <td>${money(o.total_ils)}</td>
+          <td>
+            <select data-order-status="${o.id}">
+              ${['new','processing','ordered_supplier','shipped','completed','cancelled'].map((s) =>
+                `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`
+              ).join('')}
+            </select>
+          </td>
+        </tr>
+      `).join('');
+
+      body.querySelectorAll('[data-order-status]').forEach((sel) => {
+        sel.addEventListener('change', async () => {
+          await api(`/api/admin/orders/${sel.dataset.orderStatus}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: sel.value }),
+          });
+        });
+      });
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        const data = await api('/api/admin/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: fd.get('email'),
+            password: fd.get('password'),
+          }),
+        });
+        token = data.token;
+        localStorage.setItem(TOKEN_KEY, token);
+        document.getElementById('admin-name').textContent = data.admin.email;
+        showApp(true);
+        setView('dash');
+      } catch {
+        document.getElementById('login-err').textContent = 'פרטי התחברות שגויים';
+      }
+    });
+
+    document.querySelectorAll('.sidebar button[data-view]').forEach((btn) => {
+      btn.addEventListener('click', () => setView(btn.dataset.view));
+    });
+    document.getElementById('order-filter').addEventListener('change', loadOrders);
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      token = '';
+      localStorage.removeItem(TOKEN_KEY);
+      showApp(false);
+    });
+
+    if (token) {
+      api('/api/admin/me')
+        .then((data) => {
+          document.getElementById('admin-name').textContent = data.admin.email;
+          showApp(true);
+          setView('dash');
+        })
+        .catch(() => {
+          localStorage.removeItem(TOKEN_KEY);
+          token = '';
+          showApp(false);
+        });
+    }
+  </script>
+</body>
+</html>

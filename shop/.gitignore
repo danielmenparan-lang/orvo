@@ -1,0 +1,5 @@
+node_modules/
+data/mono.db
+data/mono.db-*
+.env
+*.log

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>מוצר — MONO</title>
+  <link rel="stylesheet" href="/css/store.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="inner">
+      <a class="brand" href="/">MONO</a>
+      <div class="nav-actions">
+        <a href="/#catalog" style="color:var(--muted);margin-left:1rem;font-size:.85rem;letter-spacing:.06em">חזרה לקולקציה</a>
+        <button class="cart-btn" data-open-cart type="button">
+          תיק
+          <span class="cart-count" data-cart-count>0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container product-layout" id="product-root">
+    <p style="color:var(--muted)">טוען...</p>
+  </main>
+
+  <div class="sticky-buy" id="sticky-buy"></div>
+
+  <div class="drawer-backdrop" data-close-cart></div>
+  <aside class="cart-drawer">
+    <div class="drawer-head" style="display:flex;justify-content:space-between;align-items:center">
+      <strong style="font-family:var(--serif);font-size:1.4rem;font-weight:500">התיק שלך</strong>
+      <button type="button" data-close-cart>סגור</button>
+    </div>
+    <div class="drawer-body" data-cart-body></div>
+    <div class="drawer-foot">
+      <div class="summary-row total"><span>סה״כ</span><span data-cart-subtotal>₪0</span></div>
+      <div data-ship-nudge></div>
+      <a class="btn btn-gold btn-block" href="/checkout" style="margin-top:1rem">להשלמת הרכישה</a>
+    </div>
+  </aside>
+
+  <script src="/js/store.js"></script>
+  <script>
+    Mono.mountShell();
+    Mono.api('/api/products').then((data) => { window.__monoMeta = data; }).catch(() => {});
+
+    const slug = location.pathname.split('/').pop();
+
+    async function load() {
+      const { product: p } = await Mono.api(`/api/products/${slug}`);
+      document.title = `${p.name_he} — MONO Atelier`;
+      const left = Number(p.limited_left ?? p.stock);
+      const meter = Math.max(8, Math.min(92, (left / 30) * 100));
+      const viewers = 4 + Math.floor(Math.random() * 17);
+
+      document.getElementById('product-root').innerHTML = `
+        <div class="product-gallery reveal visible">
+          <img src="${p.image}" alt="${p.name_he}">
+          ${p.badge_he ? `<span class="badge">${p.badge_he}</span>` : ''}
+        </div>
+        <div class="product-info reveal visible">
+          <div class="eyebrow">${p.category_he} · ${viewers} צופים עכשיו</div>
+          <h1>${p.name_he}</h1>
+          <p style="color:var(--muted)">${p.name_en}</p>
+          <div class="rating-row" style="margin-top:.75rem"><span class="stars">${Mono.stars(p.rating)}</span> ${p.rating} · ${p.reviews_count} ביקורות · ${p.sold_month} נרכשו החודש</div>
+          <div class="price-row" style="margin-top:1.1rem">
+            <span class="price" style="font-size:2rem">${Mono.money(p.price_ils)}</span>
+            ${p.compare_at_ils ? `<span class="compare">${Mono.money(p.compare_at_ils)}</span>` : ''}
+            ${p.save_pct ? `<span class="save-tag">חיסכון ${p.save_pct}% מול מחירון</span>` : ''}
+          </div>
+          <p class="desc">${p.description_he}</p>
+          <div class="material"><strong style="color:var(--fg)">חומרים · </strong>${p.material_he || 'נבחר בקפידה'}</div>
+          <div class="scarcity-block">
+            <strong>${Mono.scarcityLabel(p)}</strong>
+            <div style="color:var(--muted);margin-top:.25rem;font-size:.82rem">כשהמלאי נגמר — הפריט יורד מהמהדורה עד חידוש.</div>
+            <div class="meter"><i style="width:${meter}%"></i></div>
+          </div>
+          <div class="qty-row">
+            <label for="qty">כמות</label>
+            <input id="qty" type="number" min="1" max="5" value="1" />
+          </div>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+            <button class="btn btn-gold" id="add-btn" type="button">הוסף לתיק</button>
+            <button class="btn btn-ghost" id="buy-btn" type="button">רכוש עכשיו</button>
+          </div>
+          <p style="margin-top:1.1rem;color:var(--muted);font-size:.82rem">החזרה 30 יום · אריזה דיסקרטית · תשלום מאובטח</p>
+        </div>`;
+
+      const add = () => {
+        const qty = Number(document.getElementById('qty').value) || 1;
+        Mono.addToCart(p, qty);
+      };
+      document.getElementById('add-btn').addEventListener('click', () => { add(); Mono.openCart(); });
+      document.getElementById('buy-btn').addEventListener('click', () => { add(); location.href = '/checkout'; });
+
+      const sticky = document.getElementById('sticky-buy');
+      sticky.innerHTML = `
+        <button class="btn btn-ghost" id="sticky-add" type="button">לתיק · ${Mono.money(p.price_ils)}</button>
+        <button class="btn btn-gold" id="sticky-buy-btn" type="button">רכישה</button>`;
+      document.getElementById('sticky-add').addEventListener('click', () => { add(); Mono.openCart(); });
+      document.getElementById('sticky-buy-btn').addEventListener('click', () => { add(); location.href = '/checkout'; });
+    }
+
+    load().catch(() => {
+      document.getElementById('product-root').innerHTML = '<p>הפריט לא נמצא. <a href="/">חזרה לאטלייה</a></p>';
+    });
+  </script>
+</body>
+</html>
