@@ -19,6 +19,10 @@ app.use(express.static(path.join(ROOT, 'public')));
 
 function publicProduct(row, { admin = false } = {}) {
   if (!row) return null;
+  const savePct =
+    row.compare_at_ils && row.compare_at_ils > row.price_ils
+      ? Math.round((1 - row.price_ils / row.compare_at_ils) * 100)
+      : 0;
   const base = {
     id: row.id,
     slug: row.slug,
@@ -28,9 +32,15 @@ function publicProduct(row, { admin = false } = {}) {
     category_he: row.category_he,
     tagline_he: row.tagline_he,
     description_he: row.description_he,
+    material_he: row.material_he || '',
     price_ils: row.price_ils,
     compare_at_ils: row.compare_at_ils,
+    save_pct: savePct,
     stock: row.stock,
+    limited_left: row.limited_left ?? row.stock,
+    sold_month: row.sold_month || 0,
+    rating: row.rating || 4.8,
+    reviews_count: row.reviews_count || 0,
     featured: !!row.featured,
     badge_he: row.badge_he,
     image: row.image,
@@ -45,6 +55,18 @@ function publicProduct(row, { admin = false } = {}) {
     base.est_profit_ils = Math.round(row.price_ils - row.cost_usd * 3.3);
   }
   return base;
+}
+
+function editionEndsAt() {
+  // Psychological urgency: countdown resets every Sunday 23:59 Israel-ish (UTC+3 approx)
+  const now = new Date();
+  const end = new Date(now);
+  const day = end.getUTCDay();
+  const add = day === 0 ? 0 : 7 - day;
+  end.setUTCDate(end.getUTCDate() + add);
+  end.setUTCHours(20, 59, 0, 0); // ~23:59 IDT
+  if (end <= now) end.setUTCDate(end.getUTCDate() + 7);
+  return end.toISOString();
 }
 
 function auth(req, res, next) {
@@ -89,12 +111,17 @@ app.get('/api/products', (req, res) => {
     const like = `%${q}%`;
     params.push(like, like, like);
   }
-  sql += ' ORDER BY featured DESC, price_ils ASC';
+  sql += ' ORDER BY featured DESC, price_ils DESC';
   const rows = db.prepare(sql).all(...params);
   res.json({
     products: rows.map((r) => publicProduct(r)),
-    shipping_ils: Number(getSetting('shipping_ils', 29)),
-    free_shipping_over: Number(getSetting('free_shipping_over', 249)),
+    shipping_ils: Number(getSetting('shipping_ils', 39)),
+    free_shipping_over: Number(getSetting('free_shipping_over', 590)),
+    edition_ends_at: editionEndsAt(),
+    social_proof: {
+      cities: ['תל אביב', 'הרצליה', 'חיפה', 'ירושלים', 'רעננה', 'גבעתיים'],
+      verbs: ['רכש/ה', 'שמר/ה', 'הוסיף/ה לעגלה'],
+    },
   });
 });
 

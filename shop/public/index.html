@@ -3,22 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MONO — חנות גאדג'טים</title>
-  <meta name="description" content="MONO — חנות איקומרס נקייה בשחור־לבן. מוצרים מנצחים עם משלוח לישראל." />
+  <title>MONO — Atelier · קולקציה פרטית</title>
+  <meta name="description" content="MONO Atelier — קולקציית יוקרה נבחרת. שעונים, יופי, אופנה ובית — בעיצוב שחור־לבן." />
   <link rel="stylesheet" href="/css/store.css" />
 </head>
 <body>
+  <div class="proof-bar" aria-hidden="true">
+    <div class="proof-track" id="proof-track">
+      <span>משלוח דיסקרטי · אריזת אטלייה</span>
+      <span>החזרה תוך 30 יום</span>
+      <span>קולקציה מוגבלת · לא מסה</span>
+      <span>נבחר בעבודת יד של עורך</span>
+      <span>משלוח דיסקרטי · אריזת אטלייה</span>
+      <span>החזרה תוך 30 יום</span>
+      <span>קולקציה מוגבלת · לא מסה</span>
+      <span>נבחר בעבודת יד של עורך</span>
+    </div>
+  </div>
+
   <nav class="site-nav">
     <div class="inner">
       <a class="brand" href="/">MONO</a>
       <div class="nav-links">
-        <a href="#catalog">קטלוג</a>
-        <a href="#winners">מוצרים מנצחים</a>
-        <a href="/admin">ניהול</a>
+        <a href="#edition">המהדורה</a>
+        <a href="#catalog">הקולקציה</a>
+        <a href="#promises">הבטחה</a>
       </div>
       <div class="nav-actions">
         <button class="cart-btn" data-open-cart type="button">
-          עגלה
+          תיק
           <span class="cart-count" data-cart-count>0</span>
         </button>
       </div>
@@ -28,22 +41,44 @@
   <header class="hero">
     <div class="hero-media" aria-hidden="true"></div>
     <div class="container hero-content">
+      <div class="hero-kicker">Private Atelier · Edition 04</div>
       <div class="hero-brand">MONO</div>
-      <h1>מוצרים מנצחים. מחיר חד. עיצוב שחור־לבן.</h1>
-      <p>חנות דרופשיפינג אמיתית — קטלוג נבחר מאליאקספרס, מסומן ומתומחר למכירה בישראל.</p>
+      <h1>יוקרה שקטה. מחיר שמכבד את העין.</h1>
+      <p>קולקציה פרטית של פריטים נבחרים — פחות רעש, יותר נוכחות. כל מוצר נבחר לפי חומר, צללית ומרווח.</p>
       <div class="hero-cta">
-        <a class="btn" href="#catalog">לקנות עכשיו</a>
-        <a class="btn btn-ghost" href="#winners">לראות מנצחים</a>
+        <a class="btn btn-gold" href="#edition">לצפות במהדורה</a>
+        <a class="btn btn-ghost" href="#catalog">כל הקולקציה</a>
+      </div>
+      <div class="hero-meta">
+        <div><strong>12</strong>פריטים בלבד</div>
+        <div><strong>30</strong>ימי החזרה</div>
+        <div><strong>590₪+</strong>משלוח מתנה</div>
       </div>
     </div>
   </header>
 
-  <section class="section" id="winners">
+  <div class="container">
+    <div class="ritual-strip reveal">
+      <div>
+        <div class="label">סגירת המהדורה</div>
+        <div class="countdown" id="edition-countdown">--</div>
+        <p style="color:var(--muted);font-size:.85rem;margin-top:.45rem">אחרי הסגירה המחיר חוזר למחירון המלא.</p>
+      </div>
+      <div>
+        <div class="label">למה זה עובד</div>
+        <p style="font-family:var(--serif);font-size:1.25rem;line-height:1.35">
+          עוגן מחיר גבוה · מלאי מוגבל · הוכחה חברתית חיה — בלי לצעוק ׳מבצע׳.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <section class="section" id="edition">
     <div class="container">
       <div class="section-head reveal">
         <div>
-          <h2>מוצרים מנצחים</h2>
-          <p>נבחרו לפי ביקוש, מרווח ומדיה חברתית — מוכנים למכירה.</p>
+          <h2>המהדורה הנוכחית</h2>
+          <p>הפריטים שעורכי MONO סימנו קודם — מלאי קצר, ביקוש גבוה.</p>
         </div>
       </div>
       <div class="product-grid" id="featured-grid"></div>
@@ -54,12 +89,27 @@
     <div class="container">
       <div class="section-head reveal">
         <div>
-          <h2>כל הקטלוג</h2>
-          <p>12 מוצרים פעילים. משלוח חינם מעל ₪249.</p>
+          <h2>הקולקציה המלאה</h2>
+          <p>שעונים · יופי · אופנה · בית. בלי לוגו צועק — רק עיצוב.</p>
         </div>
       </div>
       <div class="filters" id="filters"></div>
       <div class="product-grid" id="catalog-grid"></div>
+
+      <div class="promise-grid" id="promises">
+        <article class="reveal">
+          <h3>בחירה, לא מדף</h3>
+          <p>אנחנו לא מעלים מאה מוצרים. כל פריט עובר סינון עיצובי ומחיר שמחזיק יוקרה.</p>
+        </article>
+        <article class="reveal">
+          <h3>אריזה דיסקרטית</h3>
+          <p>בלי מיתוג ספק על הקופסה. חוויית פתיחה שקטה — כמו בוטיק.</p>
+        </article>
+        <article class="reveal">
+          <h3>סיכון הפוך</h3>
+          <p>30 ימי החזרה. אם זה לא מרגיש יקר אצלכם בבית — מחזירים.</p>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -67,24 +117,25 @@
     <div class="inner">
       <div>
         <div class="brand">MONO</div>
-        <p style="margin-top:.5rem">חנות שחור־לבן למוצרים שעובדים.</p>
+        <p style="margin-top:.55rem">Atelier · קולקציה פרטית בשחור־לבן.</p>
       </div>
       <div>
-        <a href="/admin">לוח ניהול</a>
+        <a href="/admin" style="opacity:.55">ניהול</a>
       </div>
     </div>
   </footer>
 
   <div class="drawer-backdrop" data-close-cart></div>
-  <aside class="cart-drawer" aria-label="עגלה">
+  <aside class="cart-drawer" aria-label="תיק">
     <div class="drawer-head" style="display:flex;justify-content:space-between;align-items:center">
-      <strong>העגלה</strong>
+      <strong style="font-family:var(--serif);font-size:1.4rem;font-weight:500">התיק שלך</strong>
       <button type="button" data-close-cart>סגור</button>
     </div>
     <div class="drawer-body" data-cart-body></div>
     <div class="drawer-foot">
       <div class="summary-row total"><span>סה״כ</span><span data-cart-subtotal>₪0</span></div>
-      <a class="btn btn-block" href="/checkout" style="margin-top:1rem">לתשלום</a>
+      <div data-ship-nudge></div>
+      <a class="btn btn-gold btn-block" href="/checkout" style="margin-top:1rem">להשלמת הרכישה</a>
     </div>
   </aside>
 
@@ -92,17 +143,14 @@
   <script>
     const categories = [
       { id: 'all', label: 'הכל' },
-      { id: 'tech', label: 'טק' },
-      { id: 'lifestyle', label: 'לייף־סטייל' },
-      { id: 'auto', label: 'רכב' },
-      { id: 'fitness', label: 'כושר' },
-      { id: 'travel', label: 'נסיעות' },
-      { id: 'home', label: 'בית' },
+      { id: 'watches', label: 'שעונים' },
       { id: 'beauty', label: 'יופי' },
+      { id: 'fashion', label: 'אופנה' },
+      { id: 'jewelry', label: 'תכשיטים' },
+      { id: 'home', label: 'בית' },
     ];
 
     let allProducts = [];
-    let shippingMeta = { shipping_ils: 29, free_shipping_over: 249 };
     let activeCat = 'all';
 
     function bindAddButtons(scope, map) {
@@ -121,26 +169,16 @@
       const featured = allProducts.filter((p) => p.featured);
       const grid = document.getElementById('featured-grid');
       grid.innerHTML = featured.map(Mono.productCard).join('');
-      const map = Object.fromEntries(featured.map((p) => [p.id, p]));
-      bindAddButtons(grid, map);
-      document.querySelectorAll('#featured-grid .reveal').forEach((el) => {
-        new IntersectionObserver((entries) => {
-          entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible'));
-        }, { threshold: 0.12 }).observe(el);
-      });
+      bindAddButtons(grid, Object.fromEntries(featured.map((p) => [p.id, p])));
+      Mono.observeReveals(grid);
     }
 
     function renderCatalog() {
       const list = activeCat === 'all' ? allProducts : allProducts.filter((p) => p.category === activeCat);
       const grid = document.getElementById('catalog-grid');
       grid.innerHTML = list.map(Mono.productCard).join('');
-      const map = Object.fromEntries(list.map((p) => [p.id, p]));
-      bindAddButtons(grid, map);
-      document.querySelectorAll('#catalog-grid .reveal').forEach((el) => {
-        new IntersectionObserver((entries) => {
-          entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible'));
-        }, { threshold: 0.12 }).observe(el);
-      });
+      bindAddButtons(grid, Object.fromEntries(list.map((p) => [p.id, p])));
+      Mono.observeReveals(grid);
     }
 
     function renderFilters() {
@@ -161,15 +199,18 @@
       Mono.mountShell();
       const data = await Mono.api('/api/products');
       allProducts = data.products;
-      shippingMeta = data;
+      window.__monoMeta = data;
+      Mono.startCountdown(data.edition_ends_at, document.getElementById('edition-countdown'));
+      Mono.startSocialProof(allProducts, data.social_proof);
       renderFeatured();
       renderFilters();
       renderCatalog();
+      Mono.observeReveals(document);
     }
 
     boot().catch((err) => {
       console.error(err);
-      document.getElementById('catalog-grid').innerHTML = '<p style="color:var(--muted)">לא ניתן לטעון מוצרים. הריצו את השרת.</p>';
+      document.getElementById('catalog-grid').innerHTML = '<p style="color:var(--muted)">לא ניתן לטעון את הקולקציה.</p>';
     });
   </script>
 </body>

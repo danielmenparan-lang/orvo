@@ -32,7 +32,7 @@ function addToCart(product, qty = 1) {
     });
   }
   saveCart(cart);
-  toast('נוסף לעגלה');
+  toast('נוסף לתיק — בחירה מצוינת');
   return cart;
 }
 
@@ -62,7 +62,7 @@ function updateCartCount() {
   });
 }
 
-function toast(msg) {
+function toast(msg, { social = false } = {}) {
   let el = document.querySelector('.toast');
   if (!el) {
     el = document.createElement('div');
@@ -70,9 +70,10 @@ function toast(msg) {
     document.body.appendChild(el);
   }
   el.textContent = msg;
+  el.classList.toggle('social', !!social);
   el.classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.remove('show'), 1800);
+  toast._t = setTimeout(() => el.classList.remove('show'), social ? 3200 : 1800);
 }
 
 async function api(path, options = {}) {
@@ -85,13 +86,22 @@ async function api(path, options = {}) {
   return data;
 }
 
-function renderCartDrawer() {
+function shipNudgeHtml(subtotal, freeOver, shippingIls) {
+  if (subtotal >= freeOver) {
+    return `<div class="ship-nudge"><strong>זכית במשלוח מתנה</strong> — הזמנה מעל ₪${freeOver.toLocaleString('he-IL')}</div>`;
+  }
+  const left = freeOver - subtotal;
+  return `<div class="ship-nudge">עוד <strong>${money(left)}</strong> למשלוח מתנה (במקום ₪${shippingIls})</div>`;
+}
+
+function renderCartDrawer(meta = window.__monoMeta || {}) {
   const body = document.querySelector('[data-cart-body]');
   const subtotalEl = document.querySelector('[data-cart-subtotal]');
+  const nudge = document.querySelector('[data-ship-nudge]');
   if (!body) return;
   const cart = getCart();
   if (!cart.length) {
-    body.innerHTML = '<p style="color:var(--muted);padding:1rem 0">העגלה ריקה.</p>';
+    body.innerHTML = '<p style="color:var(--muted);padding:1rem 0">התיק ריק. בחרו פריט מהקולקציה.</p>';
   } else {
     body.innerHTML = cart
       .map(
@@ -111,7 +121,15 @@ function renderCartDrawer() {
       btn.addEventListener('click', () => removeFromCart(btn.dataset.rm));
     });
   }
-  if (subtotalEl) subtotalEl.textContent = money(cartSubtotal());
+  const sub = cartSubtotal();
+  if (subtotalEl) subtotalEl.textContent = money(sub);
+  if (nudge) {
+    nudge.innerHTML = shipNudgeHtml(
+      sub,
+      Number(meta.free_shipping_over || 590),
+      Number(meta.shipping_ils || 39)
+    );
+  }
 }
 
 function openCart() {
@@ -125,11 +143,85 @@ function closeCart() {
   document.querySelector('.drawer-backdrop')?.classList.remove('open');
 }
 
+function stars(rating) {
+  const full = Math.round(Number(rating) || 5);
+  return '★'.repeat(Math.min(5, full)) + '☆'.repeat(Math.max(0, 5 - full));
+}
+
+function scarcityLabel(p) {
+  const left = Number(p.limited_left ?? p.stock ?? 0);
+  if (left <= 5) return `נותרו רק ${left} יחידות במהדורה`;
+  if (left <= 12) return `${left} יחידות אחרונות בסטוק האטלייה`;
+  return `${p.sold_month || 0}+ נרכשו החודש`;
+}
+
+function productCard(p) {
+  const left = Number(p.limited_left ?? p.stock ?? 0);
+  return `
+  <article class="product-card reveal">
+    <a class="media" href="/product/${p.slug}">
+      ${p.badge_he ? `<span class="badge">${p.badge_he}</span>` : ''}
+      <img src="${p.image}" alt="${p.name_he}" loading="lazy">
+      <div class="scarcity-pill">${scarcityLabel(p)}</div>
+    </a>
+    <div class="meta">
+      <span class="cat">${p.category_he}</span>
+      <h3><a href="/product/${p.slug}">${p.name_he}</a></h3>
+      <p class="tagline">${p.tagline_he || ''}</p>
+      <div class="rating-row"><span class="stars">${stars(p.rating)}</span> ${p.rating} · ${p.reviews_count} ביקורות</div>
+      <div class="price-row">
+        <span class="price">${money(p.price_ils)}</span>
+        ${p.compare_at_ils ? `<span class="compare">${money(p.compare_at_ils)}</span>` : ''}
+        ${p.save_pct ? `<span class="save-tag">חיסכון ${p.save_pct}%</span>` : ''}
+      </div>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-gold" data-add="${p.id}">להוסיף לתיק</button>
+      <a class="btn btn-ghost" href="/product/${p.slug}">לפרטים</a>
+    </div>
+  </article>`;
+}
+
+function startCountdown(iso, root) {
+  if (!root || !iso) return;
+  const tick = () => {
+    const diff = Math.max(0, new Date(iso) - Date.now());
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    root.innerHTML = `
+      <span>${String(d).padStart(2, '0')}י</span>
+      <span>${String(h).padStart(2, '0')}ש</span>
+      <span>${String(m).padStart(2, '0')}ד</span>
+      <span>${String(s).padStart(2, '0')}שנ</span>`;
+  };
+  tick();
+  clearInterval(startCountdown._t);
+  startCountdown._t = setInterval(tick, 1000);
+}
+
+function startSocialProof(products, social) {
+  if (!products?.length || !social) return;
+  const cities = social.cities || ['תל אביב'];
+  const verbs = social.verbs || ['רכש/ה'];
+  const fire = () => {
+    const p = products[Math.floor(Math.random() * products.length)];
+    const city = cities[Math.floor(Math.random() * cities.length)];
+    const verb = verbs[Math.floor(Math.random() * verbs.length)];
+    const mins = 2 + Math.floor(Math.random() * 28);
+    toast(`${verb} את ${p.name_he} ב${city} · לפני ${mins} דק׳`, { social: true });
+  };
+  clearInterval(startSocialProof._t);
+  setTimeout(fire, 4500);
+  startSocialProof._t = setInterval(fire, 14000);
+}
+
 function mountShell() {
   updateCartCount();
   document.querySelectorAll('[data-open-cart]').forEach((el) => el.addEventListener('click', openCart));
   document.querySelectorAll('[data-close-cart]').forEach((el) => el.addEventListener('click', closeCart));
-  window.addEventListener('mono:cart', renderCartDrawer);
+  window.addEventListener('mono:cart', () => renderCartDrawer());
 
   const io = new IntersectionObserver(
     (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible')),
@@ -138,27 +230,12 @@ function mountShell() {
   document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 }
 
-function productCard(p) {
-  return `
-  <article class="product-card reveal">
-    <a class="media" href="/product/${p.slug}">
-      ${p.badge_he ? `<span class="badge">${p.badge_he}</span>` : ''}
-      <img src="${p.image}" alt="${p.name_he}" loading="lazy">
-    </a>
-    <div class="meta">
-      <span class="cat">${p.category_he}</span>
-      <h3><a href="/product/${p.slug}">${p.name_he}</a></h3>
-      <p class="tagline">${p.tagline_he || ''}</p>
-      <div class="price-row">
-        <span class="price">${money(p.price_ils)}</span>
-        ${p.compare_at_ils ? `<span class="compare">${money(p.compare_at_ils)}</span>` : ''}
-      </div>
-    </div>
-    <div class="card-actions">
-      <button class="btn btn-ghost" data-add="${p.id}">לעגלה</button>
-      <a class="btn" href="/product/${p.slug}">פרטים</a>
-    </div>
-  </article>`;
+function observeReveals(scope = document) {
+  const io = new IntersectionObserver(
+    (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible')),
+    { threshold: 0.12 }
+  );
+  scope.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 }
 
 window.Mono = {
@@ -178,4 +255,10 @@ window.Mono = {
   mountShell,
   productCard,
   renderCartDrawer,
+  startCountdown,
+  startSocialProof,
+  observeReveals,
+  stars,
+  scarcityLabel,
+  shipNudgeHtml,
 };
