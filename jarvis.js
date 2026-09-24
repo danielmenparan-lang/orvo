@@ -134,11 +134,16 @@
     }
   }
 
-  async function ensureNotifyPermission() {
-    if (!('Notification' in window)) return;
-    if (Notification.permission === 'default') {
-      try { await Notification.requestPermission(); } catch (_) { /* ignore */ }
-    }
+  /** Ask only after a clear user gesture; never block the alarm UI. */
+  function ensureNotifyPermission() {
+    if (!('Notification' in window)) return Promise.resolve();
+    if (Notification.permission !== 'default') return Promise.resolve();
+    // Defer so click handlers (arm / wake) finish painting first
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        Notification.requestPermission().then(() => resolve()).catch(() => resolve());
+      }, 400);
+    });
   }
 
   function setStatus(text) {
@@ -303,15 +308,24 @@
 
     $('arm-btn').addEventListener('click', () => {
       arm();
+      ensureNotifyPermission();
       speak(`השכמה הוגדרה ל־${state.wakeTime}, ${state.name}. אני אעיר אותך.`);
     });
     $('disarm-btn').addEventListener('click', disarm);
-    $('test-btn').addEventListener('click', async () => {
-      await ensureNotifyPermission();
-      arm();
+    $('test-btn').addEventListener('click', () => {
+      // Test wake: no permission prompt competing with the alarm UI
+      state.wakeTime = $('wake-time').value || state.wakeTime;
+      state.name = ($('owner-name').value || state.name).trim() || cfg.name;
+      const audio = $('chime');
+      if (audio) {
+        audio.volume = 0.01;
+        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
+      }
+      if ('speechSynthesis' in window) speechSynthesis.getVoices();
       startAlarm({ test: true });
     });
-    $('awake-btn').addEventListener('click', () => {
+    function onAwake() {
+      if (!state.alarming && $('alarm-panel').hidden) return;
       stopAlarm();
       state.armed = false;
       save();
@@ -323,6 +337,10 @@
         (next ? `הצעד הבא: ${next.title}.` : 'בוא נזיז את ORVO.')
       );
       renderBrief();
+    }
+    $('awake-btn').addEventListener('click', onAwake);
+    $('awake-btn').addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'touch' || e.pointerType === 'pen') onAwake();
     });
     $('snooze-btn').addEventListener('click', snooze);
     $('repeat-btn').addEventListener('click', () => speak(buildSpeech()));

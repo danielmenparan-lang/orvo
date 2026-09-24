@@ -181,12 +181,15 @@ body.alarming .field input{
 }
 body.alarming .btn-wake{
   background:#fff7ef;color:var(--ink);
-  animation:breathe 1.2s ease-in-out infinite;
+  box-shadow:0 0 0 0 rgba(255,247,239,.45);
+  animation:glowPulse 1.4s ease-in-out infinite;
 }
-@keyframes breathe{
-  0%,100%{transform:scale(1)}
-  50%{transform:scale(1.03)}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,247,239,.4)}
+  50%{box-shadow:0 0 0 14px rgba(255,247,239,0)}
 }
+#alarm-panel{position:relative;z-index:5}
+#awake-btn{min-height:56px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
 .actions{display:grid;gap:10px;margin-top:8px}
 .actions-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
