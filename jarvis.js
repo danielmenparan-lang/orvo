@@ -236,7 +236,6 @@
     state.armed = true;
     // Allow re-fire tomorrow; if same-day already fired, keep key
     save();
-    ensureNotifyPermission();
     // Unlock audio for iOS by playing muted once
     const audio = $('chime');
     if (audio) {
