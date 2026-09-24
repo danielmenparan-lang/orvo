@@ -2,13 +2,22 @@
 
 Post what you need. Vetted builders send quotes. Chat and pay through ORVO.
 
+## Jarvis (personal agent)
+
+Morning wake + ORVO briefing for the founder: open [`jarvis.html`](jarvis.html).  
+Docs: [`docs/jarvis.md`](docs/jarvis.md)
+
+```bash
+node scripts/jarvis-wake.js now
+```
+
 ## Local
 
 ```bash
 python3 -m http.server 5173
 ```
 
-Open http://localhost:5173
+Open http://localhost:5173 · Jarvis: http://localhost:5173/jarvis.html
 
 Live: https://fantastic-eclair-0b2c66.netlify.app/
 

@@ -1,3 +1,5 @@
 /assets/*  /assets/:splat  200
 /video.html  /video.html  200
 /characters.html  /characters.html  200
+/jarvis.html  /jarvis.html  200
+/jarvis  /jarvis.html  200
