@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#1a1410"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Jarvis"/>
+<title>Jarvis — השכמה</title>
+<link rel="manifest" href="jarvis.manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="assets/jarvis/icon-192.png"/>
+<link rel="icon" type="image/png" href="assets/jarvis/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1410;
+  --ink-soft:#3d3229;
+  --muted:#7a6a5c;
+  --cream:#f3ebe2;
+  --sand:#e8d9c8;
+  --dawn:#ffb36b;
+  --sun:#ff8a3d;
+  --copper:#c45c26;
+  --line:rgba(26,20,16,.1);
+  --ok:#2f6b4f;
+}
+html,body{min-height:100%;}
+body{
+  font-family:Assistant,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(120% 80% at 50% -10%, #ffd4a8 0%, transparent 55%),
+    radial-gradient(90% 60% at 100% 100%, #d9c4a8 0%, transparent 45%),
+    linear-gradient(165deg, #f7f0e8 0%, #e9dccb 48%, #d6c2a8 100%);
+  min-height:100dvh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+body.alarming{
+  background:
+    radial-gradient(100% 70% at 50% 0%, #ff9a4a 0%, transparent 50%),
+    linear-gradient(180deg, #2a1810 0%, #5a3020 40%, #c47840 100%);
+  color:#fff7ef;
+  transition:background .8s ease, color .4s ease;
+}
+body.alarming .muted, body.alarming .hint{color:rgba(255,247,239,.7)}
+body.alarming .panel{background:rgba(26,20,16,.35);border-color:rgba(255,247,239,.15);backdrop-filter:blur(16px)}
+body.alarming .chip{background:rgba(255,247,239,.12);color:#fff7ef}
+body.alarming .btn-ghost{border-color:rgba(255,247,239,.35);color:#fff7ef}
+body.alarming .task{border-color:rgba(255,247,239,.12)}
+
+.sky{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 40% at 70% 15%, rgba(255,179,107,.45), transparent 60%),
+    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(196,92,38,.12), transparent 50%);
+  animation:drift 18s ease-in-out infinite alternate;
+}
+@keyframes drift{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(-2%,1%,0) scale(1.04)}
+}
+body.alarming .sky{
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(255,140,60,.55), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(255,80,30,.25), transparent 50%);
+  animation:pulseSky 1.6s ease-in-out infinite;
+}
+@keyframes pulseSky{
+  0%,100%{opacity:.85}
+  50%{opacity:1}
+}
+
+.wrap{
+  position:relative;z-index:1;
+  max-width:720px;margin:0 auto;
+  padding:max(28px, env(safe-area-inset-top)) 22px 48px;
+  min-height:100dvh;
+  display:flex;flex-direction:column;
+}
+
+.brand{
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:clamp(42px,10vw,64px);
+  font-weight:700;
+  letter-spacing:-.02em;
+  line-height:1;
+  margin-bottom:6px;
+  animation:rise .9s cubic-bezier(.2,.8,.2,1) both;
+}
+.brand span{color:var(--copper)}
+body.alarming .brand span{color:var(--dawn)}
+.tagline{
+  font-size:15px;color:var(--muted);margin-bottom:36px;
+  animation:rise .9s .08s cubic-bezier(.2,.8,.2,1) both;
+}
+.muted{color:var(--muted)}
+
+.clock-block{
+  text-align:center;
+  margin:12px 0 28px;
+  animation:rise .9s .12s cubic-bezier(.2,.8,.2,1) both;
+}
+.clock{
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:clamp(64px,18vw,112px);
+  font-weight:500;
+  letter-spacing:-.03em;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.date{font-size:15px;margin-top:10px;color:var(--muted)}
+.status-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:18px;padding:8px 14px;border-radius:999px;
+  background:rgba(26,20,16,.06);font-size:13px;font-weight:600;
+}
+.status-pill .dot{
+  width:8px;height:8px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 0 0 rgba(47,107,79,.4);
+  animation:ping 2s ease infinite;
+}
+body.alarming .status-pill{background:rgba(255,247,239,.14)}
+body.alarming .status-pill .dot{
+  background:var(--dawn);
+  animation:pingHot .7s ease infinite;
+}
+@keyframes ping{
+  0%{box-shadow:0 0 0 0 rgba(47,107,79,.45)}
+  70%{box-shadow:0 0 0 10px transparent}
+  100%{box-shadow:0 0 0 0 transparent}
+}
+@keyframes pingHot{
+  0%{box-shadow:0 0 0 0 rgba(255,179,107,.6)}
+  70%{box-shadow:0 0 0 12px transparent}
+  100%{box-shadow:0 0 0 0 transparent}
+}
+
+.panel{
+  background:rgba(255,252,248,.72);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:22px;
+  margin-bottom:16px;
+  animation:rise .9s .2s cubic-bezier(.2,.8,.2,1) both;
+}
+.panel h2{
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:22px;font-weight:700;margin-bottom:6px;
+}
+.hint{font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{flex:1;min-width:140px}
+.field label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)}
+.field input[type="time"],.field input[type="text"]{
+  width:100%;padding:12px 14px;border-radius:12px;
+  border:1px solid var(--line);background:rgba(255,255,255,.7);
+  font:inherit;font-size:16px;color:var(--ink);
+}
+body.alarming .field input{
+  background:rgba(26,20,16,.4);border-color:rgba(255,247,239,.2);color:#fff7ef;
+}
+
+.btn{
+  border:none;border-radius:12px;padding:12px 20px;
+  font:inherit;font-size:15px;font-weight:700;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .15s ease, opacity .15s;
+}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--copper);color:#fff}
+.btn-primary:hover{background:var(--sun)}
+.btn-ghost{
+  background:transparent;border:1px solid var(--line);color:var(--ink);
+}
+.btn-lg{padding:16px 28px;font-size:17px;width:100%}
+.btn-wake{
+  background:linear-gradient(135deg,var(--sun),var(--copper));
+  color:#fff;box-shadow:0 12px 32px rgba(196,92,38,.28);
+}
+body.alarming .btn-wake{
+  background:#fff7ef;color:var(--ink);
+  box-shadow:0 0 0 0 rgba(255,247,239,.45);
+  animation:glowPulse 1.4s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,247,239,.4)}
+  50%{box-shadow:0 0 0 14px rgba(255,247,239,0)}
+}
+#alarm-panel{position:relative;z-index:5}
+#awake-btn{min-height:56px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+.actions{display:grid;gap:10px;margin-top:8px}
+.actions-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.brief{margin-top:8px}
+.greeting{
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:clamp(24px,5vw,32px);
+  line-height:1.25;margin-bottom:14px;
+  animation:rise .7s .1s both;
+}
+.task{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px 0;border-bottom:1px solid var(--line);
+}
+.task:last-child{border-bottom:none}
+.task .n{
+  font-family:'Frank Ruhl Libre',serif;font-size:18px;font-weight:700;
+  color:var(--copper);min-width:1.4em;
+}
+body.alarming .task .n{color:var(--dawn)}
+.task strong{display:block;font-size:15px;margin-bottom:2px}
+.task span{font-size:13px;color:var(--muted)}
+.chip{
+  display:inline-block;font-size:12px;font-weight:600;
+  padding:4px 10px;border-radius:999px;
+  background:rgba(196,92,38,.1);color:var(--copper);margin-bottom:12px;
+}
+
+.footer-note{
+  margin-top:auto;padding-top:28px;text-align:center;
+  font-size:12px;color:var(--muted);line-height:1.6;
+}
+.footer-note a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+
+.phone-box{
+  display:grid;gap:14px;justify-items:center;text-align:center;
+  padding-top:4px;
+}
+.phone-box img.qr{
+  width:min(220px,70vw);height:auto;border-radius:16px;
+  background:#fff;padding:10px;border:1px solid var(--line);
+}
+.phone-link{
+  font-size:13px;word-break:break-all;color:var(--copper);font-weight:600;
+  direction:ltr;unicode-bidi:isolate;
+}
+.install-steps{text-align:right;width:100%;font-size:14px;line-height:1.55;color:var(--muted)}
+.install-steps li{margin:6px 0 6px 0}
+.share-row{display:flex;gap:8px;width:100%;flex-wrap:wrap}
+.share-row .btn{flex:1;min-width:120px}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media(max-width:480px){
+  .actions-2{grid-template-columns:1fr}
+  .brand{font-size:clamp(36px,11vw,52px)}
+  .clock{font-size:clamp(56px,20vw,96px)}
+  .panel{padding:18px}
+}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div class="brand">Jarvis <span>×</span> ORVO</div>
+    <p class="tagline muted">העוזר האישי שלך — מתחיל בהשכמה</p>
+  </header>
+
+  <section class="clock-block" aria-live="polite">
+    <div class="clock" id="live-clock">--:--</div>
+    <div class="date" id="live-date"></div>
+    <div class="status-pill" id="status-pill">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="status-text">מוכן להעיר אותך</span>
+    </div>
+  </section>
+
+  <section class="panel" id="phone-panel">
+    <span class="chip">לטלפון</span>
+    <h2>פתח בטלפון / הוסף למסך הבית</h2>
+    <p class="hint">אחרי שהעמוד עולה באתר החי — סרוק את ה־QR או העתק את הקישור. באייפון: Share → Add to Home Screen. באנדרואיד: תפריט → התקן אפליקציה / הוסף למסך הבית.</p>
+    <div class="phone-box">
+      <img class="qr" id="phone-qr" src="assets/jarvis/qr-netlify.png" width="360" height="360" alt="QR ל־Jarvis בטלפון"/>
+      <a class="phone-link" id="phone-url" href="https://fantastic-eclair-0b2c66.netlify.app/jarvis.html">https://fantastic-eclair-0b2c66.netlify.app/jarvis.html</a>
+      <div class="share-row">
+        <button class="btn btn-primary" id="copy-link-btn" type="button">העתק קישור</button>
+        <button class="btn btn-ghost" id="share-btn" type="button">שתף לטלפון</button>
+      </div>
+      <ol class="install-steps">
+        <li>פתח את הקישור ב־Safari / Chrome בטלפון</li>
+        <li>הוסף למסך הבית (נראה כמו אפליקציה)</li>
+        <li>פתח מ־Jarvis → הגדר שעה → <b>הפעל השכמה</b></li>
+        <li>השאר את האפליקציה/לשונית פתוחה בלילה (או לפחות אל תהרוג אותה)</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" id="setup-panel">
+    <h2>השכמה מחר בבוקר</h2>
+    <p class="hint">השאר את העמוד פתוח בטלפון (או הוסף למסך הבית). בשעה שבחרת — Jarvis מעיר אותך בקול, עם מה שצריך לסגור ב־ORVO.</p>
+    <div class="row">
+      <div class="field">
+        <label for="wake-time">שעת השכמה</label>
+        <input type="time" id="wake-time"/>
+      </div>
+      <div class="field">
+        <label for="owner-name">איך לקרוא לך</label>
+        <input type="text" id="owner-name" maxlength="40"/>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:16px">
+      <button class="btn btn-primary btn-lg" id="arm-btn" type="button">הפעל השכמה</button>
+      <div class="actions-2">
+        <button class="btn btn-ghost" id="test-btn" type="button">הער אותי עכשיו</button>
+        <button class="btn btn-ghost" id="disarm-btn" type="button">בטל</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="alarm-panel" hidden>
+    <span class="chip" id="alarm-chip">השכמה פעילה</span>
+    <h2 id="alarm-title">קום, דניאל</h2>
+    <p class="hint" id="alarm-hint">Jarvis מדבר. לחץ «אני ער» כשאתה על הרגליים.</p>
+    <div class="actions">
+      <button class="btn btn-wake btn-lg" id="awake-btn" type="button">אני ער</button>
+      <div class="actions-2">
+        <button class="btn btn-ghost" id="snooze-btn" type="button">עוד 5 דק׳</button>
+        <button class="btn btn-ghost" id="repeat-btn" type="button">תגיד שוב</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel brief" id="brief-panel">
+    <span class="chip">תדריך בוקר · ORVO</span>
+    <p class="greeting" id="brief-greeting">טוען את היום שלך…</p>
+    <div id="brief-tasks"></div>
+  </section>
+
+  <p class="footer-note">
+    שלב 1 מתוך Jarvis: השכמה.<br/>
+    בהמשך — מיילים, מה להשלים בעסק, ופעולות אמיתיות.<br/>
+    <a href="index.html">חזרה ל־ORVO</a>
+  </p>
+</div>
+
+<audio id="chime" preload="auto" loop>
+  <source src="assets/jarvis/wake-tone.wav" type="audio/wav"/>
+</audio>
+
+<script src="jarvis-config.js"></script>
+<script src="jarvis.js"></script>
+</body>
+</html>
