@@ -349,9 +349,46 @@
     }
   }
 
+  function bindPhone() {
+    const live = 'https://fantastic-eclair-0b2c66.netlify.app/jarvis.html';
+    const link = $('phone-url');
+    if (link) {
+      link.href = live;
+      link.textContent = live;
+    }
+    $('copy-link-btn')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(live);
+        setStatus('הקישור הועתק — שלח לעצמך לטלפון');
+      } catch (_) {
+        setStatus(live);
+      }
+    });
+    $('share-btn')?.addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Jarvis — השכמה',
+            text: 'פתח את Jarvis בטלפון',
+            url: live,
+          });
+        } catch (_) { /* cancelled */ }
+      } else {
+        $('copy-link-btn')?.click();
+      }
+    });
+  }
+
+  function registerSw() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('./jarvis-sw.js').catch(() => {});
+  }
+
   async function init() {
     loadSaved();
     bind();
+    bindPhone();
+    registerSw();
     await loadPriorities();
     renderClock();
     if (state.armed) setStatus(`השכמה פעילה ל־${state.wakeTime}`);

@@ -4,7 +4,8 @@ Post what you need. Vetted builders send quotes. Chat and pay through ORVO.
 
 ## Jarvis (personal agent)
 
-Morning wake + ORVO briefing for the founder: open [`jarvis.html`](jarvis.html).  
+**Phone:** https://fantastic-eclair-0b2c66.netlify.app/jarvis.html  
+Morning wake + ORVO briefing: open [`jarvis.html`](jarvis.html).  
 Docs: [`docs/jarvis.md`](docs/jarvis.md)
 
 ```bash

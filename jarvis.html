@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="theme-color" content="#1a1410"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Jarvis"/>
 <title>Jarvis — השכמה</title>
+<link rel="manifest" href="jarvis.manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="assets/jarvis/icon-192.png"/>
+<link rel="icon" type="image/png" href="assets/jarvis/icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@500;700&display=swap" rel="stylesheet"/>
@@ -225,6 +230,23 @@ body.alarming .task .n{color:var(--dawn)}
 }
 .footer-note a{color:inherit;text-decoration:underline;text-underline-offset:3px}
 
+.phone-box{
+  display:grid;gap:14px;justify-items:center;text-align:center;
+  padding-top:4px;
+}
+.phone-box img.qr{
+  width:min(220px,70vw);height:auto;border-radius:16px;
+  background:#fff;padding:10px;border:1px solid var(--line);
+}
+.phone-link{
+  font-size:13px;word-break:break-all;color:var(--copper);font-weight:600;
+  direction:ltr;unicode-bidi:isolate;
+}
+.install-steps{text-align:right;width:100%;font-size:14px;line-height:1.55;color:var(--muted)}
+.install-steps li{margin:6px 0 6px 0}
+.share-row{display:flex;gap:8px;width:100%;flex-wrap:wrap}
+.share-row .btn{flex:1;min-width:120px}
+
 @keyframes rise{
   from{opacity:0;transform:translateY(16px)}
   to{opacity:1;transform:translateY(0)}
@@ -232,6 +254,9 @@ body.alarming .task .n{color:var(--dawn)}
 
 @media(max-width:480px){
   .actions-2{grid-template-columns:1fr}
+  .brand{font-size:clamp(36px,11vw,52px)}
+  .clock{font-size:clamp(56px,20vw,96px)}
+  .panel{padding:18px}
 }
 </style>
 </head>
@@ -249,6 +274,26 @@ body.alarming .task .n{color:var(--dawn)}
     <div class="status-pill" id="status-pill">
       <span class="dot" aria-hidden="true"></span>
       <span id="status-text">מוכן להעיר אותך</span>
+    </div>
+  </section>
+
+  <section class="panel" id="phone-panel">
+    <span class="chip">לטלפון</span>
+    <h2>פתח בטלפון / הוסף למסך הבית</h2>
+    <p class="hint">אחרי שהעמוד עולה באתר החי — סרוק את ה־QR או העתק את הקישור. באייפון: Share → Add to Home Screen. באנדרואיד: תפריט → התקן אפליקציה / הוסף למסך הבית.</p>
+    <div class="phone-box">
+      <img class="qr" id="phone-qr" src="assets/jarvis/qr-netlify.png" width="360" height="360" alt="QR ל־Jarvis בטלפון"/>
+      <a class="phone-link" id="phone-url" href="https://fantastic-eclair-0b2c66.netlify.app/jarvis.html">https://fantastic-eclair-0b2c66.netlify.app/jarvis.html</a>
+      <div class="share-row">
+        <button class="btn btn-primary" id="copy-link-btn" type="button">העתק קישור</button>
+        <button class="btn btn-ghost" id="share-btn" type="button">שתף לטלפון</button>
+      </div>
+      <ol class="install-steps">
+        <li>פתח את הקישור ב־Safari / Chrome בטלפון</li>
+        <li>הוסף למסך הבית (נראה כמו אפליקציה)</li>
+        <li>פתח מ־Jarvis → הגדר שעה → <b>הפעל השכמה</b></li>
+        <li>השאר את האפליקציה/לשונית פתוחה בלילה (או לפחות אל תהרוג אותה)</li>
+      </ol>
     </div>
   </section>
 

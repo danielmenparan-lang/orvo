@@ -1,0 +1,27 @@
+{
+  "name": "Jarvis — ORVO",
+  "short_name": "Jarvis",
+  "description": "העוזר האישי של ORVO — מעיר אותך בבוקר",
+  "start_url": "./jarvis.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e9dccb",
+  "theme_color": "#1a1410",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "assets/jarvis/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/jarvis/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
