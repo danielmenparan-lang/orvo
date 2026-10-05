@@ -1,0 +1,20 @@
+---
+description: Sunx product and engineering constraints for all Cursor work
+globs:
+  - docs/sunx/**
+  - apps/**
+  - packages/**
+  - supabase/**
+alwaysApply: false
+---
+
+# Sunx rules
+
+- Product: chat → questionnaire → pay → provision → hosted agent. No customer code.
+- Capability matrix is closed; soft-reject anything outside templates.
+- Wallet + Stripe webhook before provision. Never trust client-side “paid” flags.
+- Connector writes require consent_records + tool policy mode.
+- Secrets only on server/worker; encrypt connector tokens.
+- Keep AgentSpec Zod-validated; runtime must load Spec, not ad-hoc prompts alone.
+- Prefer Inngest/Trigger jobs for provision and indexing.
+- After meaningful progress, update docs/sunx/BUILD_STATUS.md.
