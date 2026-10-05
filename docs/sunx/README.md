@@ -4,8 +4,9 @@ Sunx = public chat-to-agent SaaS (describe → permissions → pay → hosted ag
 
 | File | Purpose |
 |---|---|
+| [PRODUCT_HE.md](./PRODUCT_HE.md) | **הסבר מוצר בעברית פשוטה — קרא קודם** |
 | [HOW_TO_RUN_IN_LOCAL_CURSOR.md](./HOW_TO_RUN_IN_LOCAL_CURSOR.md) | Hebrew handoff: how to use on your machine |
-| [CURSOR_BUILD_BRIEF.md](./CURSOR_BUILD_BRIEF.md) | **Master engineering brief** (start here in English) |
+| [CURSOR_BUILD_BRIEF.md](./CURSOR_BUILD_BRIEF.md) | Master engineering brief for Cursor (English) |
 | [SUNX_CURSOR_MEGA_PROMPT.md](./SUNX_CURSOR_MEGA_PROMPT.md) | One paste block for a new Cursor chat |
 | [PRD.md](./PRD.md) | Product requirements |
 | [DATA_MODEL.md](./DATA_MODEL.md) | Tables / RLS |

@@ -32,11 +32,24 @@ Ship a working vertical slice: signup → chat describe → questionnaire → St
 
 ---
 
-## 1) Product one-liner
+## 1) Product (plain language first)
 
-**Sunx** is a public platform where a non-technical user describes any *reasonable* AI agent in chat. Sunx interviews them for permissions and integrations, takes payment, then automatically provisions, configures, and runs that agent — including managed LLM tokens and approved API connections.
+**Hebrew product explainer (read this first if confused):** `docs/sunx/PRODUCT_HE.md`
 
-**Promise:** From description → running agent. No IDE. No API keys pasted into random `.env` files by the customer (Sunx manages provider keys; customer only approves OAuth / scoped credentials).
+**One-liner:** Sunx is a public website where a normal person (no coding) describes the AI agent they want in chat, answers a permissions questionnaire, pays, and Sunx automatically builds + hosts that agent — including buying/allocating LLM tokens and connecting APIs only after the user approves.
+
+**Promise:** Describe → pay → running agent.  
+Not an IDE. Not “bring your own OpenAI key and suffer.” Sunx runs it for them.
+
+**What the customer experiences:**
+1. Chat: “Build me a support bot for my shoe store…”
+2. Questionnaire: what data it may read/write/send
+3. Preview: capabilities + integrations + cost estimate
+4. Pay
+5. Click-to-connect Shopify/Gmail/etc.
+6. Test in playground → go LIVE
+
+**What Sunx is selling:** a finished working agent as a service — not a toolkit for developers.
 
 ---
 
