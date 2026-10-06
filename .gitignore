@@ -1,1 +1,5 @@
 assets/orvo24/production.log
+node_modules/
+package-lock.json
+assets/defense/_frames/
+assets/defense/_rec/

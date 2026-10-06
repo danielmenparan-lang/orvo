@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>מערכת הגנה זיג־זג — הדגמה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070B10;
+  --steel:#9FB4C7;
+  --teal:#2EE6A6;
+  --teal-dim:rgba(46,230,166,.18);
+  --amber:#F5A524;
+  --amber-dim:rgba(245,165,36,.2);
+  --danger:#FF4D6A;
+  --danger-dim:rgba(255,77,106,.22);
+  --ink:#E8EEF4;
+  --mute:rgba(232,238,244,.55);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Heebo,sans-serif}
+#stage{
+  position:relative;width:100vw;height:100vh;
+  background:
+    radial-gradient(1200px 700px at 18% 20%, rgba(46,230,166,.07), transparent 55%),
+    radial-gradient(900px 600px at 82% 70%, rgba(255,77,106,.08), transparent 50%),
+    linear-gradient(160deg,#070B10 0%, #0C141C 45%, #091018 100%);
+}
+.grid{
+  position:absolute;inset:0;opacity:.28;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(159,180,199,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(159,180,199,.08) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+.brand{
+  position:absolute;top:28px;right:40px;z-index:20;
+  font-weight:800;font-size:22px;letter-spacing:.04em;
+}
+.brand span{color:var(--teal)}
+.timer{
+  position:absolute;top:32px;left:40px;z-index:20;
+  font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--mute);
+}
+.caption{
+  position:absolute;bottom:48px;left:50%;transform:translateX(-50%);
+  z-index:30;text-align:center;width:min(920px,90vw);
+  opacity:0;transition:opacity .45s ease;
+}
+.caption.on{opacity:1}
+.caption .kicker{
+  display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--teal);margin-bottom:10px;
+}
+.caption h1{
+  font-size:clamp(26px,3.4vw,42px);font-weight:800;line-height:1.2;
+  margin-bottom:10px;text-shadow:0 8px 40px rgba(0,0,0,.55);
+}
+.caption p{font-size:clamp(15px,1.6vw,18px);color:var(--mute);line-height:1.5}
+
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .5s ease}
+.scene.on{opacity:1;pointer-events:auto}
+
+/* Scene layout */
+.arena{
+  position:absolute;inset:110px 60px 160px;
+  display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;
+}
+.panel{
+  position:relative;height:100%;min-height:360px;
+  border:1px solid rgba(159,180,199,.18);
+  background:linear-gradient(180deg, rgba(12,20,28,.85), rgba(7,11,16,.92));
+  border-radius:4px;overflow:hidden;
+}
+.panel::before{
+  content:attr(data-label);
+  position:absolute;top:14px;right:16px;z-index:5;
+  font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--mute);
+}
+.org .code{
+  position:absolute;inset:48px 18px 18px;font-family:'JetBrains Mono',monospace;
+  font-size:12px;line-height:1.7;color:rgba(46,230,166,.72);overflow:hidden;
+  direction:ltr;text-align:left;white-space:pre;
+}
+.wall{
+  position:absolute;left:0;top:0;bottom:0;width:18px;z-index:6;
+  background:linear-gradient(180deg, var(--teal), #1aa876 40%, var(--teal));
+  box-shadow:0 0 24px rgba(46,230,166,.45);
+  transition:background .15s, box-shadow .15s, opacity .15s, transform .15s;
+}
+.wall.layer-b{
+  background:linear-gradient(180deg, var(--amber), #d48914 40%, var(--amber));
+  box-shadow:0 0 24px rgba(245,165,36,.45);
+}
+.wall.cracked{
+  background:linear-gradient(180deg, var(--danger), #c9183a);
+  box-shadow:0 0 28px rgba(255,77,106,.55);
+  animation:shake .35s ease;
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-3px)}
+  75%{transform:translateX(3px)}
+}
+.crack{
+  position:absolute;left:0;width:18px;height:40px;z-index:7;
+  background:repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(255,255,255,.55) 3px, rgba(255,255,255,.55) 4px);
+  opacity:0;pointer-events:none;
+}
+.crack.on{opacity:1;animation:pulseCrack .6s ease infinite alternate}
+@keyframes pulseCrack{from{opacity:.55}to{opacity:1}}
+
+.attacker{
+  position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+}
+.agent{
+  width:120px;height:120px;border-radius:50%;
+  background:
+    radial-gradient(circle at 35% 30%, #ff8a9a, var(--danger) 45%, #8a1028 100%);
+  box-shadow:0 0 0 3px rgba(255,77,106,.25), 0 20px 60px rgba(255,77,106,.35);
+  position:relative;transition:filter .6s, transform .6s, opacity .6s;
+}
+.agent::after{
+  content:'AI';position:absolute;inset:0;display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;color:#fff;
+}
+.agent.weak{
+  filter:saturate(.35) brightness(.7);
+  box-shadow:0 0 0 3px rgba(159,180,199,.2), 0 10px 30px rgba(0,0,0,.4);
+  animation:wobble 1.2s ease-in-out infinite;
+}
+@keyframes wobble{
+  0%,100%{transform:translateY(0) rotate(0)}
+  50%{transform:translateY(4px) rotate(-2deg)}
+}
+.agent.blocked{
+  filter:grayscale(1) brightness(.45);
+  opacity:.55;
+  animation:none;
+  transform:scale(.92);
+}
+.agent-label{font-size:14px;font-weight:600;color:var(--danger)}
+.agent-label.weak{color:var(--amber)}
+.agent-label.dead{color:var(--mute)}
+
+.beam{
+  position:absolute;height:4px;border-radius:4px;z-index:8;opacity:0;
+  background:linear-gradient(90deg, transparent, var(--danger), transparent);
+  filter:blur(.3px);
+}
+.beam.on{opacity:1;animation:beamPulse .4s ease infinite}
+@keyframes beamPulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+.virus{
+  position:absolute;width:14px;height:14px;border-radius:50%;z-index:12;
+  background:var(--teal);box-shadow:0 0 16px var(--teal);opacity:0;
+}
+.virus.on{opacity:1}
+
+.hud{
+  position:absolute;inset:auto 60px 150px;display:flex;gap:12px;justify-content:center;z-index:15;
+  opacity:0;transition:opacity .4s;
+}
+.hud.on{opacity:1}
+.chip{
+  font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 14px;
+  border:1px solid rgba(159,180,199,.25);border-radius:4px;background:rgba(7,11,16,.75);
+  color:var(--mute);
+}
+.chip.hot{border-color:rgba(46,230,166,.45);color:var(--teal)}
+.chip.warn{border-color:rgba(245,165,36,.45);color:var(--amber)}
+.chip.bad{border-color:rgba(255,77,106,.45);color:var(--danger)}
+
+.layers{
+  position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);
+  width:min(780px,86vw);height:320px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+}
+.layers.on{display:flex}
+.layer-stack{position:relative;width:100%;height:220px}
+.layer-bar{
+  position:absolute;left:0;right:0;height:88px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  font-weight:800;font-size:26px;letter-spacing:.08em;
+  transition:opacity .1s, transform .1s, box-shadow .1s;
+}
+.layer-bar .tag{
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;opacity:.85;
+}
+.layer-bar.a{
+  top:12px;
+  background:linear-gradient(90deg, rgba(46,230,166,.12), rgba(46,230,166,.42), rgba(46,230,166,.12));
+  border:2px solid rgba(46,230,166,.75);color:var(--teal);
+}
+.layer-bar.b{
+  bottom:12px;
+  background:linear-gradient(90deg, rgba(245,165,36,.12), rgba(245,165,36,.42), rgba(245,165,36,.12));
+  border:2px solid rgba(245,165,36,.75);color:var(--amber);
+}
+.layer-bar.active{opacity:1;transform:scale(1.03);z-index:2;box-shadow:0 0 40px rgba(46,230,166,.25)}
+.layer-bar.b.active{box-shadow:0 0 40px rgba(245,165,36,.28)}
+.layer-bar.idle{opacity:.28;transform:scale(.94);z-index:1;box-shadow:none}
+.swap-meter{
+  width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;
+}
+.swap-meter > i{
+  display:block;height:100%;width:0%;background:var(--teal);border-radius:3px;
+}
+.swap-meter.b > i{background:var(--amber)}
+.zig-note{
+  font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--mute);
+}
+
+.title-card,.end-card{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:40px;gap:14px;
+}
+.title-card .mark,.end-card .mark{
+  font-size:13px;font-weight:700;letter-spacing:.2em;color:var(--teal);margin-bottom:8px;
+}
+.title-card h1,.end-card h1{
+  font-size:clamp(36px,5vw,64px);font-weight:800;line-height:1.1;max-width:900px;
+}
+.title-card p,.end-card p{font-size:18px;color:var(--mute);max-width:620px;line-height:1.55}
+.end-card .ok{
+  margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--teal);
+  border:1px solid rgba(46,230,166,.35);padding:10px 18px;border-radius:4px;
+}
+
+.progress{
+  position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.06);z-index:40;
+}
+.progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg, var(--teal), var(--amber));transition:width .1s linear}
+
+.scanlines{
+  position:absolute;inset:0;pointer-events:none;z-index:50;opacity:.06;
+  background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.35) 3px);
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="grid"></div>
+  <div class="scanlines"></div>
+  <div class="brand">ZIG<span>ZAG</span> DEFENSE</div>
+  <div class="timer" id="timer">00:00.0</div>
+
+  <!-- Scene 0: Title -->
+  <div class="scene on" id="s0">
+    <div class="title-card">
+      <div class="mark">SYSTEM DEMO</div>
+      <h1>האקר כבר לא אדם.<br/>הוא סוכן.</h1>
+      <p>מהיר יותר. חכם יותר. חזק יותר. מסוכן לארגונים — אלא אם יש חומה שלא נותנת לו חלון.</p>
+    </div>
+  </div>
+
+  <!-- Scene 1-4: Arena -->
+  <div class="scene" id="sArena">
+    <div class="arena">
+      <div class="panel org" data-label="ORGANIZATION CORE">
+        <div class="wall" id="wall"></div>
+        <div class="crack" id="crack" style="top:38%"></div>
+        <div class="code" id="code"></div>
+      </div>
+      <div class="panel" data-label="THREAT VECTOR">
+        <div class="attacker">
+          <div class="agent" id="agent"></div>
+          <div class="agent-label" id="agentLabel">סוכן תוקף</div>
+        </div>
+      </div>
+    </div>
+    <div class="beam" id="beam"></div>
+    <div class="virus" id="virus"></div>
+    <div class="hud" id="hud">
+      <div class="chip" id="chip1">STATUS: MONITORING</div>
+      <div class="chip" id="chip2">WALL: STATIC</div>
+      <div class="chip" id="chip3">EXPOSURE: —</div>
+    </div>
+  </div>
+
+  <!-- Scene zigzag -->
+  <div class="scene" id="sZig">
+    <div class="layers" id="layers">
+      <div class="layer-stack">
+        <div class="layer-bar a active" id="layerA"><span class="tag">ACTIVE</span> שכבה A</div>
+        <div class="layer-bar b idle" id="layerB"><span class="tag">STANDBY</span> שכבה B</div>
+      </div>
+      <div class="swap-meter" id="meter"><i id="meterFill"></i></div>
+      <div class="zig-note" id="zigNote">SWAP CYCLE · 0.1s · NO GAP</div>
+    </div>
+  </div>
+
+  <!-- End -->
+  <div class="scene" id="sEnd">
+    <div class="end-card">
+      <div class="mark">ZERO WINDOW</div>
+      <h1>זיג־זג.<br/>אין חלון חדירה.</h1>
+      <p>שכבה ראשונה נסגרת — השנייה כבר חיה. מחליפים כל 0.1 שניות. הסוכן נחלש. הארגון נשאר סגור.</p>
+      <div class="ok">EXPOSURE WINDOW = 0.0s</div>
+    </div>
+  </div>
+
+  <div class="caption" id="caption">
+    <div class="kicker" id="capKick"></div>
+    <h1 id="capTitle"></h1>
+    <p id="capBody"></p>
+  </div>
+  <div class="progress"><i id="prog"></i></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const TOTAL = 28000;
+  const codeEl = document.getElementById('code');
+  const wall = document.getElementById('wall');
+  const crack = document.getElementById('crack');
+  const agent = document.getElementById('agent');
+  const agentLabel = document.getElementById('agentLabel');
+  const beam = document.getElementById('beam');
+  const virus = document.getElementById('virus');
+  const hud = document.getElementById('hud');
+  const chip1 = document.getElementById('chip1');
+  const chip2 = document.getElementById('chip2');
+  const chip3 = document.getElementById('chip3');
+  const caption = document.getElementById('caption');
+  const capKick = document.getElementById('capKick');
+  const capTitle = document.getElementById('capTitle');
+  const capBody = document.getElementById('capBody');
+  const prog = document.getElementById('prog');
+  const timer = document.getElementById('timer');
+  const layerA = document.getElementById('layerA');
+  const layerB = document.getElementById('layerB');
+  const meter = document.getElementById('meter');
+  const meterFill = document.getElementById('meterFill');
+  const layers = document.getElementById('layers');
+
+  const CODE = [
+    'auth.verify(token) → OK',
+    'firewall.ruleset.load(v3.2)',
+    'perimeter.scan() → CLEAN',
+    'session.bind(org_id=8841)',
+    'crypto.rotate(keys) // idle',
+    'access.policy = STRICT',
+    'honeypot.nodes = 12',
+    'telemetry.push(heartbeat)',
+  ];
+
+  let codeIdx = 0;
+  function tickCode() {
+    const line = CODE[codeIdx % CODE.length];
+    const stamp = new Date().toISOString().slice(11, 23);
+    codeEl.textContent = `[${stamp}] ${line}\n` + codeEl.textContent.slice(0, 900);
+    codeIdx++;
+  }
+  setInterval(tickCode, 280);
+  tickCode();
+
+  function showScene(id) {
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('on'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('on');
+  }
+
+  function setCaption(kick, title, body, on = true) {
+    capKick.textContent = kick;
+    capTitle.textContent = title;
+    capBody.textContent = body;
+    caption.classList.toggle('on', on);
+  }
+
+  function placeBeam() {
+    const a = agent.getBoundingClientRect();
+    const w = wall.getBoundingClientRect();
+    const x1 = a.left;
+    const x2 = w.right;
+    const y = a.top + a.height / 2;
+    beam.style.left = Math.min(x1, x2) + 'px';
+    beam.style.width = Math.abs(x1 - x2) + 'px';
+    beam.style.top = y + 'px';
+  }
+
+  function injectVirus() {
+    const a = agent.getBoundingClientRect();
+    const w = wall.getBoundingClientRect();
+    const startX = w.right;
+    const startY = w.top + w.height * 0.42;
+    const endX = a.left + a.width / 2;
+    const endY = a.top + a.height / 2;
+    virus.style.left = startX + 'px';
+    virus.style.top = startY + 'px';
+    virus.classList.add('on');
+    const t0 = performance.now();
+    function step(now) {
+      const p = Math.min(1, (now - t0) / 900);
+      const e = 1 - Math.pow(1 - p, 3);
+      virus.style.left = startX + (endX - startX) * e + 'px';
+      virus.style.top = startY + (endY - startY) * e + 'px';
+      if (p < 1) requestAnimationFrame(step);
+      else {
+        virus.classList.remove('on');
+        agent.classList.add('weak');
+        agentLabel.classList.add('weak');
+        agentLabel.textContent = 'סוכן מוחלש';
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  let zigzagTimer = null;
+  function startZigzag() {
+    let phase = 0;
+    const period = 100;
+    const zigNote = document.getElementById('zigNote');
+    function flip() {
+      phase = 1 - phase;
+      const aOn = phase === 0;
+      layerA.classList.toggle('active', aOn);
+      layerA.classList.toggle('idle', !aOn);
+      layerB.classList.toggle('active', !aOn);
+      layerB.classList.toggle('idle', aOn);
+      layerA.querySelector('.tag').textContent = aOn ? 'ACTIVE' : 'STANDBY';
+      layerB.querySelector('.tag').textContent = aOn ? 'STANDBY' : 'ACTIVE';
+      meter.classList.toggle('b', !aOn);
+      wall.classList.toggle('layer-b', !aOn);
+      chip2.textContent = aOn ? 'WALL: LAYER A' : 'WALL: LAYER B';
+      chip2.className = 'chip ' + (aOn ? 'hot' : 'warn');
+      if (zigNote) zigNote.textContent = aOn
+        ? 'LAYER A LIVE · LAYER B ARMED · 0.1s'
+        : 'LAYER B LIVE · LAYER A ARMED · 0.1s';
+      const t0 = performance.now();
+      function fill(now) {
+        const p = Math.min(1, (now - t0) / period);
+        meterFill.style.width = (p * 100) + '%';
+        if (p < 1) requestAnimationFrame(fill);
+      }
+      requestAnimationFrame(fill);
+    }
+    flip();
+    zigzagTimer = setInterval(flip, period);
+  }
+
+  function stopZigzag() {
+    if (zigzagTimer) clearInterval(zigzagTimer);
+  }
+
+  // Timeline (ms)
+  const beats = [
+    { t: 0, run() {
+      showScene('s0');
+      setCaption('', '', '', false);
+    }},
+    { t: 3200, run() {
+      showScene('sArena');
+      hud.classList.add('on');
+      setCaption('שלב 01', 'הסוכן מנסה לחדור', 'לא האקר מאחורי מסך — סוכן אוטונומי שתוקף בקצב מכונה.');
+    }},
+    { t: 6200, run() {
+      placeBeam();
+      beam.classList.add('on');
+      wall.classList.add('cracked');
+      crack.classList.add('on');
+      chip1.textContent = 'STATUS: INTRUSION';
+      chip1.className = 'chip bad';
+      chip3.textContent = 'EXPOSURE: OPEN';
+      chip3.className = 'chip bad';
+      setCaption('שלב 02', 'החומה נסדקת', 'חלק מההגנה נשבר. הארגון חשוף לרגע.');
+    }},
+    { t: 9500, run() {
+      beam.classList.remove('on');
+      injectVirus();
+      chip1.textContent = 'STATUS: NEUTRALIZER DEPLOYED';
+      chip1.className = 'chip hot';
+      setCaption('שלב 03', 'השתלת הווירוס על התוקף', 'המערכת מזריקה חומר שמחליש ומנטרל את הסוכן.');
+    }},
+    { t: 12800, run() {
+      wall.classList.remove('cracked');
+      crack.classList.remove('on');
+      chip3.textContent = 'EXPOSURE: STILL OPEN';
+      chip3.className = 'chip warn';
+      setCaption('שלב 04', 'הבעיה: עדיין חשופים', 'גם כשהוא תשוש — הוא עדיין יכול להיכנס לבית.');
+    }},
+    { t: 15800, run() {
+      // Rapid wall swap tease
+      let n = 0;
+      const iv = setInterval(() => {
+        wall.classList.toggle('layer-b');
+        chip2.textContent = wall.classList.contains('layer-b') ? 'WALL: SWAP B' : 'WALL: SWAP A';
+        chip2.className = 'chip ' + (wall.classList.contains('layer-b') ? 'warn' : 'hot');
+        n++;
+        if (n > 16) clearInterval(iv);
+      }, 100);
+      setCaption('שלב 05', 'מחליפים את החומה כל 0.1 שנ׳', 'מעדכנים את קוד ההגנה באיזור החדירה — שוב ושוב.');
+    }},
+    { t: 19000, run() {
+      showScene('sZig');
+      layers.classList.add('on');
+      // keep wall visual via arena briefly hidden; show zigzag layers
+      setCaption('השוס', 'מערכת זיג־זג — שתי שכבות', 'שכבה A נגמרת — שכבה B כבר חיה. וחוזר חלילה.');
+      startZigzag();
+      // also show agent blocked state in background? zigzag scene is clean
+    }},
+    { t: 23500, run() {
+      stopZigzag();
+      showScene('sArena');
+      hud.classList.add('on');
+      agent.classList.remove('weak');
+      agent.classList.add('blocked');
+      agentLabel.classList.remove('weak');
+      agentLabel.classList.add('dead');
+      agentLabel.textContent = 'חדירה נחסמה';
+      wall.classList.remove('layer-b');
+      chip1.textContent = 'STATUS: SECURE';
+      chip1.className = 'chip hot';
+      chip2.textContent = 'WALL: ZIGZAG ACTIVE';
+      chip2.className = 'chip hot';
+      chip3.textContent = 'EXPOSURE: 0.0s';
+      chip3.className = 'chip hot';
+      setCaption('תוצאה', 'אין חלון לסוכן', 'ההחלפה הכפולה סוגרת את הפרצה לפני שהוא מספיק להיכנס.');
+    }},
+    { t: 25500, run() {
+      showScene('sEnd');
+      setCaption('', '', '', false);
+    }},
+  ];
+
+  const start = performance.now();
+  let i = 0;
+  function frame(now) {
+    const t = now - start;
+    while (i < beats.length && t >= beats[i].t) {
+      beats[i].run();
+      i++;
+    }
+    const sec = t / 1000;
+    timer.textContent = '00:' + String(Math.floor(sec)).padStart(2, '0') + '.' + String(Math.floor((sec % 1) * 10));
+    prog.style.width = Math.min(100, (t / TOTAL) * 100) + '%';
+    if (t < TOTAL + 400) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // Expose for recorder
+  window.__DEFENSE_DEMO_MS = TOTAL;
+})();
+</script>
+</body>
+</html>
