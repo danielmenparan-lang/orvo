@@ -1,0 +1,13 @@
+{
+  "name": "orvo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ORVO — AI Agent Marketplace + ZigZag Defense demo",
+  "scripts": {
+    "record:defense": "node scripts/record-defense-demo.js",
+    "serve": "python3 -m http.server 5173"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

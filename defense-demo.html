@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ZigZag Defense — Intrusion Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;
+  --panel:#161b22;
+  --border:#30363d;
+  --text:#e6edf3;
+  --mute:#8b949e;
+  --green:#3fb950;
+  --green-dim:#238636;
+  --red:#f85149;
+  --red-dim:#da3633;
+  --amber:#d29922;
+  --blue:#58a6ff;
+  --purple:#a371f7;
+  --cyan:#39d2c0;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'IBM Plex Sans',system-ui,sans-serif}
+#stage{position:relative;width:100vw;height:100vh;padding:16px 18px 14px;display:flex;flex-direction:column;gap:10px}
+
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;
+  height:36px;
+}
+.brand{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--mute)}
+.brand b{color:var(--cyan);font-weight:700}
+.top-meta{display:flex;gap:8px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px}
+.pill{
+  border:1px solid var(--border);background:var(--panel);padding:4px 10px;border-radius:999px;color:var(--mute)
+}
+.pill.live{border-color:rgba(63,185,80,.45);color:var(--green)}
+.pill.warn{border-color:rgba(210,153,34,.5);color:var(--amber)}
+.pill.bad{border-color:rgba(248,81,73,.5);color:var(--red)}
+
+.workspace{
+  flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+
+.window{
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  box-shadow:0 8px 28px rgba(0,0,0,.35);
+}
+.titlebar{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);
+  background:#010409;flex-shrink:0;
+}
+.dots{display:flex;gap:5px}
+.dots i{width:9px;height:9px;border-radius:50%;display:block;background:#484f58}
+.dots i:nth-child(1){background:#ff5f56}
+.dots i:nth-child(2){background:#ffbd2e}
+.dots i:nth-child(3){background:#27c93f}
+.titlebar .name{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mute);flex:1}
+.titlebar .badge{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--mute)
+}
+.titlebar .badge.atk{color:var(--red);border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.08)}
+.titlebar .badge.def{color:var(--green);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.08)}
+.titlebar .badge.hot{color:var(--amber);border-color:rgba(210,153,34,.45);background:rgba(210,153,34,.1)}
+
+.body{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+.tabs{
+  display:flex;gap:0;border-bottom:1px solid var(--border);background:#0d1117;flex-shrink:0;
+}
+.tab{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 12px;color:var(--mute);
+  border-right:1px solid var(--border);background:transparent;
+}
+.tab.on{color:var(--text);background:var(--panel);box-shadow:inset 0 -2px 0 var(--cyan)}
+
+.term,.editor{
+  flex:1;min-height:0;overflow:hidden;padding:12px 14px;
+  font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.55;
+  white-space:pre-wrap;word-break:break-word;
+}
+.term{background:#0d1117;color:#c9d1d9}
+.editor{background:#0d1117;color:#c9d1d9;padding:0;display:flex}
+
+.gutter{
+  width:42px;flex-shrink:0;padding:12px 0;text-align:right;
+  color:#484f58;user-select:none;border-right:1px solid var(--border);background:#010409;
+  font-size:12px;line-height:1.55;
+}
+.gutter div{padding-right:10px}
+.code{flex:1;padding:12px 14px;overflow:hidden;position:relative}
+
+.c-muted{color:#6e7681}
+.c-green{color:var(--green)}
+.c-red{color:var(--red)}
+.c-amber{color:var(--amber)}
+.c-blue{color:var(--blue)}
+.c-cyan{color:var(--cyan)}
+.c-purple{color:var(--purple)}
+.c-white{color:var(--text)}
+.hl{
+  background:rgba(248,81,73,.18);outline:1px solid rgba(248,81,73,.35);
+  border-radius:2px;padding:0 2px;
+}
+.hl-green{
+  background:rgba(63,185,80,.16);outline:1px solid rgba(63,185,80,.35);
+  border-radius:2px;padding:0 2px;
+}
+.hl-amber{
+  background:rgba(210,153,34,.16);outline:1px solid rgba(210,153,34,.4);
+  border-radius:2px;padding:0 2px;
+}
+.cursor{
+  display:inline-block;width:7px;height:14px;background:var(--green);vertical-align:-2px;
+  animation:blink 1s step-end infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+.flash-red{animation:flashRed .5s ease}
+@keyframes flashRed{
+  0%,100%{box-shadow:inset 0 0 0 0 transparent}
+  30%{box-shadow:inset 0 0 0 2px rgba(248,81,73,.55)}
+}
+.flash-green{animation:flashGreen .5s ease}
+@keyframes flashGreen{
+  0%,100%{box-shadow:inset 0 0 0 0 transparent}
+  30%{box-shadow:inset 0 0 0 2px rgba(63,185,80,.55)}
+}
+
+.statusbar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:6px 12px;border-top:1px solid var(--border);background:#010409;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mute);flex-shrink:0;
+}
+.statusbar .ok{color:var(--green)}
+.statusbar .bad{color:var(--red)}
+.statusbar .warn{color:var(--amber)}
+
+.bottom{
+  flex-shrink:0;display:grid;grid-template-columns:1.2fr .8fr;gap:12px;height:118px;
+}
+.logwin .term{font-size:11.5px;line-height:1.45;padding:10px 12px}
+.metrics{
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 14px;
+  display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;align-content:center;
+}
+.metric label{display:block;font-size:10px;color:var(--mute);font-family:'IBM Plex Mono',monospace;margin-bottom:3px;letter-spacing:.04em}
+.metric val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--text)}
+.metric val.ok{color:var(--green)}
+.metric val.bad{color:var(--red)}
+.metric val.warn{color:var(--amber)}
+
+.layer-strip{
+  grid-column:1 / -1;height:8px;border-radius:4px;background:#21262d;overflow:hidden;position:relative;
+  border:1px solid var(--border);
+}
+.layer-strip > i{
+  position:absolute;inset:0 auto 0 0;width:0%;background:linear-gradient(90deg,var(--cyan),var(--green));
+}
+.layer-strip.b > i{background:linear-gradient(90deg,var(--amber),#e3b341)}
+
+.overlay-caption{
+  position:absolute;left:50%;bottom:132px;transform:translateX(-50%);
+  z-index:20;pointer-events:none;text-align:center;
+  background:rgba(1,4,9,.82);border:1px solid var(--border);border-radius:8px;
+  padding:10px 18px;backdrop-filter:blur(8px);opacity:0;transition:opacity .35s;
+  max-width:min(720px,90vw);
+}
+.overlay-caption.on{opacity:1}
+.overlay-caption .k{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:.12em;margin-bottom:4px}
+.overlay-caption h2{font-size:15px;font-weight:600;margin-bottom:2px}
+.overlay-caption p{font-size:12px;color:var(--mute)}
+
+.progress{position:absolute;left:0;right:0;bottom:0;height:2px;background:#21262d;z-index:30}
+.progress > i{display:block;height:100%;width:0;background:var(--cyan)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="topbar">
+    <div class="brand"><b>ZIGZAG</b> · live intrusion simulation</div>
+    <div class="top-meta">
+      <span class="pill" id="clock">00:00.0</span>
+      <span class="pill" id="phase">PHASE: IDLE</span>
+      <span class="pill live" id="mode">DEFENSE: STANDBY</span>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <!-- ATTACKER -->
+    <div class="window" id="atkWin">
+      <div class="titlebar">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <div class="name">attacker@agent-7 — zsh — 80×28</div>
+        <div class="badge atk" id="atkBadge">HOSTILE</div>
+      </div>
+      <div class="body">
+        <div class="tabs">
+          <div class="tab on">~/ops/breach.sh</div>
+          <div class="tab">session.log</div>
+        </div>
+        <div class="term" id="atkTerm"></div>
+      </div>
+      <div class="statusbar">
+        <span id="atkStatus">recon · waiting</span>
+        <span>pid 44821 · utf-8</span>
+      </div>
+    </div>
+
+    <!-- DEFENDER / ORG CODE -->
+    <div class="window" id="defWin">
+      <div class="titlebar">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <div class="name">org-edge / auth-gateway — zigzag_middleware.py</div>
+        <div class="badge def" id="defBadge">PROTECTED</div>
+      </div>
+      <div class="body">
+        <div class="tabs">
+          <div class="tab on" id="tabCode">zigzag_middleware.py</div>
+          <div class="tab" id="tabRules">ruleset.json</div>
+          <div class="tab">soc.log</div>
+        </div>
+        <div class="editor">
+          <div class="gutter" id="gutter"></div>
+          <div class="code" id="defCode"></div>
+        </div>
+      </div>
+      <div class="statusbar">
+        <span id="defStatus">layer=A · hash=—</span>
+        <span>python · LF · utf-8</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="window logwin">
+      <div class="titlebar">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <div class="name">soc-console — /var/log/zigzag/defense.log</div>
+        <div class="badge" id="socBadge">SOC</div>
+      </div>
+      <div class="term" id="socLog"></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><label>EXPOSURE WINDOW</label><val id="mExp">—</val></div>
+      <div class="metric"><label>ACTIVE LAYER</label><val id="mLayer" class="ok">A</val></div>
+      <div class="metric"><label>ATTACKER STATE</label><val id="mAtk">SCANNING</val></div>
+      <div class="metric"><label>SWAP INTERVAL</label><val id="mSwap">0.1s</val></div>
+      <div class="layer-strip" id="strip"><i id="stripFill"></i></div>
+    </div>
+  </div>
+
+  <div class="overlay-caption" id="caption">
+    <div class="k" id="capK"></div>
+    <h2 id="capT"></h2>
+    <p id="capB"></p>
+  </div>
+  <div class="progress"><i id="prog"></i></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const TOTAL = 32000;
+  const atkTerm = document.getElementById('atkTerm');
+  const defCode = document.getElementById('defCode');
+  const gutter = document.getElementById('gutter');
+  const socLog = document.getElementById('socLog');
+  const clock = document.getElementById('clock');
+  const phase = document.getElementById('phase');
+  const mode = document.getElementById('mode');
+  const atkStatus = document.getElementById('atkStatus');
+  const defStatus = document.getElementById('defStatus');
+  const atkBadge = document.getElementById('atkBadge');
+  const defBadge = document.getElementById('defBadge');
+  const mExp = document.getElementById('mExp');
+  const mLayer = document.getElementById('mLayer');
+  const mAtk = document.getElementById('mAtk');
+  const strip = document.getElementById('strip');
+  const stripFill = document.getElementById('stripFill');
+  const caption = document.getElementById('caption');
+  const capK = document.getElementById('capK');
+  const capT = document.getElementById('capT');
+  const capB = document.getElementById('capB');
+  const prog = document.getElementById('prog');
+  const atkWin = document.getElementById('atkWin');
+  const defWin = document.getElementById('defWin');
+
+  const HASH_A = 'a7f3c91e2b44';
+  const HASH_B = 'e19d60b8c3fa';
+
+  let atkLines = [];
+  let socLines = [];
+  let layer = 'A';
+  let zigTimer = null;
+  let codeMode = 'base'; // base | cracked | inject | zigzag
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderAtk() {
+    atkTerm.innerHTML = atkLines.join('\n') + (showCursor ? ' <span class="cursor"></span>' : '');
+    atkTerm.scrollTop = atkTerm.scrollHeight;
+  }
+
+  function renderSoc() {
+    socLog.innerHTML = socLines.slice(-14).join('\n');
+    socLog.scrollTop = socLog.scrollHeight;
+  }
+
+  let showCursor = true;
+
+  function atk(html) {
+    atkLines.push(html);
+    if (atkLines.length > 40) atkLines.shift();
+    renderAtk();
+  }
+
+  function soc(level, msg) {
+    const colors = { INFO: 'c-blue', WARN: 'c-amber', ALERT: 'c-red', OK: 'c-green' };
+    const ts = new Date().toISOString().slice(11, 23);
+    socLines.push(`<span class="c-muted">${ts}</span> <span class="${colors[level]||'c-white'}">${level.padEnd(5)}</span> ${msg}`);
+    renderSoc();
+  }
+
+  function setCaption(k, t, b, on = true) {
+    capK.textContent = k;
+    capT.textContent = t;
+    capB.textContent = b;
+    caption.classList.toggle('on', on);
+  }
+
+  function codeBase(layerId, hash, highlight) {
+    const L = layerId;
+    const h = hash;
+    const lines = [
+      `<span class="c-purple">from</span> zigzag.runtime <span class="c-purple">import</span> Layer, Neutralizer`,
+      `<span class="c-purple">from</span> zigzag.crypto <span class="c-purple">import</span> rotate_surface`,
+      ``,
+      `<span class="c-muted"># Active edge policy — dual-layer zigzag</span>`,
+      `ACTIVE_LAYER = <span class="c-green">"${L}"</span>`,
+      `SURFACE_HASH = <span class="c-amber">"${h}"</span>`,
+      `SWAP_MS = <span class="c-blue">100</span>`,
+      ``,
+      `<span class="c-purple">class</span> <span class="c-cyan">AuthGateway</span>:`,
+      `    <span class="c-purple">def</span> <span class="c-blue">handle</span>(self, req):`,
+      `        policy = Layer.load(ACTIVE_LAYER, SURFACE_HASH)`,
+      `        <span class="c-purple">if</span> policy.detect_intrusion(req):`,
+      `            Neutralizer.inject(req.session)  <span class="c-muted"># weaken attacker</span>`,
+      `            rotate_surface(peer_layer=True)  <span class="c-muted"># no open window</span>`,
+      `            <span class="c-purple">return</span> Response(<span class="c-blue">403</span>, <span class="c-green">"blocked"</span>)`,
+      `        <span class="c-purple">return</span> policy.forward(req)`,
+    ];
+
+    if (highlight === 'crack') {
+      lines[4] = `ACTIVE_LAYER = <span class="hl">"${L}"  # COMPROMISED PATH</span>`;
+      lines[5] = `SURFACE_HASH = <span class="hl">"${h}"</span>`;
+    } else if (highlight === 'inject') {
+      lines[12] = `            <span class="hl-green">Neutralizer.inject(req.session)  # DEPLOYED</span>`;
+    } else if (highlight === 'zigzag') {
+      lines[4] = `ACTIVE_LAYER = <span class="hl-amber">"${L}"</span>`;
+      lines[5] = `SURFACE_HASH = <span class="hl-amber">"${h}"</span>`;
+      lines[13] = `            <span class="hl-green">rotate_surface(peer_layer=True)  # A↔B LIVE</span>`;
+    }
+
+    defCode.innerHTML = lines.join('\n');
+    gutter.innerHTML = lines.map((_, i) => `<div>${i + 1}</div>`).join('');
+    defStatus.innerHTML = `layer=<span class="${L==='A'?'ok':'warn'}">${L}</span> · hash=${h}`;
+    mLayer.textContent = L;
+    mLayer.className = L === 'A' ? 'ok' : 'warn';
+  }
+
+  function setLayer(L, highlight) {
+    layer = L;
+    const hash = L === 'A' ? HASH_A : HASH_B;
+    codeBase(L, hash, highlight || codeMode);
+    strip.classList.toggle('b', L === 'B');
+  }
+
+  function startZigzag() {
+    let n = 0;
+    codeMode = 'zigzag';
+    setLayer('A', 'zigzag');
+    const period = 100;
+    function tick() {
+      n++;
+      const L = n % 2 === 0 ? 'A' : 'B';
+      setLayer(L, 'zigzag');
+      const t0 = performance.now();
+      (function fill(now) {
+        const p = Math.min(1, (now - t0) / period);
+        stripFill.style.width = (p * 100) + '%';
+        if (p < 1) requestAnimationFrame(fill);
+      })(t0);
+    }
+    tick();
+    zigTimer = setInterval(tick, period);
+  }
+
+  function stopZigzag() {
+    if (zigTimer) clearInterval(zigTimer);
+    zigTimer = null;
+  }
+
+  // Initial
+  codeBase('A', HASH_A);
+  atk(`<span class="c-green">attacker@agent-7</span>:<span class="c-blue">~/ops</span>$ <span class="c-white">./autonomous_breach.py --target org-edge:443</span>`);
+  soc('INFO', 'zigzag runtime online · layers A/B armed');
+
+  // Timeline
+  const beats = [
+    { t: 400, run() {
+      phase.textContent = 'PHASE: RECON';
+      mode.textContent = 'DEFENSE: MONITORING';
+      mode.className = 'pill live';
+      setCaption('01 · RECON', 'Autonomous agent begins recon', 'Not a human at a keyboard — scripted intrusion at machine speed.');
+      atk(`<span class="c-muted">[*] fingerprinting auth-gateway…</span>`);
+      soc('INFO', 'inbound probes from 185.22.xx.41 · UA=agent-7/1.4');
+    }},
+    { t: 2200, run() {
+      atk(`<span class="c-muted">[*] GET /api/v2/session/validate</span>`);
+      atk(`<span class="c-muted">[*] discovered jwt_alg=HS256 · middleware=zigzag</span>`);
+      atk(`<span class="c-amber">[*] crafting forged session token…</span>`);
+      atkStatus.textContent = 'exploit · crafting token';
+      mAtk.textContent = 'CRAFTING';
+      mAtk.className = 'warn';
+      soc('WARN', 'abnormal token mint pattern · entropy spike');
+    }},
+    { t: 4800, run() {
+      phase.textContent = 'PHASE: EXPLOIT';
+      phase.className = 'pill bad';
+      setCaption('02 · EXPLOIT', 'Intrusion attempt against auth code', 'Agent pushes a forged JWT into the protected edge.');
+      atk(`<span class="c-red">[>] POST /api/v2/admin/export</span>`);
+      atk(`<span class="c-red">[>] Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.forgery…</span>`);
+      atk(`<span class="c-red">[>] payload: path_traversal=../../etc/secrets</span>`);
+      atkWin.classList.add('flash-red');
+      defWin.classList.add('flash-red');
+      codeMode = 'crack';
+      setLayer('A', 'crack');
+      defBadge.textContent = 'BREACH AT';
+      defBadge.className = 'badge atk';
+      mExp.textContent = 'OPEN';
+      mExp.className = 'bad';
+      atkStatus.textContent = 'exploit · writing to edge';
+      mAtk.textContent = 'INTRUDING';
+      mAtk.className = 'bad';
+      soc('ALERT', 'intrusion signature matched · path=AuthGateway.handle');
+      soc('ALERT', 'surface hash a7f3c91e2b44 under stress');
+    }},
+    { t: 8200, run() {
+      phase.textContent = 'PHASE: NEUTRALIZE';
+      setCaption('03 · COUNTER', 'Neutralizer planted into attacker session', 'Defense injects a weakening payload into the hostile agent.');
+      codeMode = 'inject';
+      setLayer('A', 'inject');
+      defWin.classList.add('flash-green');
+      atk(`<span class="c-cyan">[!]</span> <span class="c-amber">unexpected response trailer: X-ZigZag-Seed: 0xNEUT</span>`);
+      atk(`<span class="c-amber">[!] agent loop latency +340% · tool calls degrading…</span>`);
+      atk(`<span class="c-amber">[!] memory scrub: planning buffer corrupted</span>`);
+      atkBadge.textContent = 'WEAKENED';
+      atkBadge.className = 'badge hot';
+      mAtk.textContent = 'WEAKENED';
+      mAtk.className = 'warn';
+      atkStatus.textContent = 'session · poisoned';
+      mode.textContent = 'DEFENSE: NEUTRALIZER ON';
+      mode.className = 'pill warn';
+      soc('OK', 'Neutralizer.inject(session=agent-7) · ok');
+      soc('WARN', 'attacker slowed — exposure window still open');
+      mExp.textContent = 'STILL OPEN';
+      mExp.className = 'warn';
+    }},
+    { t: 12000, run() {
+      phase.textContent = 'PHASE: SURFACE SWAP';
+      setCaption('04 · SWAP', 'Rotating defense code on the hit path', 'SURFACE_HASH and ACTIVE_LAYER rewrite every 100ms at the breach point.');
+      atk(`<span class="c-red">[x] retry exploit against cached surface…</span>`);
+      atk(`<span class="c-red">[x] 403 — hash mismatch (expected a7f3… got e19d…)</span>`);
+      let flips = 0;
+      const iv = setInterval(() => {
+        flips++;
+        setLayer(flips % 2 ? 'B' : 'A', 'zigzag');
+        if (flips >= 12) clearInterval(iv);
+      }, 100);
+      soc('OK', 'rotate_surface() · path-local rewrite @ 100ms');
+      mode.textContent = 'DEFENSE: SWAPPING';
+      defBadge.textContent = 'ROTATING';
+      defBadge.className = 'badge hot';
+    }},
+    { t: 15500, run() {
+      phase.textContent = 'PHASE: ZIGZAG';
+      phase.className = 'pill live';
+      setCaption('05 · ZIGZAG', 'Two layers — zero open window', 'Layer A ends only after Layer B is already live. Repeat.');
+      startZigzag();
+      mode.textContent = 'DEFENSE: ZIGZAG ACTIVE';
+      mode.className = 'pill live';
+      defBadge.textContent = 'ZIGZAG';
+      defBadge.className = 'badge def';
+      mExp.textContent = '0.0s';
+      mExp.className = 'ok';
+      atk(`<span class="c-red">[x] race A→B failed — peer layer already armed</span>`);
+      atk(`<span class="c-red">[x] race B→A failed — peer layer already armed</span>`);
+      atk(`<span class="c-muted">[*] no executable gap between surfaces</span>`);
+      soc('OK', 'dual-layer handshake · exposure_window=0.0s');
+      soc('OK', 'A live / B armed · B live / A armed');
+    }},
+    { t: 22000, run() {
+      atk(`<span class="c-red">[FATAL] agent-7 planning halted · quarantine flag</span>`);
+      atk(`<span class="c-muted">connection closed by org-edge</span>`);
+      atk(`<span class="c-green">attacker@agent-7</span>:<span class="c-blue">~/ops</span>$`);
+      showCursor = true;
+      atkBadge.textContent = 'BLOCKED';
+      mAtk.textContent = 'BLOCKED';
+      mAtk.className = 'ok';
+      atkStatus.textContent = 'session · terminated';
+      soc('OK', 'hostile session dropped · forensics packet stored');
+      setCaption('06 · SECURE', 'Intrusion closed in code', 'Exploit path neutralized. Zigzag keeps the surface moving.');
+    }},
+    { t: 25500, run() {
+      stopZigzag();
+      setLayer('A', 'zigzag');
+      stripFill.style.width = '100%';
+      setCaption('RESULT', 'exposure_window = 0.0s', 'Breach attempt logged. Attacker weakened. No entry.');
+      phase.textContent = 'PHASE: SECURE';
+      phase.className = 'pill live';
+      mode.textContent = 'DEFENSE: LOCKED';
+      mode.className = 'pill live';
+      defBadge.textContent = 'SECURE';
+      defBadge.className = 'badge def';
+      soc('OK', 'simulation complete · zigzag held');
+    }},
+    { t: 29000, run() {
+      setCaption('', '', '', false);
+    }},
+  ];
+
+  // Type attacker initial feel: small drip of blank then start
+  renderAtk();
+
+  const start = performance.now();
+  let i = 0;
+  function frame(now) {
+    const t = now - start;
+    while (i < beats.length && t >= beats[i].t) {
+      beats[i].run();
+      i++;
+    }
+    const sec = t / 1000;
+    clock.textContent = '00:' + String(Math.floor(sec)).padStart(2,'0') + '.' + String(Math.floor((sec%1)*10));
+    prog.style.width = Math.min(100, (t / TOTAL) * 100) + '%';
+    if (t < TOTAL + 200) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  window.__DEFENSE_DEMO_MS = TOTAL;
+})();
+</script>
+</body>
+</html>
