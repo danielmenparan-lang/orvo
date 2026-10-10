@@ -2,6 +2,13 @@
 
 Post what you need. Vetted builders send quotes. Chat and pay through ORVO.
 
+## ShoppingRed (active wedge)
+
+Google Merchant Center disapproval triage for Shopify stores — Q4 timing, Lemon Squeezy MoR (no Israeli osek required to start).
+
+- App: http://localhost:5173/shoppingred/
+- Founder: [`docs/shoppingred-founder.md`](docs/shoppingred-founder.md)
+
 ## Local
 
 ```bash
