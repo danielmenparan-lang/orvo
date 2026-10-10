@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ShoppingRed — fix Merchant Center disapprovals before Q4 burns budget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#12141A;--panel:#1A1D26;--fog:#F2F0EB;--red:#E23B2F;--red-deep:#B82C22;
+  --line:rgba(18,20,26,.1);--muted:#5C6370;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--ink);color:#fff;line-height:1.5}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none}
+
+.hero{
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden;
+  background:
+    linear-gradient(105deg,rgba(18,20,26,.92) 0%,rgba(18,20,26,.75) 40%,rgba(226,59,47,.35) 100%),
+    url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:24px clamp(20px,5vw,56px);position:relative;z-index:2;animation:up .6s ease both}
+.logo{font-family:Fraunces,serif;font-weight:700;font-size:22px;letter-spacing:-.03em}
+.logo span{color:var(--red)}
+.nav a{font-size:14px;font-weight:500;border:1px solid rgba(255,255,255,.25);padding:10px 16px;border-radius:999px}
+.hero-body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 clamp(20px,5vw,56px) clamp(48px,9vh,100px);max-width:880px;position:relative;z-index:2}
+.mark{font-family:Fraunces,serif;font-size:clamp(52px,10vw,108px);font-weight:700;line-height:.9;letter-spacing:-.04em;margin-bottom:18px;animation:up .7s .08s ease both}
+.mark span{color:var(--red)}
+h1{font-family:Fraunces,serif;font-weight:600;font-size:clamp(22px,3vw,34px);max-width:18ch;line-height:1.15;margin-bottom:14px;animation:up .7s .16s ease both}
+.lead{color:rgba(255,255,255,.72);font-size:17px;max-width:40ch;margin-bottom:28px;animation:up .7s .24s ease both}
+.ctas{display:flex;gap:12px;flex-wrap:wrap;animation:up .7s .32s ease both}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 22px;font-weight:600;font-size:15px;border-radius:999px;transition:transform .2s,background .2s}
+.btn:hover{transform:translateY(-2px)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:var(--red-deep)}
+.btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35)}
+
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+.section{background:var(--fog);color:var(--ink);padding:88px clamp(20px,5vw,56px)}
+.inner{max-width:1050px;margin:0 auto}
+.kicker{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--red-deep);margin-bottom:10px}
+h2{font-family:Fraunces,serif;font-size:clamp(28px,4vw,42px);letter-spacing:-.03em;line-height:1.1;max-width:16ch;margin-bottom:14px}
+.sub{color:var(--muted);max-width:46ch;margin-bottom:36px;font-size:16px}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.col{border-top:3px solid var(--ink);padding-top:16px}
+.col strong{display:block;font-family:Fraunces,serif;font-size:20px;margin-bottom:8px}
+.col p{color:var(--muted);font-size:14px}
+
+.pricing{background:var(--panel);color:#fff}
+.pricing .kicker{color:#ff8a7a}
+.pricing .sub{color:rgba(255,255,255,.55)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:720px}
+.card{border:1px solid rgba(255,255,255,.12);padding:28px;border-radius:16px;background:rgba(0,0,0,.2)}
+.card.feat{border-color:var(--red)}
+.card h3{font-family:Fraunces,serif;font-size:24px}
+.amt{font-family:Fraunces,serif;font-size:44px;margin:10px 0 16px}
+.amt span{font-size:16px;color:rgba(255,255,255,.5)}
+.card ul{list-style:none;margin-bottom:22px}
+.card li{padding:6px 0;color:rgba(255,255,255,.65);font-size:14px;padding-left:14px;position:relative}
+.card li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--red);position:absolute;left:0;top:12px}
+.card .btn{width:100%}
+
+footer{padding:24px clamp(20px,5vw,56px);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:rgba(255,255,255,.45);background:var(--ink)}
+
+@media(max-width:800px){.cols,.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <nav class="nav">
+    <div class="logo">Shopping<span>Red</span></div>
+    <a href="app.html">Open app</a>
+  </nav>
+  <div class="hero-body">
+    <div class="mark">Shopping<span>Red</span></div>
+    <h1>Merchant Center said no. Your Shopping budget still said yes.</h1>
+    <p class="lead">Upload this week’s GMC issues export. Get a Shopify-ready fix list and a week-over-week diff — before Q4 ads burn on dead SKUs.</p>
+    <div class="ctas">
+      <a class="btn btn-red" href="#pricing">Start Solo — $69/mo</a>
+      <a class="btn btn-ghost" href="app.html">Try with a sample CSV</a>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="inner">
+    <p class="kicker">One job</p>
+    <h2>CSV in. Diff out. Fix Shopify.</h2>
+    <p class="sub">Built for store ops who already export Merchant Center diagnostics every Monday — and still miss the same SKUs.</p>
+    <div class="cols">
+      <div class="col"><strong>01 Upload</strong><p>Drop the Merchant Center issues CSV. No Google OAuth in v1 — ships this week.</p></div>
+      <div class="col"><strong>02 Prioritize</strong><p>New / recurring / resolved vs last upload. Fix the red ones first.</p></div>
+      <div class="col"><strong>03 Shopify map</strong><p>Each issue string maps to a field + playbook step. Mark fixed, re-check next week.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section pricing" id="pricing">
+  <div class="inner">
+    <p class="kicker">Pricing · Lemon Squeezy</p>
+    <h2>Pay when Shopping is live.</h2>
+    <p class="sub">Checkout via Lemon Squeezy (Merchant of Record) — works without Israeli osek; payouts can go to Bank Leumi / PayPal.</p>
+    <div class="grid">
+      <div class="card feat">
+        <h3>Solo</h3>
+        <div class="amt">$69<span>/mo</span></div>
+        <ul>
+          <li>1 store · unlimited CSV uploads</li>
+          <li>52-week history</li>
+          <li>Issue → Shopify playbooks</li>
+        </ul>
+        <button class="btn btn-red" data-plan="solo">Checkout Solo</button>
+      </div>
+      <div class="card">
+        <h3>Multi</h3>
+        <div class="amt">$129<span>/mo</span></div>
+        <ul>
+          <li>Up to 3 stores</li>
+          <li>Shared ops view</li>
+          <li>Priority playbook updates</li>
+        </ul>
+        <button class="btn btn-ghost" data-plan="multi">Checkout Multi</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 ShoppingRed</span>
+  <span>Payments: Lemon Squeezy MoR · see docs/shoppingred-founder.md</span>
+</footer>
+
+<script src="config.js"></script>
+<script>
+document.querySelectorAll('[data-plan]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const url = (window.SHOPPINGRED_LS?.[btn.dataset.plan] || '').trim();
+    if (!url) {
+      alert('Lemon Squeezy not connected yet.\n\nFounder steps:\n1) Create Solo/Multi products in Lemon Squeezy\n2) Paste checkout URLs into shoppingred/config.js\n3) KYC + W-8BEN\n4) Payout → Bank Leumi (ILS) or PayPal\n\nNo Israeli osek required to start. Ask a CPA about tax reporting.');
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
+  });
+});
+</script>
+</body>
+</html>
