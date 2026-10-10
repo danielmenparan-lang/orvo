@@ -140,6 +140,28 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:8px;color:#fff;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none}
 #toast.show{opacity:1}
 
+/* Agent Launch pricing */
+.launch-section{padding:80px clamp(20px,5vw,64px);max-width:1100px;margin:0 auto}
+.launch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.launch-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:28px 24px;display:flex;flex-direction:column;min-height:100%;transition:border-color .2s,box-shadow .2s}
+.launch-card:hover{border-color:rgba(255,107,53,.35);box-shadow:0 12px 40px rgba(0,0,0,.05)}
+.launch-card.featured{border-color:var(--o);box-shadow:0 12px 40px rgba(255,107,53,.1)}
+.launch-card .price{font-family:'Playfair Display',serif;font-size:36px;font-weight:500;margin:12px 0 8px;letter-spacing:-.02em}
+.launch-card .price span{font-family:Inter,sans-serif;font-size:14px;color:var(--gray);font-weight:400}
+.launch-card h3{font-size:18px;font-weight:600}
+.launch-card .desc{font-size:14px;color:var(--gray);margin-bottom:20px;flex:1}
+.launch-card ul{list-style:none;margin-bottom:24px;font-size:13px;color:var(--gray)}
+.launch-card ul li{padding:6px 0;padding-left:18px;position:relative}
+.launch-card ul li::before{content:'';position:absolute;left:0;top:12px;width:6px;height:6px;border-radius:50%;background:var(--o)}
+.launch-card .btn{width:100%}
+.launch-note{margin-top:28px;font-size:13px;color:var(--gray);text-align:center}
+.run-strip{margin-top:48px;padding:28px;background:var(--dark);color:#fff;border-radius:14px;display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center}
+.run-strip h3{font-family:'Playfair Display',serif;font-size:24px;font-weight:500;margin-bottom:8px}
+.run-strip p{font-size:14px;color:rgba(255,255,255,.55);margin-bottom:0}
+.run-tiers{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.run-tiers button{min-width:120px}
+@media(max-width:800px){.launch-grid{grid-template-columns:1fr}.run-strip{grid-template-columns:1fr}.run-tiers{justify-content:stretch}.run-tiers button{flex:1}}
+
 /* Cinematic demo */
 .demo-section{background:linear-gradient(180deg,#fff 0%,var(--bg) 100%);padding:80px clamp(20px,5vw,64px);border-top:1px solid var(--border)}
 .demo-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center}
@@ -177,6 +199,7 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
 <nav>
   <a class="logo" href="#" data-action="home"><span>O</span>RVO</a>
   <ul class="nav-links">
+    <li><a href="#launch">Agent Launch</a></li>
     <li><a href="#demo">ORVO24</a></li>
     <li><a href="#how">How it works</a></li>
     <li><a href="#builders">For builders</a></li>
@@ -197,10 +220,10 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
     <div class="hero-text">
       <div class="eyebrow"><span class="dot"></span> Trusted AI agent marketplace</div>
       <h1>Need an AI agent?<br><em>Meet a builder.</em></h1>
-      <p class="lead">Post what you need. Vetted builders send quotes. Chat privately and pay securely through ORVO.</p>
+      <p class="lead">Need certainty? Buy a fixed Launch SKU and get a production agent in 7 days. Or post a custom job and get vetted quotes.</p>
       <div class="hero-btns">
-        <button class="btn btn-primary btn-lg" data-action="client-start">Post a request</button>
-        <button class="btn btn-ghost btn-lg" data-action="builder-start">Apply as a builder</button>
+        <a class="btn btn-primary btn-lg" href="#launch">Launch in 7 days</a>
+        <button class="btn btn-ghost btn-lg" data-action="client-start">Post a custom request</button>
       </div>
       <div class="role-pick">
         <button type="button" class="role-card" data-action="client-start">
@@ -224,10 +247,66 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
   </section>
 
   <div class="trust">
+    <div class="trust-item"><b>Fixed Launch SKUs</b> — ship in 7 days</div>
     <div class="trust-item"><b>Vetted builders</b> — manual review</div>
-    <div class="trust-item"><b>Private chat</b> — agree on scope & price</div>
     <div class="trust-item"><b>Secure payments</b> — via Stripe</div>
   </div>
+
+  <section class="launch-section" id="launch">
+    <p class="section-label">ORVO Agent Launch</p>
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,42px);font-weight:500;line-height:1.15;margin-bottom:16px;letter-spacing:-.02em">One production agent.<br>Fixed price. 7 days.</h2>
+    <p style="color:var(--gray);max-width:520px;margin-bottom:40px;font-size:16px">Marketplace for custom jobs. Launch for certainty — pick a SKU, pay, we deliver a working agent with handoff and a 14-day fix window.</p>
+    <div class="launch-grid">
+      <div class="launch-card">
+        <p class="tag">Lite</p>
+        <h3>Launch Lite</h3>
+        <div class="price">$1,490</div>
+        <p class="desc">First agent for a solo or SMB. One channel, one integration, template workflow.</p>
+        <ul>
+          <li>Support triage, FAQ, or lead qualifier</li>
+          <li>Deployed demo + handoff Loom</li>
+          <li>14-day warranty on scope</li>
+        </ul>
+        <button class="btn btn-ghost" data-action="launch-buy" data-sku="launch_lite">Buy Lite</button>
+      </div>
+      <div class="launch-card featured">
+        <p class="tag">Most chosen</p>
+        <h3>Launch Pro</h3>
+        <div class="price">$3,490</div>
+        <p class="desc">Default SKU. Up to two integrations, custom prompts/rules, ORVO project room.</p>
+        <ul>
+          <li>Everything in Lite</li>
+          <li>2 integrations + custom rules</li>
+          <li>Acceptance checklist in dashboard</li>
+        </ul>
+        <button class="btn btn-primary" data-action="launch-buy" data-sku="launch_pro">Buy Pro</button>
+      </div>
+      <div class="launch-card">
+        <p class="tag">Plus</p>
+        <h3>Launch Plus</h3>
+        <div class="price">$6,990</div>
+        <p class="desc">Multi-step or light RAG — document Q&A (≤50 docs) or a second workflow branch.</p>
+        <ul>
+          <li>Everything in Pro</li>
+          <li>RAG / second branch</li>
+          <li>Senior review before go-live</li>
+        </ul>
+        <button class="btn btn-ghost" data-action="launch-buy" data-sku="launch_plus">Buy Plus</button>
+      </div>
+    </div>
+    <div class="run-strip">
+      <div>
+        <h3>ORVO Run — keep it alive</h3>
+        <p>After Launch: monitoring, prompt tweaks, breakage fixes. This is the MRR engine — stack Care plans toward $10k.</p>
+      </div>
+      <div class="run-tiers">
+        <button class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.2)" data-action="launch-buy" data-sku="run_basic">$299/mo</button>
+        <button class="btn btn-primary" data-action="launch-buy" data-sku="run_pro">$699/mo</button>
+        <button class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.2)" data-action="launch-buy" data-sku="run_team">$1,499/mo</button>
+      </div>
+    </div>
+    <p class="launch-note">Need something outside these SKUs? <a href="#" data-action="client-start" style="color:var(--o);font-weight:500">Post a custom request</a> — builders quote, you pay through ORVO (12% platform fee).</p>
+  </section>
 
   <section class="demo-section" id="demo">
     <div class="demo-inner" style="grid-template-columns:1fr;max-width:900px;text-align:center">
@@ -273,17 +352,18 @@ footer{padding:32px clamp(20px,5vw,64px);border-top:1px solid var(--border);disp
   </section>
 
   <section class="cta">
-    <h2>Ready to start?</h2>
-    <p>Join as a client or apply as a vetted builder.</p>
+    <h2>Ship an agent this week</h2>
+    <p>Launch Pro for a fixed deliverable — or post a custom job for marketplace quotes.</p>
     <div class="cta-btns">
-      <button class="btn btn-primary btn-lg" data-action="client-start">Post a request</button>
-      <button class="btn btn-ghost btn-lg" data-action="signup">Create free account</button>
+      <a class="btn btn-primary btn-lg" href="#launch">See Launch pricing</a>
+      <button class="btn btn-ghost btn-lg" data-action="client-start">Post a custom request</button>
     </div>
   </section>
 
   <footer>
-    <span>© 2025 ORVO — AI Agent Marketplace</span>
+    <span>© 2026 ORVO — AI Agent Marketplace</span>
     <div class="footer-links">
+      <a href="#launch">Agent Launch</a>
       <a href="#how">How it works</a>
       <a href="#" data-action="login">Sign in</a>
       <a href="#" data-action="builder-start">Become a builder</a>
