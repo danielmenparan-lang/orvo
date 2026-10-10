@@ -23,6 +23,34 @@
   // Fallback if supabase-config.js cached/old
   const ADMIN_EMAIL = 'danielmen.paran@gmail.com';
 
+  const SKU_LABELS = {
+    launch_lite: 'Launch Lite ($1,490)',
+    launch_pro: 'Launch Pro ($3,490)',
+    launch_plus: 'Launch Plus ($6,990)',
+    run_basic: 'ORVO Run Basic ($299/mo)',
+    run_pro: 'ORVO Run Pro ($699/mo)',
+    run_team: 'ORVO Run Team ($1,499/mo)',
+  };
+
+  function stripeLinkFor(sku) {
+    const links = window.STRIPE_LINKS || {};
+    const specific = (links[sku] || '').trim();
+    if (specific) return specific;
+    return (window.STRIPE_PAYMENT_LINK || '').trim();
+  }
+
+  function buyLaunchSku(sku) {
+    const label = SKU_LABELS[sku] || sku;
+    const link = stripeLinkFor(sku);
+    if (!link) {
+      toast('Stripe not connected yet — founder: paste Payment Links in supabase-config.js (see docs/path-to-10k-mrr.md)', false);
+      console.warn('[ORVO] Missing Stripe link for', sku, '— set window.STRIPE_LINKS.' + sku);
+      return;
+    }
+    window.open(link, '_blank', 'noopener');
+    toast(`Opening Stripe for ${label}`, true);
+  }
+
   function myEmail() {
     return (user?.email || profile?.email || '').toLowerCase().trim();
   }
@@ -998,6 +1026,10 @@
     }
     else if (a === 'jobs') { e.preventDefault(); user ? (openDash(), go('jobs')) : openAuth('login'); }
     else if (a === 'admin') { e.preventDefault(); user ? (openDash(), go('admin')) : openAuth('login'); }
+    else if (a === 'launch-buy') {
+      e.preventDefault();
+      buyLaunchSku(t.dataset.sku || 'launch_pro');
+    }
     else if (a === 'close-dash') { e.preventDefault(); closeDash(); }
     else if (a === 'close-quote') closeQuote();
     else if (a === 'close-post') closePost();
