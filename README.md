@@ -2,7 +2,19 @@
 
 Post what you need. Vetted builders send quotes. Chat and pay through ORVO.
 
-## Local
+## SubShield (separate product)
+
+COI compliance SaaS for general contractors — path to $10k MRR without the marketplace.
+
+```bash
+python3 -m http.server 5173
+```
+
+Open http://localhost:5173/subshield/
+
+Founder checklist: [`docs/subshield-founder.md`](docs/subshield-founder.md)
+
+## Local (ORVO)
 
 ```bash
 python3 -m http.server 5173
