@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>שילמת? — הודעת וואטסאפ ללקוח שלא שילם</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Heebo:wght@800;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0B0F0C;--green:#128C7E;--green2:#075E54;--lime:#25D366;--fog:#F3F6F4;--muted:#5A6560;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Assistant,sans-serif;background:var(--ink);color:#fff;min-height:100vh;line-height:1.45}
+button,input,select,textarea{font-family:inherit}
+a{color:inherit}
+
+.shell{min-height:100vh;display:flex;flex-direction:column;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%,rgba(37,211,102,.22),transparent 55%),
+    linear-gradient(165deg,#0B0F0C 0%,#102018 55%,#0B0F0C 100%);
+}
+.top{padding:20px clamp(16px,4vw,40px);display:flex;justify-content:space-between;align-items:center}
+.brand{font-family:Heebo,sans-serif;font-weight:900;font-size:20px;letter-spacing:-.02em}
+.brand em{font-style:normal;color:var(--lime)}
+.top span{font-size:13px;color:rgba(255,255,255,.45)}
+
+.main{flex:1;display:grid;place-items:center;padding:12px clamp(16px,4vw,40px) 48px}
+.card{
+  width:min(440px,100%);
+  background:var(--fog);color:var(--ink);
+  border-radius:28px;padding:28px 22px 22px;
+  box-shadow:0 30px 80px rgba(0,0,0,.45);
+  animation:pop .55s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes pop{from{opacity:0;transform:translateY(24px) scale(.98)}to{opacity:1;transform:none}}
+
+h1{
+  font-family:Heebo,sans-serif;font-weight:900;font-size:clamp(42px,12vw,56px);
+  line-height:.95;letter-spacing:-.04em;margin-bottom:8px;text-align:center;
+}
+h1 em{font-style:normal;color:var(--green)}
+.pitch{text-align:center;color:var(--muted);font-size:16px;font-weight:600;margin-bottom:22px}
+
+label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:12px 0 6px}
+input,select,textarea{
+  width:100%;padding:13px 14px;border-radius:14px;border:1px solid #D5DDD8;
+  background:#fff;font-size:16px;color:var(--ink);
+}
+textarea{min-height:70px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.btn{
+  margin-top:18px;width:100%;border:none;border-radius:999px;padding:16px;
+  font-size:18px;font-weight:800;cursor:pointer;
+  background:var(--lime);color:#053B24;
+  box-shadow:0 10px 0 #128C7E;transition:transform .12s,box-shadow .12s;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 6px 0 #128C7E}
+.btn-ghost{
+  margin-top:10px;width:100%;border:1px solid #C9D4CE;background:#fff;color:var(--ink);
+  border-radius:999px;padding:12px;font-weight:700;cursor:pointer;font-size:14px;
+}
+.preview{
+  margin-top:16px;background:#E7F8EF;border:1px solid #B7E8CB;border-radius:16px;padding:14px;
+  font-size:14px;white-space:pre-wrap;line-height:1.5;display:none;
+}
+.preview.show{display:block;animation:pop .35s ease both}
+.foot{text-align:center;margin-top:14px;font-size:12px;color:var(--muted)}
+.foot a{color:var(--green2);font-weight:700;text-decoration:none}
+
+@media(max-width:480px){.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="brand">שילמ<em>ת?</em></div>
+    <span>בלי עוסק · Lemon Squeezy</span>
+  </div>
+  <div class="main">
+    <div class="card">
+      <h1>שילמ<em>ת?</em></h1>
+      <p class="pitch">הלקוח לא שילם? לוחצים — נפתח וואטסאפ עם ההודעה מוכנה.</p>
+
+      <label>טלפון הלקוח (עם קידומת מדינה)</label>
+      <input id="phone" inputmode="tel" placeholder="972501234567" dir="ltr"/>
+
+      <div class="row2">
+        <div>
+          <label>סכום</label>
+          <input id="amount" inputmode="decimal" placeholder="1,500" dir="ltr"/>
+        </div>
+        <div>
+          <label>מטבע</label>
+          <select id="currency">
+            <option value="₪">₪ שקל</option>
+            <option value="$">$ דולר</option>
+            <option value="€">€ אירו</option>
+          </select>
+        </div>
+      </div>
+
+      <label>על מה</label>
+      <input id="what" placeholder="עיצוב לוגו / שיפוץ מטבח / חשבונית 1042"/>
+
+      <label>השם שלך</label>
+      <input id="from" placeholder="דניאל"/>
+
+      <label>לינק לתשלום (Bit / PayBox / PayPal) — אופציונלי</label>
+      <input id="pay" placeholder="https://..." dir="ltr"/>
+
+      <label>טון</label>
+      <select id="tone">
+        <option value="soft">מנומס</option>
+        <option value="direct">ישיר</option>
+        <option value="last">לפני סוף שבוע</option>
+      </select>
+
+      <button class="btn" id="send" type="button">שלח בוואטסאפ</button>
+      <button class="btn-ghost" id="copy" type="button">רק תעתיק את ההודעה</button>
+      <div class="preview" id="preview"></div>
+      <p class="foot">Pro (שמירת לקוחות) · <a href="#" id="pro">Lemon Squeezy</a></p>
+    </div>
+  </div>
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
