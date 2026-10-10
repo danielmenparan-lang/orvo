@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SubShield — COI compliance for contractors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0F1419;
+  --ink-soft:#1C2430;
+  --fog:#E8EDF2;
+  --mist:#C5CED9;
+  --amber:#E8A317;
+  --amber-deep:#C4840A;
+  --ok:#2F6B4F;
+  --warn:#B45309;
+  --bad:#9B2C2C;
+  --glass:rgba(15,20,25,.55);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Source Sans 3',sans-serif;background:var(--ink);color:#fff;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none}
+
+/* ——— Hero composition ——— */
+.hero{
+  min-height:100vh;min-height:100dvh;
+  position:relative;display:flex;flex-direction:column;
+  overflow:hidden;
+  background:
+    linear-gradient(120deg,rgba(15,20,25,.88) 0%,rgba(15,20,25,.55) 45%,rgba(15,20,25,.35) 100%),
+    url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+}
+.hero::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 50% at 20% 80%,rgba(232,163,23,.18),transparent 55%);
+}
+.nav{
+  position:relative;z-index:2;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:28px clamp(20px,5vw,56px);
+  animation:rise .7s ease both;
+}
+.brand{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:800;font-size:clamp(22px,3vw,28px);letter-spacing:-.03em;
+}
+.brand em{font-style:normal;color:var(--amber)}
+.nav a.ghost{
+  font-size:14px;font-weight:500;color:rgba(255,255,255,.75);
+  border:1px solid rgba(255,255,255,.22);padding:10px 18px;border-radius:2px;
+  transition:background .2s,border-color .2s;
+}
+.nav a.ghost:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4)}
+
+.hero-body{
+  position:relative;z-index:2;
+  flex:1;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:0 clamp(20px,5vw,56px) clamp(48px,8vh,96px);
+  max-width:920px;
+}
+.brand-hero{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:800;font-size:clamp(48px,9vw,104px);
+  line-height:.92;letter-spacing:-.04em;
+  margin-bottom:20px;
+  animation:rise .8s .1s ease both;
+}
+.brand-hero em{font-style:normal;color:var(--amber)}
+.hero h1{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:500;font-size:clamp(22px,3.2vw,36px);
+  line-height:1.2;letter-spacing:-.02em;
+  max-width:16ch;margin-bottom:14px;
+  animation:rise .8s .2s ease both;
+}
+.hero .lead{
+  font-size:clamp(16px,1.6vw,18px);color:rgba(255,255,255,.72);
+  max-width:38ch;margin-bottom:28px;
+  animation:rise .8s .3s ease both;
+}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;animation:rise .8s .4s ease both}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:14px 26px;font-size:15px;font-weight:600;border-radius:2px;
+  transition:transform .2s,background .2s,color .2s;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn-amber{background:var(--amber);color:var(--ink)}
+.btn-amber:hover{background:var(--amber-deep);color:#fff}
+.btn-line{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35)}
+.btn-line:hover{border-color:#fff;background:rgba(255,255,255,.06)}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:none}
+}
+
+/* ——— Sections ——— */
+.section{padding:88px clamp(20px,5vw,56px);background:var(--fog);color:var(--ink)}
+.section-inner{max-width:1100px;margin:0 auto}
+.kicker{
+  font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber-deep);margin-bottom:12px;
+}
+.section h2{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:700;font-size:clamp(28px,4vw,44px);
+  letter-spacing:-.03em;line-height:1.1;margin-bottom:16px;max-width:16ch;
+}
+.section .sub{color:#4A5564;font-size:17px;max-width:46ch;margin-bottom:40px}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.step{padding-top:20px;border-top:3px solid var(--ink)}
+.step strong{
+  display:block;font-family:'Bricolage Grotesque',sans-serif;
+  font-size:20px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em;
+}
+.step p{font-size:15px;color:#4A5564}
+
+.pricing{background:var(--ink-soft);color:#fff}
+.pricing .kicker{color:var(--amber)}
+.pricing .sub{color:rgba(255,255,255,.55)}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.price-card{
+  background:rgba(15,20,25,.55);border:1px solid rgba(255,255,255,.1);
+  padding:28px 24px;border-radius:2px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:border-color .25s,transform .25s;
+}
+.price-card:hover{border-color:rgba(232,163,23,.5);transform:translateY(-3px)}
+.price-card.featured{border-color:var(--amber);background:rgba(232,163,23,.08)}
+.price-card h3{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:700}
+.price-card .amt{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-size:40px;font-weight:800;letter-spacing:-.03em;margin:8px 0;
+}
+.price-card .amt span{font-size:15px;font-weight:500;color:rgba(255,255,255,.5)}
+.price-card ul{list-style:none;margin:12px 0 24px;flex:1}
+.price-card li{font-size:14px;color:rgba(255,255,255,.65);padding:6px 0;padding-left:16px;position:relative}
+.price-card li::before{content:'';position:absolute;left:0;top:13px;width:6px;height:6px;background:var(--amber)}
+.price-card .btn{width:100%;margin-top:auto}
+
+.demo-cta{
+  background:linear-gradient(135deg,var(--fog) 0%,#d5dde8 100%);
+  color:var(--ink);text-align:center;padding:96px 24px;
+}
+.demo-cta h2{margin:0 auto 12px;max-width:18ch}
+.demo-cta p{margin:0 auto 28px;color:#4A5564}
+
+footer{
+  background:var(--ink);color:rgba(255,255,255,.45);
+  padding:28px clamp(20px,5vw,56px);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13px;
+}
+footer a:hover{color:#fff}
+
+@media(max-width:800px){
+  .steps,.price-grid{grid-template-columns:1fr}
+  .hero-body{justify-content:center;padding-top:40px}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <nav class="nav">
+    <div class="brand">Sub<em>Shield</em></div>
+    <a class="ghost" href="app.html">Open app</a>
+  </nav>
+  <div class="hero-body">
+    <div class="brand-hero">Sub<em>Shield</em></div>
+    <h1>Expired sub COIs stop jobs. We stop the expirations.</h1>
+    <p class="lead">Track certificates, chase subcontractors before coverage lapses, and export a compliance pack for audits.</p>
+    <div class="cta-row">
+      <a class="btn btn-amber" href="#pricing">Start Pro — $149/mo</a>
+      <a class="btn btn-line" href="app.html">Try the dashboard</a>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="how">
+  <div class="section-inner">
+    <p class="kicker">One job</p>
+    <h2>Upload. Track. Chase.</h2>
+    <p class="sub">Built for GC office managers who still chase COIs in email threads and spreadsheet hell.</p>
+    <div class="steps">
+      <div class="step">
+        <strong>01 — Projects &amp; subs</strong>
+        <p>Add a jobsite, list subcontractors, attach the current COI PDF.</p>
+      </div>
+      <div class="step">
+        <strong>02 — Expiry radar</strong>
+        <p>Red / yellow / green by coverage end date. See who’s about to lapse.</p>
+      </div>
+      <div class="step">
+        <strong>03 — Auto chase</strong>
+        <p>Email reminders at 30 / 14 / 7 / 0 days. Export a ZIP for the auditor.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section pricing" id="pricing">
+  <div class="section-inner">
+    <p class="kicker">Pricing</p>
+    <h2>Pay when the jobsite can’t afford a lapse.</h2>
+    <p class="sub">Path to $10k MRR: ~45 Pro + 15 Team plans. Stripe links go live when you connect them.</p>
+    <div class="price-grid">
+      <div class="price-card">
+        <h3>Solo</h3>
+        <div class="amt">$79<span>/mo</span></div>
+        <ul>
+          <li>1 company · 25 active subs</li>
+          <li>Email reminders</li>
+          <li>CSV export</li>
+        </ul>
+        <button class="btn btn-line" data-plan="solo">Choose Solo</button>
+      </div>
+      <div class="price-card featured">
+        <h3>Pro</h3>
+        <div class="amt">$149<span>/mo</span></div>
+        <ul>
+          <li>100 subs · multiple jobsites</li>
+          <li>Compliance ZIP pack</li>
+          <li>Priority for audits</li>
+        </ul>
+        <button class="btn btn-amber" data-plan="pro">Choose Pro</button>
+      </div>
+      <div class="price-card">
+        <h3>Team</h3>
+        <div class="amt">$299<span>/mo</span></div>
+        <ul>
+          <li>Unlimited subs · 3 seats</li>
+          <li>Custom reminder templates</li>
+          <li>Shared ops inbox</li>
+        </ul>
+        <button class="btn btn-line" data-plan="team">Choose Team</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-cta">
+  <p class="kicker" style="color:var(--amber-deep)">Dashboard</p>
+  <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:clamp(28px,4vw,44px);letter-spacing:-.03em">See who’s red before Monday.</h2>
+  <p>Local demo works now. Cloud sync when you connect Supabase.</p>
+  <a class="btn btn-amber" href="app.html">Open SubShield app</a>
+</section>
+
+<footer>
+  <span>© 2026 SubShield — COI compliance for contractors</span>
+  <span><a href="../docs/subshield-founder.md">Founder checklist</a> · Not affiliated with ORVO marketplace</span>
+</footer>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  function buy(plan) {
+    const links = window.SUBSHIELD_STRIPE || {};
+    const url = (links[plan] || '').trim();
+    if (!url) {
+      alert('Stripe not connected yet.\n\nFounder: create Payment Links in Stripe, paste into subshield/config.js (see docs/subshield-founder.md).\n\nThen: bank payout inside Stripe + ~$1,200 marketing budget.');
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
+  }
+  document.querySelectorAll('[data-plan]').forEach(btn => {
+    btn.addEventListener('click', () => buy(btn.dataset.plan));
+  });
+})();
+</script>
+</body>
+</html>

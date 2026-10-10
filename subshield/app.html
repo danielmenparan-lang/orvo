@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SubShield App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--ink:#0F1419;--panel:#161D27;--fog:#E8EDF2;--line:rgba(255,255,255,.08);--amber:#E8A317;--ok:#3D8B6E;--warn:#D97706;--bad:#DC2626;--muted:#8B96A5}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Sans 3',sans-serif;background:var(--ink);color:#fff;min-height:100vh}
+a{color:var(--amber);text-decoration:none}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--line)}
+.brand{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px}
+.brand em{font-style:normal;color:var(--amber)}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px}
+h1{font-family:'Bricolage Grotesque',sans-serif;font-size:28px;font-weight:800;letter-spacing:-.03em;margin-bottom:6px}
+.lead{color:var(--muted);margin-bottom:24px;font-size:15px}
+.grid{display:grid;grid-template-columns:1fr 1.4fr;gap:20px}
+@media(max-width:840px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:20px}
+.card h2{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;padding:10px 12px;border-radius:2px;border:1px solid var(--line);background:#0F1419;color:#fff;font:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;font-weight:600;font-size:14px;border:none;border-radius:2px;cursor:pointer;margin-top:14px}
+.btn-amber{background:var(--amber);color:var(--ink);width:100%}
+.btn-ghost{background:transparent;color:#fff;border:1px solid var(--line);margin-right:8px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.stat{flex:1;min-width:100px;background:var(--panel);border:1px solid var(--line);padding:14px;border-radius:2px}
+.stat b{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:26px}
+.stat span{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.pill{display:inline-block;padding:2px 8px;border-radius:2px;font-size:11px;font-weight:700;text-transform:uppercase}
+.pill.ok{background:rgba(61,139,110,.2);color:#6EE7B7}
+.pill.warn{background:rgba(217,119,6,.2);color:#FCD34D}
+.pill.bad{background:rgba(220,38,38,.2);color:#FCA5A5}
+.pill.miss{background:rgba(139,150,165,.15);color:var(--muted)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;color:var(--ink);padding:12px 18px;border-radius:2px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9}
+.toast.show{opacity:1}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.empty{color:var(--muted);padding:24px 0;text-align:center;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="index.html">Sub<em>Shield</em></a>
+  <div>
+    <a href="index.html" style="color:var(--muted);font-size:13px;margin-right:16px">Marketing site</a>
+    <button class="btn btn-ghost" id="btn-export" style="margin:0">Export CSV</button>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Compliance radar</h1>
+  <p class="lead">Local demo — data stays in this browser. Connect Supabase later for team sync.</p>
+  <div class="stats" id="stats"></div>
+  <div class="grid">
+    <div class="card">
+      <h2>Add subcontractor COI</h2>
+      <label>Project / jobsite</label>
+      <input id="f-project" placeholder="e.g. Harbor Lot B"/>
+      <label>Subcontractor</label>
+      <input id="f-sub" placeholder="e.g. Apex Electric LLC"/>
+      <label>Contact email</label>
+      <input id="f-email" type="email" placeholder="ops@apexelectric.com"/>
+      <label>COI expiration</label>
+      <input id="f-exp" type="date"/>
+      <label>Policy / carrier (optional)</label>
+      <input id="f-carrier" placeholder="e.g. Hartford · GL $1M"/>
+      <button class="btn btn-amber" id="btn-add">Save COI</button>
+    </div>
+    <div class="card">
+      <h2>Active coverage</h2>
+      <div id="table-wrap"><p class="empty">No COIs yet — add your first sub.</p></div>
+      <div class="row-actions">
+        <button class="btn btn-ghost" id="btn-seed">Load sample GC data</button>
+        <button class="btn btn-ghost" id="btn-chase">Simulate chase emails</button>
+      </div>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
