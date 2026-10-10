@@ -2,6 +2,14 @@
 
 Post what you need. Vetted builders send quotes. Chat and pay through ORVO.
 
+## שילמת? (current — face-punch idea)
+
+הלקוח לא שילם? כפתור → וואטסאפ עם ההודעה מוכנה.
+
+- http://localhost:5173/shilamta/
+- [`docs/shilamta-founder.md`](docs/shilamta-founder.md)
+- Lemon Squeezy → Bank Leumi (no osek to start)
+
 ## Local
 
 ```bash
