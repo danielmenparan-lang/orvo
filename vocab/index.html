@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>מילים למבחן — משחק זיכרון</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --ink: #0f2a2e;
+  --muted: #4a6a70;
+  --paper: #f3faf8;
+  --card: #ffffff;
+  --teal: #0d7a72;
+  --teal-deep: #095a55;
+  --mint: #b8e8df;
+  --sun: #e8a317;
+  --sun-soft: #fff0c8;
+  --coral: #d64545;
+  --ok: #1a8f5c;
+  --shadow: 0 18px 50px rgba(15, 42, 46, 0.12);
+  --radius: 20px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  font-family: "Heebo", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 90% 60% at 10% -10%, #c8f0e8 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, #ffe8b8 0%, transparent 45%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, #d4efe9 0%, transparent 50%),
+    linear-gradient(165deg, #eaf7f4 0%, #f7fbf9 45%, #eef6f3 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { overflow-x: hidden; }
+
+.en {
+  font-family: "Sora", sans-serif;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.app {
+  width: min(560px, 100%);
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 28px;
+  animation: rise 0.55s ease both;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand strong {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.streak {
+  background: var(--sun-soft);
+  color: #8a5a00;
+  border: 1px solid rgba(232, 163, 23, 0.35);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.screen { display: none; flex: 1; flex-direction: column; }
+.screen.active { display: flex; animation: rise 0.45s ease both; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.92); opacity: 0; }
+  70% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(6px); }
+  40% { transform: translateX(-6px); }
+  60% { transform: translateX(4px); }
+  80% { transform: translateX(-3px); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120px) rotate(240deg); opacity: 0; }
+}
+
+.hero-card {
+  background: linear-gradient(145deg, var(--teal) 0%, var(--teal-deep) 100%);
+  color: #fff;
+  border-radius: 28px;
+  padding: 28px 24px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -20% -40% 30%;
+  height: 160px;
+  background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 65%);
+  pointer-events: none;
+}
+
+.hero-card h1 {
+  font-size: clamp(1.6rem, 5vw, 2rem);
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-card p {
+  opacity: 0.9;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  position: relative;
+  z-index: 1;
+  max-width: 34ch;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.stat {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(15, 42, 46, 0.06);
+  border: 1px solid rgba(13, 122, 114, 0.08);
+}
+
+.stat b {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mode-btn {
+  appearance: none;
+  border: none;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 18px 18px;
+  text-align: right;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(15, 42, 46, 0.07);
+  border: 1px solid rgba(13, 122, 114, 0.1);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.mode-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(15, 42, 46, 0.12);
+  border-color: rgba(13, 122, 114, 0.28);
+}
+
+.mode-btn:active { transform: translateY(0); }
+
+.mode-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 1.35rem;
+  background: var(--mint);
+}
+
+.mode-btn:nth-child(2) .mode-icon { background: var(--sun-soft); }
+.mode-btn:nth-child(3) .mode-icon { background: #dcecff; }
+.mode-btn:nth-child(4) .mode-icon { background: #ffd9d4; }
+
+.mode-text strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.mode-text span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.chev { color: var(--teal); font-size: 1.2rem; opacity: 0.7; }
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.back-btn, .ghost-btn, .primary-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+}
+
+.back-btn, .ghost-btn {
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(13, 122, 114, 0.15);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px 22px;
+  font-size: 1rem;
+  box-shadow: 0 10px 24px rgba(13, 122, 114, 0.28);
+}
+
+.primary-btn:hover { transform: translateY(-1px); }
+.primary-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.progress-wrap {
+  margin-bottom: 18px;
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: rgba(13, 122, 114, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--teal), #2bbbad);
+  border-radius: inherit;
+  transition: width 0.35s ease;
+}
+
+.flash-stage {
+  perspective: 1200px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.flash-card {
+  flex: 1;
+  min-height: 280px;
+  position: relative;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.flash-card.flipped { transform: rotateY(180deg); }
+
+.flash-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.flash-front {
+  background: linear-gradient(160deg, #ffffff 0%, #eefaf7 100%);
+  border: 1px solid rgba(13, 122, 114, 0.12);
+}
+
+.flash-back {
+  background: linear-gradient(160deg, var(--teal) 0%, var(--teal-deep) 100%);
+  color: #fff;
+  transform: rotateY(180deg);
+}
+
+.flash-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0.65;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.flash-word {
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+
+.flash-hint {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.flash-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.know-btn, .again-btn {
+  appearance: none;
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.know-btn { background: #d8f5e8; color: var(--ok); }
+.again-btn { background: #ffe3e0; color: var(--coral); }
+
+.quiz-prompt {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 28px 22px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(13, 122, 114, 0.1);
+  margin-bottom: 18px;
+  animation: pop 0.35s ease both;
+}
+
+.quiz-prompt .dir {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.quiz-prompt .q {
+  font-size: clamp(1.45rem, 5.5vw, 2rem);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option {
+  appearance: none;
+  width: 100%;
+  border: 2px solid rgba(13, 122, 114, 0.12);
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px 18px;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: right;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--teal);
+  transform: translateX(-3px);
+}
+
+.option.correct {
+  background: #d8f5e8;
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.option.wrong {
+  background: #ffe3e0;
+  border-color: var(--coral);
+  color: var(--coral);
+  animation: shake 0.4s ease;
+}
+
+.option:disabled { cursor: default; }
+
+.match-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.match-tile {
+  appearance: none;
+  border: 2px solid rgba(13, 122, 114, 0.12);
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px 12px;
+  min-height: 72px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  word-break: break-word;
+}
+
+.match-tile.selected {
+  border-color: var(--teal);
+  background: #e7f8f4;
+  box-shadow: 0 0 0 3px rgba(13, 122, 114, 0.15);
+}
+
+.match-tile.matched {
+  opacity: 0.35;
+  pointer-events: none;
+  transform: scale(0.96);
+}
+
+.match-tile.mismatch {
+  animation: shake 0.4s ease;
+  border-color: var(--coral);
+}
+
+.type-box {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 28px 22px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(13, 122, 114, 0.1);
+  text-align: center;
+}
+
+.type-box .prompt-he {
+  font-size: clamp(1.4rem, 5vw, 1.9rem);
+  font-weight: 800;
+  margin: 12px 0 22px;
+}
+
+.type-input {
+  width: 100%;
+  border: 2px solid rgba(13, 122, 114, 0.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-family: "Sora", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  direction: ltr;
+  outline: none;
+  margin-bottom: 12px;
+  background: #f7fcfb;
+}
+
+.type-input:focus { border-color: var(--teal); }
+
+.type-feedback {
+  min-height: 28px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.type-feedback.ok { color: var(--ok); }
+.type-feedback.bad { color: var(--coral); }
+
+.result-card {
+  background: var(--card);
+  border-radius: 28px;
+  padding: 36px 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  animation: pop 0.45s ease both;
+}
+
+.result-card h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.result-card p {
+  color: var(--muted);
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+
+.score-ring {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, #fff 58%, transparent 59%),
+    conic-gradient(var(--teal) calc(var(--p) * 1%), rgba(13,122,114,0.15) 0);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--teal);
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti i {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  animation: confetti-fall 1.4s ease-out forwards;
+}
+
+.weak-list {
+  margin-top: 8px;
+  text-align: right;
+  background: #fff8e8;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(232, 163, 23, 0.3);
+}
+
+.weak-list h3 {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: #8a5a00;
+}
+
+.weak-list ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weak-list li {
+  font-size: 0.88rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.footer-note {
+  margin-top: auto;
+  padding-top: 28px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+@media (max-width: 420px) {
+  .stats { gap: 8px; }
+  .stat { padding: 12px 6px; }
+  .match-tile { font-size: 0.82rem; min-height: 64px; padding: 12px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <strong>מילים למבחן</strong>
+      <span>אנגלית ⇄ עברית · חייבים לזכור</span>
+    </div>
+    <div class="streak" id="streakBadge">🔥 רצף 0</div>
+  </header>
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="hero-card">
+      <h1>תלמד. תזכור.<br/>תעבור את המבחן.</h1>
+      <p>49 מילים מהרשימה שלך — בחר מצב משחק והתחל. כל תשובה נכונה בונה רצף.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="statMastered">0</b><small>שולט</small></div>
+      <div class="stat"><b id="statSeen">0</b><small>נלמד</small></div>
+      <div class="stat"><b id="statTotal">49</b><small>בסך הכל</small></div>
+    </div>
+
+    <div class="modes">
+      <button class="mode-btn" data-mode="flash">
+        <div class="mode-icon">🃏</div>
+        <div class="mode-text">
+          <strong>כרטיסיות</strong>
+          <span>הפוך לגלות · סמן אם ידעת</span>
+        </div>
+        <div class="chev">‹</div>
+      </button>
+      <button class="mode-btn" data-mode="quiz">
+        <div class="mode-icon">🎯</div>
+        <div class="mode-text">
+          <strong>חידון מהיר</strong>
+          <span>4 אפשרויות · עברית ↔ אנגלית</span>
+        </div>
+        <div class="chev">‹</div>
+      </button>
+      <button class="mode-btn" data-mode="match">
+        <div class="mode-icon">🔗</div>
+        <div class="mode-text">
+          <strong>התאם זוגות</strong>
+          <span>חבר מילה לתרגום שלה</span>
+        </div>
+        <div class="chev">‹</div>
+      </button>
+      <button class="mode-btn" data-mode="type">
+        <div class="mode-icon">⌨️</div>
+        <div class="mode-text">
+          <strong>כתוב באנגלית</strong>
+          <span>הכי קשה — והכי יעיל למבחן</span>
+        </div>
+        <div class="chev">‹</div>
+      </button>
+    </div>
+
+    <p class="footer-note">המילים נשמרות במכשיר שלך · בהצלחה במבחן!</p>
+  </section>
+
+  <!-- FLASH -->
+  <section class="screen" id="screen-flash">
+    <div class="game-header">
+      <button class="back-btn" data-home>→ חזרה</button>
+      <button class="ghost-btn" id="flashSkip">דלג</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="flashProgLabel">1 / 12</span><span>כרטיסיות</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="flashProg"></div></div>
+    </div>
+    <div class="flash-stage">
+      <div class="flash-card" id="flashCard">
+        <div class="flash-face flash-front">
+          <div class="flash-label">English</div>
+          <div class="flash-word en" id="flashEn">word</div>
+          <div class="flash-hint">לחץ כדי להפוך</div>
+        </div>
+        <div class="flash-face flash-back">
+          <div class="flash-label">עברית</div>
+          <div class="flash-word" id="flashHe">מילה</div>
+          <div class="flash-hint">ידעת?</div>
+        </div>
+      </div>
+      <div class="flash-actions">
+        <button class="again-btn" id="flashAgain">עוד פעם</button>
+        <button class="know-btn" id="flashKnow">ידעתי ✓</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="screen" id="screen-quiz">
+    <div class="game-header">
+      <button class="back-btn" data-home>→ חזרה</button>
+      <span id="quizScore" style="font-weight:700;color:var(--teal)">0 נק׳</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="quizProgLabel">1 / 15</span><span>חידון</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="quizProg"></div></div>
+    </div>
+    <div class="quiz-prompt">
+      <div class="dir" id="quizDir">מה התרגום לעברית?</div>
+      <div class="q" id="quizQ">word</div>
+    </div>
+    <div class="options" id="quizOptions"></div>
+  </section>
+
+  <!-- MATCH -->
+  <section class="screen" id="screen-match">
+    <div class="game-header">
+      <button class="back-btn" data-home>→ חזרה</button>
+      <span id="matchLeft" style="font-weight:700;color:var(--teal)">6 זוגות</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span>מצא את כל הזוגות</span><span id="matchMoves">0 מהלכים</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="matchProg"></div></div>
+    </div>
+    <div class="match-grid" id="matchGrid"></div>
+  </section>
+
+  <!-- TYPE -->
+  <section class="screen" id="screen-type">
+    <div class="game-header">
+      <button class="back-btn" data-home>→ חזרה</button>
+      <span id="typeScore" style="font-weight:700;color:var(--teal)">0 / 10</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="typeProgLabel">1 / 10</span><span>כתיבה</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="typeProg"></div></div>
+    </div>
+    <div class="type-box">
+      <div class="dir" style="color:var(--muted);font-size:0.85rem">כתוב באנגלית</div>
+      <div class="prompt-he" id="typeHe">מילה</div>
+      <input class="type-input" id="typeInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type the English word…"/>
+      <div class="type-feedback" id="typeFeedback"></div>
+      <button class="primary-btn" id="typeSubmit" style="width:100%">בדיקה</button>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="screen-result">
+    <div class="result-card" id="resultCard">
+      <div class="confetti" id="confetti"></div>
+      <div class="score-ring" id="scoreRing" style="--p:0"><span id="scorePct">0%</span></div>
+      <h2 id="resultTitle">כל הכבוד!</h2>
+      <p id="resultMsg">סיימת סבב.</p>
+      <div id="weakBox"></div>
+      <div class="result-actions">
+        <button class="primary-btn" id="resultAgain">עוד סבב</button>
+        <button class="ghost-btn" data-home>חזרה לתפריט</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const WORDS = [
+  { en: "alternative", he: "אלטרנטיבה, חלופה" },
+  { en: "community", he: "קהילה" },
+  { en: "match", he: "התאמה, להתאים" },
+  { en: "owner", he: "בעלים" },
+  { en: "project", he: "פרויקט" },
+  { en: "skill", he: "מיומנות" },
+  { en: "consider", he: "לשקול, לקחת בחשבון" },
+  { en: "include", he: "לכלול, כולל" },
+  { en: "interview", he: "ראיון, לראיין" },
+  { en: "involve", he: "לערב, לכלול" },
+  { en: "require", he: "לדרוש" },
+  { en: "run", he: "לנהל" },
+  { en: "completely", he: "לגמרי, לחלוטין" },
+  { en: "equal", he: "שווה" },
+  { en: "whenever", he: "מתישהו, כש-" },
+  { en: "answer a need", he: "לענות על צורך" },
+  { en: "bank teller", he: "פקיד בנק" },
+  { en: "(be) familiar with", he: "להכיר, להיות בקיא ב..." },
+  { en: "in return", he: "בתמורה" },
+  { en: "pop up", he: "לצוץ" },
+  { en: "take part in", he: "להשתתף / לקחת חלק ב" },
+  { en: "loan", he: "להלוות, הלוואה" },
+  { en: "type", he: "סוג" },
+  { en: "huge", he: "ענק, עצום" },
+  { en: "unlike", he: "שלא כמו, בניגוד ל" },
+  { en: "effort", he: "מאמץ" },
+  { en: "employee", he: "עובד, שכיר" },
+  { en: "initiation", he: "חניכה" },
+  { en: "member", he: "חבר בקבוצה" },
+  { en: "participant", he: "משתתף" },
+  { en: "symbol", he: "סמל" },
+  { en: "tradition", he: "מסורת" },
+  { en: "initiate", he: "להתחיל, ליזום" },
+  { en: "spread", he: "להפיץ, להתפשט" },
+  { en: "annual", he: "שנתי, כל שנה" },
+  { en: "active", he: "פעיל" },
+  { en: "daily routine", he: "שגרה יומית" },
+  { en: "join in", he: "להצטרף" },
+  { en: "make a difference", he: "לשנות, להשפיע" },
+  { en: "range from ... to ...", he: "נע בין.. ל" },
+  { en: "registration", he: "הרשמה, רישום" },
+  { en: "deed", he: "מעשה" },
+  { en: "positive", he: "חיובי" },
+  { en: "improve", he: "לשפר" },
+  { en: "prove", he: "להוכיח" },
+  { en: "elderly", he: "מבוגר, זקן" },
+  { en: "local", he: "מקומי" },
+  { en: "proudly", he: "בגאווה" },
+  { en: "fill in", he: "למלא, להשלים" },
+];
+
+const STORAGE_KEY = "vocab-exam-progress-v1";
+
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { mastery: {}, streak: 0, seen: {} };
+  } catch {
+    return { mastery: {}, streak: 0, seen: {} };
+  }
+}
+
+function saveProgress(p) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+}
+
+let progress = loadProgress();
+let currentMode = null;
+let lastResultMode = null;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickN(arr, n) {
+  return shuffle(arr).slice(0, Math.min(n, arr.length));
+}
+
+function weightedWords(n) {
+  const scored = WORDS.map((w) => {
+    const m = progress.mastery[w.en] || 0;
+    const weight = Math.max(1, 6 - m);
+    return { w, weight };
+  });
+  const pool = [];
+  scored.forEach(({ w, weight }) => {
+    for (let i = 0; i < weight; i++) pool.push(w);
+  });
+  const out = [];
+  const used = new Set();
+  while (out.length < n && pool.length) {
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    if (!used.has(pick.en)) {
+      used.add(pick.en);
+      out.push(pick);
+    } else {
+      // remove one instance to avoid infinite loop
+      const idx = pool.findIndex((x) => x.en === pick.en);
+      if (idx >= 0) pool.splice(idx, 1);
+    }
+  }
+  return out.length ? out : pickN(WORDS, n);
+}
+
+function markSeen(en) {
+  progress.seen[en] = true;
+  saveProgress(progress);
+  refreshHomeStats();
+}
+
+function bumpMastery(en, delta) {
+  const cur = progress.mastery[en] || 0;
+  progress.mastery[en] = Math.max(0, Math.min(5, cur + delta));
+  markSeen(en);
+}
+
+function bumpStreak(ok) {
+  progress.streak = ok ? (progress.streak || 0) + 1 : 0;
+  saveProgress(progress);
+  refreshHomeStats();
+}
+
+function refreshHomeStats() {
+  const seen = Object.keys(progress.seen || {}).length;
+  const mastered = Object.values(progress.mastery || {}).filter((v) => v >= 3).length;
+  document.getElementById("statSeen").textContent = seen;
+  document.getElementById("statMastered").textContent = mastered;
+  document.getElementById("statTotal").textContent = WORDS.length;
+  document.getElementById("streakBadge").textContent = `🔥 רצף ${progress.streak || 0}`;
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function goHome() {
+  currentMode = null;
+  showScreen("screen-home");
+  refreshHomeStats();
+}
+
+document.querySelectorAll("[data-home]").forEach((btn) => {
+  btn.addEventListener("click", goHome);
+});
+
+function startMode(mode) {
+  currentMode = mode;
+  lastResultMode = mode;
+  if (mode === "flash") startFlash();
+  else if (mode === "quiz") startQuiz();
+  else if (mode === "match") startMatch();
+  else if (mode === "type") startType();
+}
+
+document.querySelectorAll(".mode-btn").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    startMode(btn.dataset.mode);
+  });
+});
+
+document.getElementById("resultAgain").addEventListener("click", () => {
+  const mode = lastResultMode || "quiz";
+  currentMode = mode;
+  if (mode === "flash") startFlash();
+  if (mode === "quiz") startQuiz();
+  if (mode === "match") startMatch();
+  if (mode === "type") startType();
+});
+
+/* -------- FLASH -------- */
+let flashDeck = [];
+let flashIdx = 0;
+let flashKnown = 0;
+let flashMiss = [];
+
+function startFlash() {
+  flashDeck = weightedWords(12);
+  flashIdx = 0;
+  flashKnown = 0;
+  flashMiss = [];
+  showScreen("screen-flash");
+  renderFlash();
+}
+
+function renderFlash() {
+  const card = document.getElementById("flashCard");
+  card.classList.remove("flipped");
+  const w = flashDeck[flashIdx];
+  document.getElementById("flashEn").textContent = w.en;
+  document.getElementById("flashHe").textContent = w.he;
+  const pct = (flashIdx / flashDeck.length) * 100;
+  document.getElementById("flashProg").style.width = `${pct}%`;
+  document.getElementById("flashProgLabel").textContent = `${flashIdx + 1} / ${flashDeck.length}`;
+  markSeen(w.en);
+}
+
+document.getElementById("flashCard").addEventListener("click", () => {
+  document.getElementById("flashCard").classList.toggle("flipped");
+});
+
+function advanceFlash(knew) {
+  const w = flashDeck[flashIdx];
+  if (knew) {
+    flashKnown++;
+    bumpMastery(w.en, 1);
+    bumpStreak(true);
+  } else {
+    flashMiss.push(w);
+    bumpMastery(w.en, -1);
+    bumpStreak(false);
+  }
+  flashIdx++;
+  if (flashIdx >= flashDeck.length) {
+    finishRound(flashKnown, flashDeck.length, flashMiss, "כרטיסיות");
+  } else {
+    renderFlash();
+  }
+}
+
+document.getElementById("flashKnow").addEventListener("click", () => advanceFlash(true));
+document.getElementById("flashAgain").addEventListener("click", () => advanceFlash(false));
+document.getElementById("flashSkip").addEventListener("click", () => advanceFlash(false));
+
+/* -------- QUIZ -------- */
+let quizDeck = [];
+let quizIdx = 0;
+let quizScore = 0;
+let quizMiss = [];
+let quizLocked = false;
+
+function startQuiz() {
+  quizDeck = weightedWords(15);
+  quizIdx = 0;
+  quizScore = 0;
+  quizMiss = [];
+  quizLocked = false;
+  showScreen("screen-quiz");
+  renderQuiz();
+}
+
+function renderQuiz() {
+  quizLocked = false;
+  const w = quizDeck[quizIdx];
+  const toHebrew = Math.random() > 0.45;
+  const qEl = document.getElementById("quizQ");
+  const dirEl = document.getElementById("quizDir");
+  const optsEl = document.getElementById("quizOptions");
+  optsEl.innerHTML = "";
+
+  document.getElementById("quizScore").textContent = `${quizScore} נק׳`;
+  document.getElementById("quizProg").style.width = `${(quizIdx / quizDeck.length) * 100}%`;
+  document.getElementById("quizProgLabel").textContent = `${quizIdx + 1} / ${quizDeck.length}`;
+
+  if (toHebrew) {
+    dirEl.textContent = "מה התרגום לעברית?";
+    qEl.textContent = w.en;
+    qEl.className = "q en";
+    const distractors = shuffle(WORDS.filter((x) => x.en !== w.en)).slice(0, 3).map((x) => x.he);
+    const options = shuffle([w.he, ...distractors]);
+    options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = opt;
+      btn.addEventListener("click", () => answerQuiz(btn, opt === w.he, w));
+      optsEl.appendChild(btn);
+    });
+  } else {
+    dirEl.textContent = "מה התרגום לאנגלית?";
+    qEl.textContent = w.he;
+    qEl.className = "q";
+    const distractors = shuffle(WORDS.filter((x) => x.en !== w.en)).slice(0, 3).map((x) => x.en);
+    const options = shuffle([w.en, ...distractors]);
+    options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.className = "option en";
+      btn.textContent = opt;
+      btn.style.textAlign = "left";
+      btn.addEventListener("click", () => answerQuiz(btn, opt === w.en, w));
+      optsEl.appendChild(btn);
+    });
+  }
+  markSeen(w.en);
+}
+
+function answerQuiz(btn, correct, w) {
+  if (quizLocked) return;
+  quizLocked = true;
+  const buttons = [...document.querySelectorAll("#quizOptions .option")];
+  buttons.forEach((b) => (b.disabled = true));
+
+  if (correct) {
+    btn.classList.add("correct");
+    quizScore++;
+    bumpMastery(w.en, 1);
+    bumpStreak(true);
+  } else {
+    btn.classList.add("wrong");
+    quizMiss.push(w);
+    bumpMastery(w.en, -1);
+    bumpStreak(false);
+    buttons.forEach((b) => {
+      const isRight =
+        b.textContent === w.he || b.textContent === w.en;
+      if (isRight) b.classList.add("correct");
+    });
+  }
+
+  setTimeout(() => {
+    quizIdx++;
+    if (quizIdx >= quizDeck.length) {
+      finishRound(quizScore, quizDeck.length, quizMiss, "חידון");
+    } else {
+      renderQuiz();
+    }
+  }, correct ? 450 : 900);
+}
+
+/* -------- MATCH -------- */
+let matchPairs = [];
+let matchSelected = null;
+let matchDone = 0;
+let matchMoves = 0;
+let matchBusy = false;
+
+function startMatch() {
+  matchPairs = weightedWords(6);
+  matchSelected = null;
+  matchDone = 0;
+  matchMoves = 0;
+  matchBusy = false;
+  showScreen("screen-match");
+  renderMatch();
+}
+
+function renderMatch() {
+  const grid = document.getElementById("matchGrid");
+  grid.innerHTML = "";
+  const tiles = [];
+  matchPairs.forEach((w) => {
+    tiles.push({ id: w.en, side: "en", label: w.en, pair: w.en });
+    tiles.push({ id: w.en + "-he", side: "he", label: w.he, pair: w.en });
+  });
+  shuffle(tiles).forEach((t) => {
+    const btn = document.createElement("button");
+    btn.className = "match-tile" + (t.side === "en" ? " en" : "");
+    btn.textContent = t.label;
+    btn.dataset.pair = t.pair;
+    btn.dataset.side = t.side;
+    btn.addEventListener("click", () => onMatchClick(btn));
+    grid.appendChild(btn);
+  });
+  updateMatchMeta();
+}
+
+function updateMatchMeta() {
+  document.getElementById("matchLeft").textContent = `${matchPairs.length - matchDone} זוגות`;
+  document.getElementById("matchMoves").textContent = `${matchMoves} מהלכים`;
+  document.getElementById("matchProg").style.width = `${(matchDone / matchPairs.length) * 100}%`;
+}
+
+function onMatchClick(btn) {
+  if (matchBusy || btn.classList.contains("matched") || btn.classList.contains("selected")) return;
+
+  btn.classList.add("selected");
+  if (!matchSelected) {
+    matchSelected = btn;
+    return;
+  }
+
+  matchMoves++;
+  matchBusy = true;
+  const a = matchSelected;
+  const b = btn;
+
+  if (a.dataset.pair === b.dataset.pair && a.dataset.side !== b.dataset.side) {
+    a.classList.add("matched");
+    b.classList.add("matched");
+    a.classList.remove("selected");
+    b.classList.remove("selected");
+    matchDone++;
+    bumpMastery(a.dataset.pair, 1);
+    bumpStreak(true);
+    markSeen(a.dataset.pair);
+    matchSelected = null;
+    matchBusy = false;
+    updateMatchMeta();
+    if (matchDone >= matchPairs.length) {
+      setTimeout(() => finishRound(matchPairs.length, matchPairs.length, [], "התאמה"), 400);
+    }
+  } else {
+    a.classList.add("mismatch");
+    b.classList.add("mismatch");
+    bumpStreak(false);
+    setTimeout(() => {
+      a.classList.remove("selected", "mismatch");
+      b.classList.remove("selected", "mismatch");
+      matchSelected = null;
+      matchBusy = false;
+      updateMatchMeta();
+    }, 500);
+  }
+}
+
+/* -------- TYPE -------- */
+let typeDeck = [];
+let typeIdx = 0;
+let typeScore = 0;
+let typeMiss = [];
+
+function normalizeAnswer(s) {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[()]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\.{2,}/g, "...");
+}
+
+function answersMatch(input, expected) {
+  const a = normalizeAnswer(input);
+  const b = normalizeAnswer(expected);
+  if (a === b) return true;
+  // allow without parentheses content for "(be) familiar with"
+  const stripped = normalizeAnswer(expected.replace(/\([^)]*\)/g, "").trim());
+  if (a === stripped) return true;
+  // allow "familiar with" for "(be) familiar with"
+  if (b.includes(a) && a.length >= Math.min(6, stripped.length)) return true;
+  return false;
+}
+
+function startType() {
+  typeDeck = weightedWords(10);
+  typeIdx = 0;
+  typeScore = 0;
+  typeMiss = [];
+  showScreen("screen-type");
+  renderType();
+}
+
+function renderType() {
+  const w = typeDeck[typeIdx];
+  document.getElementById("typeHe").textContent = w.he;
+  document.getElementById("typeInput").value = "";
+  document.getElementById("typeFeedback").textContent = "";
+  document.getElementById("typeFeedback").className = "type-feedback";
+  document.getElementById("typeScore").textContent = `${typeScore} / ${typeDeck.length}`;
+  document.getElementById("typeProg").style.width = `${(typeIdx / typeDeck.length) * 100}%`;
+  document.getElementById("typeProgLabel").textContent = `${typeIdx + 1} / ${typeDeck.length}`;
+  document.getElementById("typeInput").focus();
+  markSeen(w.en);
+}
+
+function submitType() {
+  const w = typeDeck[typeIdx];
+  const input = document.getElementById("typeInput").value;
+  const fb = document.getElementById("typeFeedback");
+  if (!input.trim()) return;
+
+  const ok = answersMatch(input, w.en);
+  if (ok) {
+    fb.textContent = "נכון! ✓";
+    fb.className = "type-feedback ok";
+    typeScore++;
+    bumpMastery(w.en, 2);
+    bumpStreak(true);
+  } else {
+    fb.textContent = `לא מדויק — התשובה: ${w.en}`;
+    fb.className = "type-feedback bad";
+    typeMiss.push(w);
+    bumpMastery(w.en, -1);
+    bumpStreak(false);
+  }
+
+  setTimeout(() => {
+    typeIdx++;
+    if (typeIdx >= typeDeck.length) {
+      finishRound(typeScore, typeDeck.length, typeMiss, "כתיבה");
+    } else {
+      renderType();
+    }
+  }, ok ? 500 : 1100);
+}
+
+document.getElementById("typeSubmit").addEventListener("click", submitType);
+document.getElementById("typeInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") submitType();
+});
+
+/* -------- RESULT -------- */
+function finishRound(correct, total, miss, label) {
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+  document.getElementById("scoreRing").style.setProperty("--p", pct);
+  document.getElementById("scorePct").textContent = `${pct}%`;
+
+  let title = "כל הכבוד!";
+  let msg = `סיימת סבב ${label}: ${correct} מתוך ${total}.`;
+  if (pct === 100) {
+    title = "מושלם! 🏆";
+    msg = `כולן נכונות בסבב ${label}. אתה מוכן למבחן.`;
+    spawnConfetti();
+  } else if (pct >= 70) {
+    title = "יפה מאוד!";
+    msg = `${correct}/${total} נכון. עוד סבב אחד וזה נכנס לראש.`;
+  } else {
+    title = "המשך להתאמן";
+    msg = `${correct}/${total}. המילים הקשות יופיעו יותר — זה בכוונה.`;
+  }
+
+  document.getElementById("resultTitle").textContent = title;
+  document.getElementById("resultMsg").textContent = msg;
+
+  const weakBox = document.getElementById("weakBox");
+  if (miss.length) {
+    const unique = [];
+    const seen = new Set();
+    miss.forEach((w) => {
+      if (!seen.has(w.en)) {
+        seen.add(w.en);
+        unique.push(w);
+      }
+    });
+    weakBox.innerHTML = `
+      <div class="weak-list">
+        <h3>לחזק לפני המבחן</h3>
+        <ul>
+          ${unique
+            .slice(0, 6)
+            .map(
+              (w) =>
+                `<li><span class="en">${w.en}</span><span>${w.he}</span></li>`
+            )
+            .join("")}
+        </ul>
+      </div>`;
+  } else {
+    weakBox.innerHTML = "";
+  }
+
+  showScreen("screen-result");
+}
+
+function spawnConfetti() {
+  const box = document.getElementById("confetti");
+  box.innerHTML = "";
+  const colors = ["#0d7a72", "#e8a317", "#d64545", "#2bbbad", "#fff"];
+  for (let i = 0; i < 28; i++) {
+    const el = document.createElement("i");
+    el.style.left = `${Math.random() * 100}%`;
+    el.style.background = colors[i % colors.length];
+    el.style.animationDelay = `${Math.random() * 0.4}s`;
+    el.style.animationDuration = `${1 + Math.random()}s`;
+    box.appendChild(el);
+  }
+}
+
+refreshHomeStats();
+
+// Deep-link: /vocab/?mode=quiz|flash|match|type (must run after lets are initialized)
+const modeParam = new URLSearchParams(location.search).get("mode");
+if (modeParam && ["flash", "quiz", "match", "type"].includes(modeParam)) {
+  startMode(modeParam);
+}
+</script>
+</body>
+</html>
